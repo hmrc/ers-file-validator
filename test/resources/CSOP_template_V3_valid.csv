@@ -1,0 +1,54 @@
+"CSOP scheme template – Options and replacement options exercised",,,,,,,,,,,,,,,,,,,
+"How to complete this schedule:",,,,,,,,,,,,,,,,,,,
+"Enter details of each employee and the Company Share Option Plan (CSOP) below.
+Please note: Monetary values must be entered to 4 decimal places in pounds sterling.
+Numbers of shares and securities must be entered to 2 decimal places.",,,,,,,,,,,,,,,,,,,
+"Important note",,,,,,,,,,,,,,,,,,,
+"You must not alter the structure or formatting of this schedule. If you do your schedule will be rejected.",,,,,,,,,,,,,,,,,,,
+"For more information on completing this schedule, follow the link below. You must be connected to the internet to access the guide.",,,,,,,,,,,,,,,,,,,
+"CSOP guidance",,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,
+"1.
+Date of event
+(yyyy-mm-dd)","2.
+Employee first name","3.
+Employee second name
+(if applicable)","4.
+Employee last name","5.
+National Insurance number
+(if applicable)","6.
+PAYE reference of employing company","7.
+Date of grant
+(yyyy-mm-dd)","8.
+Total number of shares employee entitled to on exercise of the option before any cashless exercise or other adjustment
+e.g. 100.00","9.
+Are these shares part of the largest class of shares in that company?
+(yes/no)","10.
+Are the shares subject to the option listed on a recognised stock exchange?
+(yes/no)
+","11.
+Actual market value (AMV) of a share on the date of exercise
+£
+e.g. 10.1234","12.
+Exercise price per share
+£
+e.g. 10.1234","13.
+Unrestricted market value (UMV) of a share on the date of exercise
+£
+e.g. 10.1234","14.
+If the answer to question 10 is no, was the market value agreed with HMRC?
+(yes/no)","15.
+If yes enter the HMRC reference given","16.
+Does the exercise qualify for tax relief?
+(yes/no)","17.
+Was PAYE operated?
+(yes/no)","18.
+If yes, deductible amount
+£
+e.g. 10.1234","19.
+Has a National Insurance Contributions election or agreement been operated?
+(yes/no)","20.
+Were all shares resulting from the exercise sold? (yes/no). Answer yes if they were either sold on the same day as the exercise in connection with the exercise or sale instructions were given for all shares to be sold on exercise"
+2015-11-29,"John","Middle","Doe","AA123456A","123/XZ55555555",2015-12-29,100.00,"yes","no",10.1234,10.1234,10.1234,"yes","aa12345678","yes","yes",10.1234,"yes","yes"
+2015-11-29,"John","Middle","Doe","AA123456A","123/XZ55555555",2015-12-29,100.00,"yes","no",10.1234,10.1234,10.1234,"no",,"yes","no",,"yes","no"
+2015-11-29,"John",,"Doe","AA123456A","123/XZ55555555",2015-12-29,100.00,"yes","yes",10.1234,10.1234,10.1234,,,"yes","yes",10.1234,"yes","yes"

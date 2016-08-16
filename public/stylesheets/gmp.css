@@ -1,0 +1,24 @@
+.bottom-blue-border {
+  border-bottom: 5px solid #005ea5;
+}
+.grid-1-2{
+  float: left;
+  padding-right: 20px;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+.confirmation {
+  background-color: #28A197;
+  text-align: center;
+  color: #FFF;
+  padding: 2px 80px 20px;
+}
+
+.panel-indent {
+clear: both;
+border-left: 4px solid #bfc1c3;
+padding: 10px 0 10px 15px;
+margin: 30px 15px 45px 0;
+}
