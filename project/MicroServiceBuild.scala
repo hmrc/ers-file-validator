@@ -37,7 +37,7 @@ private object AppDependencies {
     "com.kenshoo" %% "metrics-play" % metricsPlayVersion,
     "com.codahale.metrics" % "metrics-graphite" % metricsGraphiteVersion,
     "uk.gov.hmrc" %% "bulk-entity-streaming" % ersEntityStreamingVersion,
-    "uk.gov.hmrc" %% "data-validation-lib" % "0.1",
+    "uk.gov.hmrc" %% "tabular-data-validator" % "1.0.0",
     "org.scala-lang.modules" %% "scala-xml" % "1.0.5",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.3",
   "uk.gov.hmrc" %% "play-url-binders" % "1.0.0",

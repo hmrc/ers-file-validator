@@ -16,7 +16,7 @@
 
 package services.validation
 
-import hmrc.gsi.gov.uk.services.validation.{ValidationError, Cell, DataValidator}
+import uk.gov.hmrc.services.validation.{ValidationError, Cell, DataValidator}
 import models.ValidationErrorData
 import org.scalatestplus.play.PlaySpec
 

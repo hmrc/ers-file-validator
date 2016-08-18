@@ -16,7 +16,7 @@
 
 package services.validation.OTHERTestData
 
-import hmrc.gsi.gov.uk.services.validation.Cell
+import uk.gov.hmrc.services.validation.Cell
 import models.ValidationErrorData
 
 trait ERSValidationOTHEREnhancementTestData {

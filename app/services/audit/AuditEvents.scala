@@ -16,7 +16,7 @@
 
 package services.audit
 
-import hmrc.gsi.gov.uk.services.validation.ValidationError
+import uk.gov.hmrc.services.validation.ValidationError
 import models.{CallbackData, SchemeInfo}
 import org.apache.commons.lang3.exception.ExceptionUtils
 import uk.gov.hmrc.play.http.HeaderCarrier

@@ -18,7 +18,7 @@ package services
 
 import java.util.concurrent.TimeUnit
 
-import hmrc.gsi.gov.uk.services.validation.{DataValidator, ValidationError}
+import uk.gov.hmrc.services.validation.{ValidationError,DataValidator}
 import metrics.Metrics
 import models._
 import play.api.Logger

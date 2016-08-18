@@ -17,7 +17,7 @@
 package services.validation
 
 import com.typesafe.config.ConfigFactory
-import hmrc.gsi.gov.uk.services.validation.{Cell, DataValidator, Row, ValidationError}
+import uk.gov.hmrc.services.validation.{Cell, DataValidator, Row, ValidationError}
 import org.scalatestplus.play.PlaySpec
 import services.validation.CSOPTestData.{ERSValidationCSOPExercisedTestData, ERSValidationCSOPRCLTestData, ERSValidationCSOPGrantedTestData}
 

@@ -16,7 +16,7 @@
 
 package services
 
-import hmrc.gsi.gov.uk.services.validation.{Cell, ValidationError}
+import uk.gov.hmrc.services.validation.{Cell, ValidationError}
 import models.{SchemeData, SchemeInfo, ValidationErrorData}
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.joda.time.DateTime

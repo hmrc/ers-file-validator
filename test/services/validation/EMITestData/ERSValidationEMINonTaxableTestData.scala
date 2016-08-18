@@ -16,7 +16,7 @@
 
 package services.validation.EMITestData
 
-import hmrc.gsi.gov.uk.services.validation.Cell
+import uk.gov.hmrc.services.validation.Cell
 import models.ValidationErrorData
 import org.apache.commons.lang3.StringUtils
 

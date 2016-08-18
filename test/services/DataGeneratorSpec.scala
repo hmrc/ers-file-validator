@@ -17,7 +17,7 @@
 package services
 
 import com.typesafe.config.ConfigFactory
-import hmrc.gsi.gov.uk.services.validation.DataValidator
+import uk.gov.hmrc.services.validation.DataValidator
 import models.{ERSFileProcessingException, SchemeData, SchemeInfo}
 import org.joda.time.DateTime
 import org.scalatest.{Matchers, BeforeAndAfter}

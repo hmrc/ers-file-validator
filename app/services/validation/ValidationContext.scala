@@ -17,7 +17,7 @@
 package services.validation
 
 import scala.util.matching.Regex
-import hmrc.gsi.gov.uk.services.validation.{Row, Cell, DataValidator}
+import uk.gov.hmrc.services.validation.{Row, Cell, DataValidator}
 import play.api.Logger
 
 object ValidationContext extends ERSValidationFormatters{

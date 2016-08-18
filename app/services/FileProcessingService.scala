@@ -28,7 +28,7 @@ import play.api.libs.iteratee.Enumerator
 import services.audit.AuditEvents
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.HeaderCarrier
-import uk.gov.hmrc.stream.BulkEntityProcessor
+//import uk.gov.hmrc.stream.BulkEntityProcessor
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
