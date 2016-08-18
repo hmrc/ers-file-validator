@@ -5,7 +5,7 @@ resolvers ++= Seq(
   Resolver.url("scoverage-bintray", url("https://dl.bintray.com/sksamuel/sbt-plugins/"))(Resolver.ivyStylePatterns)
 )
 
-addSbtPlugin("uk.gov.hmrc" % "sbt-auto-build" % "0.10.0")
+addSbtPlugin("uk.gov.hmrc" % "sbt-auto-build" % "1.0.0")
 
 addSbtPlugin("uk.gov.hmrc" % "sbt-git-versioning" % "0.8.0")
 
