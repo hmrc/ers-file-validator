@@ -345,7 +345,7 @@ trait ERSValidationOTHEROptionsTestData {
       //Column Q
       None,
       Some(List(ValidationErrorData("error.17","017","Company Reference Number must be less than 11 characters (numbers and letters)."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Company Reference Number must be less than 11 characters (numbers and letters)."))),
+      None,
       //Column R
       None,
       Some(List(ValidationErrorData("error.18","018","Corporation Tax reference must be a 10 digit number."))),
