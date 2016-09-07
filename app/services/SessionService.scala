@@ -31,13 +31,7 @@ object SessionService extends SessionService
 
 trait SessionService extends SessionCacheWiring {
 
-  val CALCULATION_RESULTS_KEY: String = "calculation_results_key"
   val CALLBACK_DATA_KEY = "callback_data_key"
-
-  val SCENARIO_KEY = "scenario"
-
-//  val REVALUATION_DATE_KEY = "revaluation_date"
-//  val REVALUATION_RATE_KEY = "revaluation_rate"
 
   def retrieveCallbackData()(implicit request: Request[_], hc: HeaderCarrier): Future[Option[CallbackData]] = {
 
@@ -47,14 +41,15 @@ trait SessionService extends SessionCacheWiring {
 
   }
 
-  def storeCallbackData(postData: CallbackData)(implicit request: Request[_], hc: HeaderCarrier): Future[Option[CallbackData]] = {
+  def storeCallbackData(data: CallbackData, totalRows: Int)(implicit request: Request[_], hc: HeaderCarrier): Future[Option[CallbackData]] = {
+    val callbackData = data.copy(noOfRows = Some(totalRows))
 
-    val cacheMap = sessionCache.cache[CallbackData](CALLBACK_DATA_KEY, postData)
+    val cacheMap = sessionCache.cache[CallbackData](CALLBACK_DATA_KEY, callbackData)
 
     cacheMap.map(cacheMap =>
-      Some(postData)
-    ).recover { case e =>
-      Logger.warn("Failed to store attachments post data: " + e)
+      Some(callbackData)
+    ).recover { case e:Throwable =>
+      Logger.error("Failed to store callback data with no of rows: " + e)
       None
     }
   }
@@ -65,7 +60,7 @@ trait SessionService extends SessionCacheWiring {
     cacheMap.map(cacheMap =>
       Some(dataPair._2)
     ).recover { case e =>
-      Logger.warn("Failed to store attachments post data: " + e)
+      Logger.error("Failed to store attachments post data: " + e)
       None
     }
   }

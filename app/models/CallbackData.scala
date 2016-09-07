@@ -25,7 +25,7 @@ case class ERSFileProcessingException(message: String,
                                 context: String,
                                 jsonSize: Option[Int] = None) extends Exception(message)
 
-case class CallbackData(collection: String, id: String, length: Long, name: Option[String], contentType: Option[String], customMetadata: Option[JsObject])
+case class CallbackData(collection: String, id: String, length: Long, name: Option[String], contentType: Option[String], customMetadata: Option[JsObject], noOfRows:Option[Int])
 
 object CallbackData {
   implicit val format = Json.format[CallbackData]

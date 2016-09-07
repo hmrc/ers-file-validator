@@ -78,7 +78,7 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     "inflationProofRequest" -> false
   )
 
-  val callbackData = CallbackData(collection = "collection", id = "someid", length = 1000L, name = Some("John"), contentType = Some("content-type"), customMetadata = Some(metaData))
+  val callbackData = CallbackData(collection = "collection", id = "someid", length = 1000L, name = Some("John"), contentType = Some("content-type"), customMetadata = Some(metaData), None)
   val d: FileData = FileData(callbackData, schemeInfo)
   val csvData: CsvFileData = CsvFileData(
     List(
