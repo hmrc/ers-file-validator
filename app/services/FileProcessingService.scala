@@ -60,14 +60,14 @@ trait FileProcessingService extends ServicesConfig with DataGenerator with Metri
         totalRows+= el.data.size
         res + sendScheme(el,callbackData, empRef)}
     }
-  sessionService.storeCallbackData(callbackData,totalRows).map {
-    case callback: Option[CallbackData] if callback.isDefined => res1
-    case _ => Logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
-      throw new ERSFileProcessingException(("callback data storage in sessioncache failed "), "Exception storing callback data")
-  } .recover {
-    case e:Throwable => Logger.error(s"storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-      throw e
-  }
+    sessionService.storeCallbackData(callbackData,totalRows).map {
+      case callback: Option[CallbackData] if callback.isDefined => res1
+      case _ => Logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
+        throw new ERSFileProcessingException(("callback data storage in sessioncache failed "), "Exception storing callback data")
+    } .recover {
+      case e:Throwable => Logger.error(s"storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+        throw e
+    }
     Logger.warn(s"Total rows for schemeRef ${schemeInfo.schemeRef}: $totalRows")
     auditEvents.totalRows(totalRows, schemeInfo)
     res1
@@ -88,6 +88,16 @@ trait FileProcessingService extends ServicesConfig with DataGenerator with Metri
       sendScheme(schemeData, callbackData, empRef)
     }
   }
+
+  def getTotalCsvRows(callbackData: CallbackData, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo,request: Request[_])={
+    readCSVFile(callbackData).map { fileData =>
+      val sheetName = callbackData.name.getOrElse("").replace(".csv","")
+      val result: ListBuffer[Seq[String]] = getCsvData(fileData)(schemeInfo, sheetName,hc,request)
+      val schemeData: SchemeData = SchemeData(schemeInfo, sheetName, None, result)
+      schemeData.data.size
+    }
+  }
+
 
   def readFile(collection: String, id: String) : Iterator[String] = {
     Logger.debug("1. Read File ")
