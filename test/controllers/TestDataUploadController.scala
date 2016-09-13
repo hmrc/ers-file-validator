@@ -54,6 +54,7 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     val currentConfig = mockCurrentConfig
     val sessionService = mockSessionService
     val fileProcessService = mockFileProcessingService
+    when(mockSessionService.storeCallbackData(Matchers.any(),Matchers.any())(Matchers.any(),Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
   }
 
   def processFileDataFromFrontend(request: FakeRequest[AnyContentAsJson])(handler: Future[Result] => Any): Unit ={
@@ -143,7 +144,7 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     "Successfully receive data" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {
-        when(mockFileProcessingService.processCsvFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),any[Request[_]])).thenReturn(Future(l.size))
+        when(mockFileProcessingService.processCsvFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),any[Request[_]])).thenReturn(Future(l.size, 100))
         processCsvFileDataFromFrontend(request.withJsonBody(Json.toJson(csvData))) {
           result =>
             status(result) must be(OK)
@@ -154,7 +155,7 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     "return errors when an incorrect json object is sent to process-file" in {
       reset(mockFileProcessingService)
       running(FakeApplication()){
-        when(mockFileProcessingService.processCsvFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),any[Request[_]])).thenReturn(Future(l.size))
+        when(mockFileProcessingService.processCsvFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),any[Request[_]])).thenReturn(Future(l.size, 100))
         processCsvFileDataFromFrontend(request.withJsonBody(metaData)){
           result =>
             status(result) must be (BAD_REQUEST)
