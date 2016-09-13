@@ -85,19 +85,9 @@ trait FileProcessingService extends ServicesConfig with DataGenerator with Metri
 
       Logger.info("2.1 result contains: " + result)
       Logger.debug("No if SchemeData Objects " + result.size)
-      sendScheme(schemeData, callbackData, empRef)
+      (sendScheme(schemeData, callbackData, empRef), schemeData.data.size)
     }
   }
-
-  def getTotalCsvRows(callbackData: CallbackData, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo,request: Request[_])={
-    readCSVFile(callbackData).map { fileData =>
-      val sheetName = callbackData.name.getOrElse("").replace(".csv","")
-      val result: ListBuffer[Seq[String]] = getCsvData(fileData)(schemeInfo, sheetName,hc,request)
-      val schemeData: SchemeData = SchemeData(schemeInfo, sheetName, None, result)
-      schemeData.data.size
-    }
-  }
-
 
   def readFile(collection: String, id: String) : Iterator[String] = {
     Logger.debug("1. Read File ")
