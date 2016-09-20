@@ -30,9 +30,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
 import play.api.libs.iteratee.Enumerator
+import play.api.libs.json.{Writes, Json}
 import play.api.mvc.Request
 import play.api.test.Helpers._
 import services.audit.AuditEvents
+import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.stream.BulkEntityProcessor
 
@@ -59,8 +61,8 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
     schemeType = "EMI"
   )
 
-  val callbackData = CallbackData("ers-files", "id1", 1024, Option("csop.ods"), Option("ods"), None)
-  val callbackDataCSV = CallbackData("ers-files", "id1", 1024, Option("EMI40_Adjustments_V3"), Option("csv"), None)
+  val callbackData = CallbackData("ers-files", "id1", 1024, Option("csop.ods"), Option("ods"), None,None)
+  val callbackDataCSV = CallbackData("ers-files", "id1", 1024, Option("EMI40_Adjustments_V3"), Option("csv"), None,None)
   val metrics = mock[Metrics]
 
   def xmlSourceData() =  Future.successful(Enumerator(xmlData1.toString.getBytes()))
@@ -88,7 +90,7 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
         override def readFile(collection: String, id: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
         override val auditEvents:AuditEvents = mock[AuditEvents]
 
-
+        when(mockSessionService.storeCallbackData(Matchers.any(),Matchers.any())(Matchers.any(),Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
       }
       val result = testFileProcessingService.processFile(callbackData, "")(hc,schemeInfo, request)
       result mustBe 1
@@ -104,21 +106,6 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
     })
 
 
-//    "display expected exception" in {
-//     when(mockBulkEntityProcessor.usingXMLf(Matchers.any(),Matchers.any(),Matchers.any()))
-//       def exceptionMessage: String = {
-//         try {
-//           val result = testFileProcessingService.readFile("x", "y")
-//           result.toString()
-//         }
-//         catch {
-//           case e: ERSFileProcessingException => {
-//             return e.message + ", " + e.context
-//           }
-//         }
-//       }
-//      exceptionMessage must be ("Failed to stream the data from file, Exception STAX streaming")
-//    }
   }
 
   "yield a list of scheme data from file data with large file" in {
@@ -132,6 +119,8 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
       override def readFile(collection: String, id: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
       override val auditEvents:AuditEvents = mock[AuditEvents]
 
+      when(mockSessionService.storeCallbackData(any[CallbackData],any[Int])
+        (Matchers.any(), any[HeaderCarrier])).thenReturn(Future.successful(Some(callbackData)))
     }
 
     val result = testFileProcessingService1.processFile(callbackData, "")(hc, schemeInfo, request)

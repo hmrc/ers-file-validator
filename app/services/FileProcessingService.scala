@@ -60,6 +60,14 @@ trait FileProcessingService extends ServicesConfig with DataGenerator with Metri
         totalRows+= el.data.size
         res + sendScheme(el,callbackData, empRef)}
     }
+    sessionService.storeCallbackData(callbackData,totalRows).map {
+      case callback: Option[CallbackData] if callback.isDefined => res1
+      case _ => Logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
+        throw new ERSFileProcessingException(("callback data storage in sessioncache failed "), "Exception storing callback data")
+    } .recover {
+      case e:Throwable => Logger.error(s"storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+        throw e
+    }
     Logger.warn(s"Total rows for schemeRef ${schemeInfo.schemeRef}: $totalRows")
     auditEvents.totalRows(totalRows, schemeInfo)
     res1
@@ -77,7 +85,7 @@ trait FileProcessingService extends ServicesConfig with DataGenerator with Metri
 
       Logger.info("2.1 result contains: " + result)
       Logger.debug("No if SchemeData Objects " + result.size)
-      sendScheme(schemeData, callbackData, empRef)
+      (sendScheme(schemeData, callbackData, empRef), schemeData.data.size)
     }
   }
 

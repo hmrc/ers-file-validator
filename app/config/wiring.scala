@@ -59,7 +59,7 @@ object AuthParamsControllerConfiguration extends AuthParamsControllerConfig {
 
 object ERSFileValidatorSessionCache extends SessionCache with AppName with ServicesConfig {
   override lazy val http = WSHttp
-  override lazy val defaultSource = appName
+  override lazy val defaultSource = "ers-returns-frontend"
   override lazy val baseUri = baseUrl("cachable.session-cache")
   override lazy val domain = getConfString("cachable.session-cache.domain", throw new Exception(Messages("ers.exceptions.wiring.noConfig")))
 }

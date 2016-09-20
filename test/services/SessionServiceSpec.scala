@@ -76,7 +76,7 @@ class SessionServiceSpec extends PlaySpec with OneServerPerSuite with ScalaFutur
 
     "successfully store attachments callback post data" in {
       val postData = CallbackData(id = "theid", collection = "thecollection", length = 1000L, name = Some("thefilename"), contentType = None, customMetadata
-        = None)
+        = None, noOfRows = None)
 
       val json = Json.toJson[CallbackData](postData)
       when(TestSessionService.sessionCache.cache[CallbackData]
@@ -84,16 +84,17 @@ class SessionServiceSpec extends PlaySpec with OneServerPerSuite with ScalaFutur
         (any[Writes[CallbackData]], any[HeaderCarrier]))
         .thenReturn(Future.successful(CacheMap("sessionValue", Map(SessionService.CALLBACK_DATA_KEY -> json))))
 
-      val result: Option[CallbackData] = Await.result(TestSessionService.storeCallbackData(postData)(request, hc), 10 seconds)
+      val result: Option[CallbackData] = Await.result(TestSessionService.storeCallbackData(postData, 1000)(request, hc), 10 seconds)
 
       result.get.length must be(1000L)
+      result.get.noOfRows.get must be (1000)
 
     }
 
 
     "successfully retrieve callback post data" in {
       val postData = CallbackData(id = "theid", collection = "thecollection", length = 1000L, name = Some("thefilename"), contentType = None, customMetadata
-        = None)
+        = None, noOfRows = None)
 
       when(TestSessionService.sessionCache.fetchAndGetEntry[CallbackData](any())(any(), any())).thenReturn(Future.successful(Some
         (postData)))

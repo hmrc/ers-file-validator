@@ -85,8 +85,18 @@ trait DataUploadController extends BaseController with Metrics {
           implicit val schemeInfo: SchemeInfo = res.schemeInfo
           Logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
-          Future.sequence(process(res.callbackData, empRef)(hc, schemeInfo, request)).map { s =>
-            Ok(s"${s.sum}")
+          Future.sequence(process(res.callbackData, empRef)(hc, schemeInfo, request)).map { result =>
+//            val totalRowt = result.foldLeft(0) (_ +_._2)
+            val totalRowCount = result.foldLeft(0) ((accum,inputTuple) => accum +inputTuple._2)
+            sessionService.storeCallbackData(res.callbackData.head, totalRowCount).map {
+              case callback: Option[CallbackData] if callback.isDefined => totalRowCount
+              case _ => Logger.error(s"csv storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
+                throw new ERSFileProcessingException("csv callback data storage in sessioncache failed ", "Exception storing csv callback data")
+            } .recover {
+              case e:Throwable => Logger.error(s"csv storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+                throw e
+            }
+            Ok(s"${result.foldLeft(0) ((accum,inputTuple) => accum +inputTuple._1)}")
           }.recover {
             case e: ERSFileProcessingException => {
               Logger.error(e.message)
@@ -107,6 +117,7 @@ trait DataUploadController extends BaseController with Metrics {
         }
       )
   }
+
   def process(res:List[CallbackData], empRef: String)(hc:HeaderCarrier, schemeInfo:SchemeInfo,request:Request[_]) = {
     for {
       callbackData <- res
