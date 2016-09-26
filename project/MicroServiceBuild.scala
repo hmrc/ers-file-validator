@@ -14,7 +14,7 @@ private object AppDependencies {
   import play.core.PlayVersion
 
   private val playHealthVersion = "1.1.0"
-  private val playMicroServiceBootStrapVersion = "4.2.1"
+  private val playMicroServiceBootStrapVersion = "4.4.0"
 
   private val playUiVersion = "4.2.0"
   private val playConfigVersion = "2.0.1"
@@ -23,7 +23,7 @@ private object AppDependencies {
   private val domainVersion = "3.5.0"
   private val httpCachingVersion = "5.2.0"
   private val ersEntityStreamingVersion = "1.0.0"
-  private val playAuthorisationVersion = "3.1.0"
+  private val playAuthorisationVersion = "3.3.0"
   private val reactivemongoTestVersion = "1.2.0"
 
   val compile = Seq(
