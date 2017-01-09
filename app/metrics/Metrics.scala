@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,33 @@
 
 package metrics
 
-import com.kenshoo.play.metrics.MetricsRegistry
-
 import java.util.concurrent.TimeUnit
+
+import com.codahale.metrics.MetricRegistry
+import uk.gov.hmrc.play.graphite.MicroserviceMetrics
 
 trait ERSMetrics {
   def fileProcessingTimer(diff: Long, unit: TimeUnit): Unit
+
   def besTimer(diff: Long, unit: TimeUnit): Unit
+
   def sendToSubmissionsTimer(diff: Long, unit: TimeUnit): Unit
+
   def dataIteratorTimer(diff: Long, unit: TimeUnit): Unit
 }
 
-object ERSMetrics extends ERSMetrics {
-  override def fileProcessingTimer(diff: Long, unit: TimeUnit) = MetricsRegistry.defaultRegistry.timer("file-processing-time").update(diff, unit)
-  override def besTimer(diff: Long, unit: TimeUnit) = MetricsRegistry.defaultRegistry.timer("bes-processing-time").update(diff, unit)
-  override def sendToSubmissionsTimer(diff: Long, unit: TimeUnit) = MetricsRegistry.defaultRegistry.timer("send-to-submissions-time").update(diff, unit)
-  override def dataIteratorTimer(diff: Long, unit: TimeUnit) = MetricsRegistry.defaultRegistry.timer("data-iterator-time").update(diff, unit)
+object ERSMetrics extends ERSMetrics with MicroserviceMetrics {
+  val registry: MetricRegistry = metrics.defaultRegistry
+
+  override def fileProcessingTimer(diff: Long, unit: TimeUnit) = registry.timer("file-processing-time").update(diff, unit)
+
+  override def besTimer(diff: Long, unit: TimeUnit) = registry.timer("bes-processing-time").update(diff, unit)
+
+  override def sendToSubmissionsTimer(diff: Long, unit: TimeUnit) = registry.timer("send-to-submissions-time").update(diff, unit)
+
+  override def dataIteratorTimer(diff: Long, unit: TimeUnit) = registry.timer("data-iterator-time").update(diff, unit)
 }
 
 trait Metrics {
-  val metrics:ERSMetrics = ERSMetrics
+  val metrics: ERSMetrics = ERSMetrics
 }
