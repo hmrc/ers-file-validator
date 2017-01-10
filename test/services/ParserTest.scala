@@ -22,10 +22,12 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
+import play.api.i18n.Messages
 import play.api.mvc.Request
 import services.XMLTestData._
 import services.audit.AuditEvents
 import uk.gov.hmrc.play.http.HeaderCarrier
+import play.api.i18n.Messages.Implicits._
 
 /**
   * Created by raghu on 26/01/16.
@@ -116,6 +118,6 @@ class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with 
     val result = intercept[ERSFileProcessingException] {
       TestDataGenerator.getSheet("abc")(schemeInfo, hc, request)
     }
-    result.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+    result.message mustBe Messages("ers.exceptions.dataParser.incorrectSheetName")
   }
 }
