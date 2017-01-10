@@ -17,7 +17,7 @@ private object AppDependencies {
   private val metricsGraphiteVersion = "3.0.2"
   private val httpCachingVersion = "6.1.0"
   private val bulkEntityStreamingVersion = "1.0.0"
-  private val playAuthorisationVersion = "3.3.0"
+  private val playAuthorisationVersion = "4.2.0"
   private val logbackJsonLoggerVersion = "3.1.0"
   private val domainVersion = "4.0.0"
   private val playUrlBindersVersion = "2.0.0"
@@ -30,7 +30,7 @@ private object AppDependencies {
   private val jsoupVersion = "1.8.3"
   private val hmrcTestVersion = "2.2.0"
   private val wiremockVersion = "1.57"
-  private val cryptoVersion = "3.0.0"
+  private val cryptoVersion = "4.1.0"
   private val mockitoCoreVerison = "1.9.5"
 
 
