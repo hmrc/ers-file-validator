@@ -32,7 +32,6 @@ import uk.gov.hmrc.play.http.HeaderCarrier
   */
 class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with MockitoSugar with BeforeAndAfter {
 
-
   object TestDataParser extends DataParser
 
   object TestDataGenerator extends DataGenerator {
@@ -50,6 +49,7 @@ class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with 
 
   implicit val hc: HeaderCarrier = mock[HeaderCarrier]
   implicit val request: Request[_] = mock[Request[_]]
+
   "parse row with duplicate column data 1" in {
     val result = TestDataParser.parse(emiAdjustmentsXMLRow1.toString)
     result.right.get.size must equal(17)
@@ -65,13 +65,10 @@ class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with 
   "display incorrectSheetName exception in identifyAndDefineSheet method" in {
     def exceptionMessage: String = {
       try {
-        val result = TestDataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo, hc, request)
-        result.toString()
+        TestDataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo, hc, request).toString
       }
       catch {
-        case e: ERSFileProcessingException => {
-          return e.message + ", " + e.context
-        }
+        case e: ERSFileProcessingException => e.message + ", " + e.context
       }
     }
 
@@ -81,14 +78,10 @@ class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with 
   "display incorrectHeader exception in validateHeaderRow method" in {
     def exceptionMessage: String = {
       try {
-        val data: Seq[String] = Seq("", "")
-        val result = TestDataGenerator.validateHeaderRow(data, "CSOP_OptionsRCL_V3")(schemeInfo, hc, request)
-        result.toString()
+        TestDataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V3")(schemeInfo, hc, request).toString
       }
       catch {
-        case e: ERSFileProcessingException => {
-          return e.message + ", " + e.context
-        }
+        case e: ERSFileProcessingException => e.message + ", " + e.context
       }
     }
 
@@ -123,7 +116,6 @@ class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with 
     val result = intercept[ERSFileProcessingException] {
       TestDataGenerator.getSheet("abc")(schemeInfo, hc, request)
     }
-    result.message mustBe "ers.exceptions.dataParser.incorrectSheetName"
+    result.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
   }
-
 }

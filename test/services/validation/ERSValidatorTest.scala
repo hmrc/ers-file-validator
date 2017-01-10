@@ -30,10 +30,10 @@ import services.validation.EMITestData.ERSValidationEMIAdjustmentsTestData
  * Created by darryl on 28/01/16.
  */
 class ERSValidatorTest extends PlaySpec with OneServerPerSuite with ScalaFutures with MockitoSugar with ERSValidationEMIAdjustmentsTestData {
-  Play.start(new FakeApplication)
-  val validator = DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
 
+  val validator = DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
   val testData =  Seq("yes", "yes", "yes", "4", "2011-10-13", "Mia", "Iam", "Aim", "AB123456C", "123/XZ55555555", "10.1234", "10.14", "10.1324", "10.1244")
+
   "ERSValidator" should {
     "should return valid cells" in {
       ErsValidator.getCells(testData,1) mustBe getValidRowData
