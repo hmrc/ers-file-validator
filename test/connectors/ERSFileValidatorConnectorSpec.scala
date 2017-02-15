@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,10 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
 import play.api.Logger
-import play.api.i18n.Messages
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.http._
+import play.api.i18n.Messages
+import play.api.i18n.Messages.Implicits._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -52,10 +53,9 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with OneServerPerSuite with
     reset(mockHttpPut)
   }
 
-  val data =    ListBuffer[Seq[String]](
-      Seq("abc") )
+  val data = ListBuffer[Seq[String]](Seq("abc"))
 
-  val schemeInfo: SchemeInfo = SchemeInfo (
+  val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11000001231275",
     timestamp = DateTime.now,
     schemeId = "123PA12345678",
@@ -63,31 +63,32 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with OneServerPerSuite with
     schemeName = "MyScheme",
     schemeType = "EMI"
   )
-  val submissionData = SchemeData (schemeInfo, "sheetOne", None, data: ListBuffer[Seq[String]])
+  val submissionData = SchemeData(schemeInfo, "sheetOne", None, data: ListBuffer[Seq[String]])
 
   "The ERSFileValidator Connector" must {
     "return a positive response on sending sheet data" in {
       implicit val request = FakeRequest()
-      implicit val hc:HeaderCarrier = new HeaderCarrier
+      implicit val hc: HeaderCarrier = new HeaderCarrier
       when(mockHttpPost.POST[SchemeData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(HttpResponse(200)))
       TestERSFileValidatorConnector.sendToSubmissions(submissionData, "").map {
         response => response.body must equal(200)
       }
     }
-    "throw the expected exception" in{
+    "throw the expected exception" in {
 
-      val testData:List[(Throwable,String)] = List(
-        (new Throwable(""),Messages("ers.exceptions.fileValidatorConnector.failedSendingData") + ", " + ""),
-        (new BadRequestException(""),Messages("ers.exceptions.fileValidatorConnector.badRequest") + ", " + ""),
-        (new NotFoundException(""),Messages("ers.exceptions.fileValidatorConnector.notFound") + ", " + ""),
-        (new ServiceUnavailableException(""),Messages("ers.exceptions.fileValidatorConnector.serviceUnavailable") + ", " + "")
+      val testData: List[(Throwable, String)] = List(
+        (new Throwable(""), Messages("ers.exceptions.fileValidatorConnector.failedSendingData") + ", " + ""),
+        (new BadRequestException(""), Messages("ers.exceptions.fileValidatorConnector.badRequest") + ", " + ""),
+        (new NotFoundException(""), Messages("ers.exceptions.fileValidatorConnector.notFound") + ", " + ""),
+        (new ServiceUnavailableException(""), Messages("ers.exceptions.fileValidatorConnector.serviceUnavailable") + ", " + "")
       )
 
       implicit val request = FakeRequest()
-      implicit val hc:HeaderCarrier = new HeaderCarrier
+      implicit val hc: HeaderCarrier = new HeaderCarrier
 
-      for(i <- 0 until testData.size){
+      for (i <- 0 until testData.size) {
         when(mockHttpPost.POST[SchemeData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.failed(testData(i)._1))
+
         def exceptionMessage: String = {
           try {
             val result = Await.result(TestERSFileValidatorConnector.sendToSubmissions(SchemeData(schemeInfo, "", None, data: ListBuffer[Seq[String]]), ""), 1 seconds)
@@ -101,11 +102,8 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with OneServerPerSuite with
         }
         Logger.debug(exceptionMessage)
         Logger.debug(testData(i)._2)
-        exceptionMessage must be (testData(i)._2)
+        exceptionMessage must be(testData(i)._2)
       }
-
-
     }
   }
-
 }

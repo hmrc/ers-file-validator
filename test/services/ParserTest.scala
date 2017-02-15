@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,23 +23,24 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
 import play.api.i18n.Messages
+import play.api.mvc.Request
 import services.XMLTestData._
 import services.audit.AuditEvents
 import uk.gov.hmrc.play.http.HeaderCarrier
-import play.api.mvc.Request
+import play.api.i18n.Messages.Implicits._
 
 /**
- * Created by raghu on 26/01/16.
- */
-class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with MockitoSugar with BeforeAndAfter{
-
+  * Created by raghu on 26/01/16.
+  */
+class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with MockitoSugar with BeforeAndAfter {
 
   object TestDataParser extends DataParser
+
   object TestDataGenerator extends DataGenerator {
-    override val auditEvents:AuditEvents = mock[AuditEvents]
+    override val auditEvents: AuditEvents = mock[AuditEvents]
   }
 
-  val schemeInfo: SchemeInfo = SchemeInfo (
+  val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
     timestamp = DateTime.now,
     schemeId = "123PA12345678",
@@ -48,80 +49,75 @@ class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with 
     schemeType = "EMI"
   )
 
-  implicit val hc:HeaderCarrier = mock[HeaderCarrier]
-  implicit val request:Request[_] = mock[Request[_]]
+  implicit val hc: HeaderCarrier = mock[HeaderCarrier]
+  implicit val request: Request[_] = mock[Request[_]]
+
   "parse row with duplicate column data 1" in {
     val result = TestDataParser.parse(emiAdjustmentsXMLRow1.toString)
     result.right.get.size must equal(17)
   }
 
-  besParserTests.foreach( rec => {
+  besParserTests.foreach(rec => {
     rec._1 in {
       val result = TestDataParser.parse(rec._2.toString)
-      result.right.get.toList.take(rec._3.size) must be (rec._3)
+      result.right.get.toList.take(rec._3.size) must be(rec._3)
     }
   })
 
   "display incorrectSheetName exception in identifyAndDefineSheet method" in {
     def exceptionMessage: String = {
       try {
-        val result = TestDataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo,hc,request)
-        result.toString()
+        TestDataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo, hc, request).toString
       }
       catch {
-        case e: ERSFileProcessingException => {
-          return e.message + ", " + e.context
-        }
+        case e: ERSFileProcessingException => e.message + ", " + e.context
       }
     }
-    exceptionMessage must be ("Incorrect ERS Template - Sheet Name isn't as expected, Couldn't identify SheetName EMI40_Taxable")
+
+    exceptionMessage must be("Incorrect ERS Template - Sheet Name isn't as expected, Couldn't identify SheetName EMI40_Taxable")
   }
 
   "display incorrectHeader exception in validateHeaderRow method" in {
     def exceptionMessage: String = {
       try {
-        val data: Seq[String] = Seq("","")
-        val result = TestDataGenerator.validateHeaderRow(data,"CSOP_OptionsRCL_V3")(schemeInfo,hc,request)
-        result.toString()
+        TestDataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V3")(schemeInfo, hc, request).toString
       }
       catch {
-        case e: ERSFileProcessingException => {
-          return e.message + ", " + e.context
-        }
+        case e: ERSFileProcessingException => e.message + ", " + e.context
       }
     }
-    exceptionMessage must be ("Incorrect ERS Template - Header doesn't match, Header doesn't match")
+
+    exceptionMessage must be("Incorrect ERS Template - Header doesn't match, Header doesn't match")
   }
 
   "return sheetInfo given a valid sheet name" in {
-    val sheet = TestDataGenerator.getSheet(ERSTemplatesInfo.emiSheet5Name)(schemeInfo,hc,request)
+    val sheet = TestDataGenerator.getSheet(ERSTemplatesInfo.emiSheet5Name)(schemeInfo, hc, request)
     sheet.schemeType mustBe "EMI"
     sheet.sheetId mustBe 5
   }
 
   "return sheetInfo for CSOP_OptionsGranted_V3" in {
-    val sheet = TestDataGenerator.getSheet(ERSTemplatesInfo.csopSheet1Name)(schemeInfo,hc,request)
+    val sheet = TestDataGenerator.getSheet(ERSTemplatesInfo.csopSheet1Name)(schemeInfo, hc, request)
     sheet.schemeType mustBe "CSOP"
     sheet.sheetId mustBe 1
   }
 
   "return sheetInfo for CSOP_OptionsRCL_V3" in {
-    val sheet = TestDataGenerator.getSheet(ERSTemplatesInfo.csopSheet2Name)(schemeInfo,hc,request)
+    val sheet = TestDataGenerator.getSheet(ERSTemplatesInfo.csopSheet2Name)(schemeInfo, hc, request)
     sheet.schemeType mustBe "CSOP"
     sheet.sheetId mustBe 2
   }
 
   "return sheetInfo for CSOP_OptionsExercised_V3" in {
-    val sheet = TestDataGenerator.getSheet(ERSTemplatesInfo.csopSheet3Name)(schemeInfo,hc,request)
+    val sheet = TestDataGenerator.getSheet(ERSTemplatesInfo.csopSheet3Name)(schemeInfo, hc, request)
     sheet.schemeType mustBe "CSOP"
     sheet.sheetId mustBe 3
   }
 
   "throw an exception for an invalid sheetName" in {
-    val result = intercept[ERSFileProcessingException]{
-      TestDataGenerator.getSheet("abc")(schemeInfo,hc,request)
+    val result = intercept[ERSFileProcessingException] {
+      TestDataGenerator.getSheet("abc")(schemeInfo, hc, request)
     }
     result.message mustBe Messages("ers.exceptions.dataParser.incorrectSheetName")
   }
-
 }

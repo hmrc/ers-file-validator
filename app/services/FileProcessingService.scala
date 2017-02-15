@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,32 @@
 
 package services
 
-import java.io.{BufferedReader, Reader, InputStreamReader}
+import java.io.{BufferedReader, InputStreamReader}
 import java.util.concurrent.TimeUnit
+
 import config.ApplicationConfig._
 import connectors.ERSFileValidatorConnector
 import metrics.Metrics
 import models._
 import play.api.Logger
-import play.api.i18n.Messages
-import play.api.libs.iteratee.Enumerator
-import services.audit.AuditEvents
+import _root_.services.audit.AuditEvents
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.HeaderCarrier
-//import uk.gov.hmrc.stream.BulkEntityProcessor
+import play.api.Play.current
+import play.api.i18n.Messages
+import play.api.i18n.Messages.Implicits._
+import play.api.mvc.Request
+
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
-import play.api.mvc.Request
-import scala.collection.JavaConverters._
+
 trait FileProcessingService extends ServicesConfig with DataGenerator with Metrics {
 
   val splitSchemes = splitLargeSchemes
-  val maxNumberOfRows = maxNumberOfRowsPersubmission
+  val maxNumberOfRows = maxNumberOfRowsPerSubmission
   val sessionService: SessionService = SessionService
   val ersConnector: ERSFileValidatorConnector = ERSFileValidatorConnector
   override val auditEvents:AuditEvents = AuditEvents
@@ -102,17 +105,6 @@ trait FileProcessingService extends ServicesConfig with DataGenerator with Metri
 
   val converter : (String) => Seq[String] = _.split(",")
 
-
-/*
-  def readCSVFile(callbackData: CallbackData) : Future[Iterator[Seq[String]]] = {
-    try {
-      new BulkEntityProcessor[Seq[String]]().usingEnumOfByteArrays(
-      Enumerator.fromStream(ersConnector.readAttachmentUri(callbackData.collection, callbackData.id)), '\n', converter)
-    }catch {
-      case e : Throwable => throw new ERSFileProcessingException(Messages("ers.exceptions.fileProcessingService.failedStream"), Messages("ers.exceptions.fileProcessingService.bulkEntity"))
-    }
-  }
-*/
 def readCSVFile(callbackData: CallbackData) : Future[Iterator[String]] = {
   try {
     val reader = new BufferedReader(new InputStreamReader(ersConnector.readAttachmentUri(callbackData.collection, callbackData.id),"UTF-8"))

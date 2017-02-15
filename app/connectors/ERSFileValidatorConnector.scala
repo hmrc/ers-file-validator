@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,9 @@ import config.WSHttpWithCustomTimeOut
 import metrics.Metrics
 import models.{ERSFileProcessingException, SchemeData}
 import play.api.Logger
+import play.api.Play.current
 import play.api.i18n.Messages
+import play.api.i18n.Messages.Implicits._
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.play.config.ServicesConfig
@@ -34,55 +36,55 @@ import scala.concurrent.Future
 
 
 trait ERSFileValidatorConnector extends ServicesConfig with Metrics {
-  val httpPost : HttpPost = WSHttpWithCustomTimeOut
+  val httpPost: HttpPost = WSHttpWithCustomTimeOut
   val httpGet: HttpGet = WSHttpWithCustomTimeOut
-  val httpPut : HttpPut = WSHttpWithCustomTimeOut
+  val httpPut: HttpPut = WSHttpWithCustomTimeOut
 
-  val auditEvents:AuditEvents = AuditEvents
+  val auditEvents: AuditEvents = AuditEvents
 
   lazy val serviceURL = baseUrl("ers-file-validator")
 
-  def readAttachmentUri(collection: String, id:String) = {
+  def readAttachmentUri(collection: String, id: String) = {
     val urladdress = s"${baseUrl("attachments")}/attachments-internal/${collection}/${id}"
     new URL(urladdress).openStream()
   }
 
-  def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier,request:Request[_]):Future[HttpResponse] = {
+  def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[HttpResponse] = {
     import java.net.URLEncoder
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
     val startTime = System.currentTimeMillis()
     val result = httpPost.POST(s"${baseUrl("ers-submissions")}/ers/${encodedEmpRef}/submit-presubmission", schemeData).recover {
-      case nf : BadRequestException => {
+      case nf: BadRequestException => {
         deliverSendToSubmissionsMetrics(startTime)
         Logger.error(Messages("ers.exceptions.fileValidatorConnector.badRequest") + nf.getMessage)
-        auditEvents.auditRunTimeError(nf,nf.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.badRequest"),nf.getMessage )
+        auditEvents.auditRunTimeError(nf, nf.toString, schemeData.schemeInfo, schemeData.sheetName)
+        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.badRequest"), nf.getMessage)
       }
-      case nf : NotFoundException => {
+      case nf: NotFoundException => {
         deliverSendToSubmissionsMetrics(startTime)
         Logger.error(Messages("ers.exceptions.fileValidatorConnector.notFound") + nf.getMessage)
-        auditEvents.auditRunTimeError(nf,nf.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.notFound"),nf.getMessage)
+        auditEvents.auditRunTimeError(nf, nf.toString, schemeData.schemeInfo, schemeData.sheetName)
+        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.notFound"), nf.getMessage)
       }
-      case nf : ServiceUnavailableException => {
+      case nf: ServiceUnavailableException => {
         deliverSendToSubmissionsMetrics(startTime)
         Logger.error(Messages("ers.exceptions.fileValidatorConnector.serviceUnavailable") + nf.getMessage)
-        auditEvents.auditRunTimeError(nf,nf.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.serviceUnavailable"),nf.getMessage )
+        auditEvents.auditRunTimeError(nf, nf.toString, schemeData.schemeInfo, schemeData.sheetName)
+        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.serviceUnavailable"), nf.getMessage)
       }
       case e => {
         Logger.error(Messages("ers.exceptions.fileValidatorConnector.failedSendingData") + e.getMessage)
         deliverSendToSubmissionsMetrics(startTime)
-        auditEvents.auditRunTimeError(e,e.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.failedSendingData"),e.getMessage)
+        auditEvents.auditRunTimeError(e, e.toString, schemeData.schemeInfo, schemeData.sheetName)
+        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.failedSendingData"), e.getMessage)
       }
     }
     deliverSendToSubmissionsMetrics(startTime)
     result
   }
 
-  def deliverSendToSubmissionsMetrics(startTime:Long) =
+  def deliverSendToSubmissionsMetrics(startTime: Long) =
     metrics.sendToSubmissionsTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
   //def source6() = play.api.libs.ws.WS.url("http://localhost:9410/file-stream/ABCDEF123456").getStream().map { response => response._2}

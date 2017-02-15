@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 HM Revenue & Customs
+ * Copyright 2017 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package config
 
 import play.api.Play._
 import play.api.i18n.Messages
+import play.api.i18n.Messages.Implicits._
+import play.api.mvc.LegacyI18nSupport
 import uk.gov.hmrc.play.config.ServicesConfig
 
 trait ApplicationConfig {
@@ -30,10 +32,10 @@ trait ApplicationConfig {
   val submissionsUrl: String
 
   val splitLargeSchemes: Boolean
-  val maxNumberOfRowsPersubmission: Int
+  val maxNumberOfRowsPerSubmission: Int
 }
 
-object ApplicationConfig extends ApplicationConfig with ServicesConfig {
+object ApplicationConfig extends ApplicationConfig with ServicesConfig with LegacyI18nSupport {
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(Messages("ers.exceptions.applicationConfig.missingKey", key)))
 
@@ -48,6 +50,6 @@ object ApplicationConfig extends ApplicationConfig with ServicesConfig {
   override lazy val submissionsUrl: String = baseUrl("ers-submissions") + "/ers-submissions/" + "submit-presubmission"
 
   override lazy val splitLargeSchemes: Boolean = configuration.getBoolean(s"$env.largefiles.enabled").getOrElse(false)
-  override lazy val maxNumberOfRowsPersubmission: Int =  configuration.getInt(s"$env.largefiles.maxrowspersheet").getOrElse(10000)
+  override lazy val maxNumberOfRowsPerSubmission: Int = configuration.getInt(s"$env.largefiles.maxrowspersheet").getOrElse(10000)
 
 }

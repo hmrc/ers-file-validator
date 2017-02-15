@@ -1,3 +1,5 @@
+import play.routes.compiler.StaticRoutesGenerator
+import play.sbt.routes.RoutesKeys.routesGenerator
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
@@ -11,16 +13,14 @@ trait MicroService {
   import uk.gov.hmrc._
   import DefaultBuildSettings._
   import TestPhases._
-  import uk.gov.hmrc.{SbtBuildInfo, ShellPrompt}
 
   val appName: String
 
-  lazy val appDependencies : Seq[ModuleID] = ???
-  lazy val plugins : Seq[Plugins] = Seq(play.PlayScala)
-  lazy val playSettings : Seq[Setting[_]] = Seq.empty
+  lazy val appDependencies: Seq[ModuleID] = ???
+  lazy val plugins: Seq[Plugins] = Seq(play.sbt.PlayScala)
+  lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
   lazy val scoverageSettings = {
-    import scoverage.ScoverageSbtPlugin._
     Seq(
       ScoverageKeys.coverageExcludedPackages := "<empty>;app.*;config.*;testOnlyDoNotUseInAppConf.*;views.*;uk.gov.hmrc.*;prod.*;models.*;services.ERSRequest",
       ScoverageKeys.coverageMinimum := 70,
@@ -31,11 +31,11 @@ trait MicroService {
   }
 
   lazy val microservice = Project(appName, file("."))
-    .enablePlugins(plugins : _*)
+    .enablePlugins(plugins: _*)
     .enablePlugins(SbtAutoBuildPlugin, SbtGitVersioning)
     .enablePlugins(SbtDistributablesPlugin)
-    .settings(playSettings : _*)
-    .settings(scoverageSettings : _*)
+    .settings(playSettings: _*)
+    .settings(scoverageSettings: _*)
     .settings(publishingSettings: _*)
     .settings(scalaSettings: _*)
     .settings(defaultSettings(): _*)
@@ -44,19 +44,20 @@ trait MicroService {
       libraryDependencies ++= appDependencies,
       parallelExecution in Test := false,
       fork in Test := false,
-      retrieveManaged := true
+      retrieveManaged := true,
+      routesGenerator := StaticRoutesGenerator
     )
-    .settings(Repositories.playPublishingSettings : _*)
+    .settings(Repositories.playPublishingSettings: _*)
     .settings(inConfig(TemplateTest)(Defaults.testSettings): _*)
     .configs(IntegrationTest)
     .settings(inConfig(TemplateItTest)(Defaults.itSettings): _*)
     .settings(
       Keys.fork in IntegrationTest := false,
-      unmanagedSourceDirectories in IntegrationTest <<= (baseDirectory in IntegrationTest)(base => Seq(base / "it")),
+      unmanagedSourceDirectories in IntegrationTest <<= (baseDirectory in IntegrationTest) (base => Seq(base / "it")),
       addTestReportOption(IntegrationTest, "int-test-reports"),
       testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
       parallelExecution in IntegrationTest := false)
-    .settings(resolvers += Resolver.bintrayRepo("hmrc", "releases"))
+    .settings(resolvers += Resolver.bintrayRepo("hmrc", "releases"), resolvers += Resolver.jcenterRepo)
 }
 
 private object TestPhases {
@@ -78,7 +79,7 @@ private object Repositories {
   import uk.gov.hmrc._
   import PublishingSettings._
 
-  lazy val playPublishingSettings : Seq[sbt.Setting[_]] = sbtrelease.ReleasePlugin.releaseSettings ++ Seq(
+  lazy val playPublishingSettings: Seq[sbt.Setting[_]] = sbtrelease.ReleasePlugin.releaseSettings ++ Seq(
 
     credentials += SbtCredentials,
 
