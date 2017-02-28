@@ -35,6 +35,7 @@ import uk.gov.hmrc.play.http.ws._
 
 import scala.concurrent.duration._
 
+
 object ERSFileValidatorAuditConnector extends AuditConnector with AppName with RunMode {
   override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
 }
@@ -47,11 +48,10 @@ object WSHttp extends WSGet with WSPut with WSPost with WSDelete with WSPatch wi
 object WSHttpWithCustomTimeOut extends WSHttp with AppName with RunMode with HttpAuditing {
   override val hooks = Seq(AuditingHook)
   override val auditConnector = ERSFileValidatorAuditConnector
-  private val twentySeconds: Int = 20
 
   override def buildRequest[A](url: String)(implicit hc: HeaderCarrier): WSRequest = {
-    val ersTimeOut: Int = Play.configuration.getInt("ers-file-validator-timeout-seconds").getOrElse(twentySeconds)
-    super.buildRequest[A](url).withRequestTimeout(Duration(ersTimeOut, SECONDS))
+    val ersTimeOut = Play.configuration.getInt("ers-file-validator-timeout-seconds").getOrElse(20).seconds
+    super.buildRequest[A](url).withRequestTimeout(ersTimeOut)
   }
 }
 
