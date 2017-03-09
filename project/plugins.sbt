@@ -9,7 +9,7 @@ addSbtPlugin("uk.gov.hmrc" % "sbt-git-versioning" % "0.8.0")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "0.8.5")
 
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.10")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.5.12")
 
 addSbtPlugin("uk.gov.hmrc" % "sbt-settings" % "3.2.0")
 
