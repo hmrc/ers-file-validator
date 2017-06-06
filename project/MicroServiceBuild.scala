@@ -20,7 +20,6 @@ private object AppDependencies {
   private val playAuthorisationVersion = "4.3.0"
   private val logbackJsonLoggerVersion = "3.1.0"
   private val domainVersion = "4.1.0"
-  private val playUrlBindersVersion = "2.1.0"
   private val tabularDataValidatorVersion = "1.0.0"
   private val scalaXmlVersion = "1.0.5"
   private val scalaParserCombinatorsVersion = "1.0.3"
@@ -43,7 +42,6 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "play-graphite" % playGraphiteVersion,
     "uk.gov.hmrc" %% "domain" % domainVersion,
     "uk.gov.hmrc" %% "http-caching-client" % httpCachingVersion,
-    "uk.gov.hmrc" %% "play-url-binders" % playUrlBindersVersion,
     "uk.gov.hmrc" %% "logback-json-logger" % logbackJsonLoggerVersion,
     "uk.gov.hmrc" %% "bulk-entity-streaming" % bulkEntityStreamingVersion,
     "uk.gov.hmrc" %% "tabular-data-validator" % tabularDataValidatorVersion,
