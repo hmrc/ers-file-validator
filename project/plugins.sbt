@@ -3,6 +3,8 @@ resolvers ++= Seq(
   Resolver.url("scoverage-bintray", url("https://dl.bintray.com/sksamuel/sbt-plugins/"))(Resolver.ivyStylePatterns)
 )
 
+resolvers += "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
+
 addSbtPlugin("uk.gov.hmrc" % "sbt-auto-build" % "1.0.0")
 
 addSbtPlugin("uk.gov.hmrc" % "sbt-git-versioning" % "0.8.0")
@@ -19,4 +21,3 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.7.0")
 
 addSbtPlugin("uk.gov.hmrc" % "sbt-distributables" % "1.0.0")
 
-resolvers += "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases/"
