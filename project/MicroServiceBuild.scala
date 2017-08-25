@@ -11,9 +11,9 @@ private object AppDependencies {
   import play.sbt.PlayImport._
 
   private val playHealthVersion = "2.1.0"
-  private val playMicroServiceBootStrapVersion = "5.13.0"
-  private val playConfigVersion = "4.2.0"
-  private val playGraphiteVersion = "3.1.0"
+  private val playMicroServiceBootStrapVersion = "5.16.0"
+  private val playConfigVersion = "4.3.0"
+  private val playGraphiteVersion = "3.2.0"
   private val metricsGraphiteVersion = "3.0.2"
   private val httpCachingVersion = "6.1.0"
   private val bulkEntityStreamingVersion = "1.0.0"
@@ -21,16 +21,16 @@ private object AppDependencies {
   private val logbackJsonLoggerVersion = "3.1.0"
   private val domainVersion = "4.1.0"
   private val tabularDataValidatorVersion = "1.0.0"
-  private val scalaXmlVersion = "1.0.5"
-  private val scalaParserCombinatorsVersion = "1.0.3"
+  private val scalaXmlVersion = "1.0.6"
+  private val scalaParserCombinatorsVersion = "1.0.6"
   private val scalaTestVersion = "2.2.6"
   private val scalaTestPlusPlayVersion = "1.5.1"
   private val pegdownVersion = "1.6.0"
-  private val jsoupVersion = "1.8.3"
-  private val hmrcTestVersion = "2.2.0"
-  private val wiremockVersion = "1.57"
-  private val cryptoVersion = "4.1.0"
-  private val mockitoCoreVerison = "1.9.5"
+  private val jsoupVersion = "1.10.3"
+  private val hmrcTestVersion = "2.3.0"
+  private val wiremockVersion = "1.58"
+  private val cryptoVersion = "4.4.0"
+  private val mockitoCoreVerison = "1.10.19"
 
 
   val compile = Seq(
