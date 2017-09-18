@@ -32,7 +32,10 @@ import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.{DataValidator, ValidationError}
 
 import scala.collection.mutable.ListBuffer
-import scala.util.Try
+import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success, Try}
 import scala.xml._
 
 trait DataParser {
@@ -72,6 +75,8 @@ trait DataParser {
 }
 
 trait DataGenerator extends DataParser with Metrics {
+
+  val defaultChunkSize: Int = 10000
 
   def getData(iterator: Iterator[String])(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): ListBuffer[SchemeData] = {
     var rowNum = 0
@@ -140,24 +145,103 @@ trait DataGenerator extends DataParser with Metrics {
     schemeData
   }
 
-  def getCsvData(iterator: Iterator[String])(implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]) = {
+  def getCsvData(iterator: Iterator[String])
+                (implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): ListBuffer[Seq[String]] = {
     val validator = setValidator(sheetName)
     val columnCount = getSheet(sheetName)(schemeInfo, hc, request).headerRow.size
-    val sheetData: ListBuffer[Seq[String]] = ListBuffer()
-    var rowCount = 0
-    while (iterator.hasNext) {
-      rowCount += 1
-      val foundData = iterator.next.split(",")
-      val rowData: Seq[String] = constructColumnData(foundData, columnCount)
-      if (!isBlankRow(rowData)) {
-        Logger.debug("Row Num :- " + rowCount + " -- Data retrieved:-" + rowData.mkString)
-        sheetData += generateRowData(rowData, rowCount, validator)
-      }
+
+    val chunkSize = current.configuration.getInt("validationChunkSize").getOrElse(defaultChunkSize)
+    val cpus = Runtime.getRuntime.availableProcessors()
+
+    val rows = getRowsFromFile(iterator)
+    val chunks = numberOfChunks(rows.size, chunkSize)
+    val submissions = submitChunks(rows, chunks, chunkSize, columnCount, validator)
+    val result = getResult(submissions)
+
+    val data = checkResult(result) match {
+      case Success(rows) => rows
+      case Failure(ex) => throw ex
     }
-    if (sheetData.isEmpty) {
+
+    if (data.isEmpty) {
       throw ERSFileProcessingException(Messages("ers_check_csv_file.noData", sheetName + ".csv"), Messages("ers_check_csv_file.noData"))
     }
-    sheetData
+    data
+  }
+
+  def getRowsFromFile(iterator: Iterator[String]): List[List[String]] = {
+    val rows: ListBuffer[List[String]] = new ListBuffer()
+    while (iterator.hasNext) {
+      val row = iterator.next().split(",").toList
+      rows += row
+    }
+    rows.toList
+  }
+
+  def numberOfChunks(rows: Int, chunkSize: Int): Int = {
+    val chunks: Int = (rows / chunkSize) + (if (rows % chunkSize == 0) 0 else 1)
+    chunks
+  }
+
+  def submitChunks(
+                    rows: List[List[String]],
+                    chunks: Int,
+                    chunkSize: Int,
+                    columnCount: Int,
+                    validator: DataValidator)
+                  (implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): Array[Future[List[Seq[String]]]] = {
+
+    val futures = new Array[Future[List[Seq[String]]]](chunks)
+
+    for (chunk <- 1 to chunks) {
+      val chunkStart = (chunk - 1) * chunkSize + 1
+      val chunkEnd = (chunk * chunkSize).min(rows.size)
+
+      futures(chunk - 1) = Future {
+        val chunk = rows.slice(chunkStart - 1, chunkEnd)
+        processChunk(chunk, chunkStart, columnCount, validator)
+      }
+    }
+    futures
+  }
+
+  def processChunk(
+                    chunk: List[List[String]],
+                    chunkStart: Int,
+                    columnCount: Int,
+                    validator: DataValidator)
+                  (implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): List[Seq[String]] = {
+
+    val data: ListBuffer[Seq[String]] = new ListBuffer()
+    var rowNo = chunkStart
+    chunk.foreach(row => {
+      val rowData: Seq[String] = constructColumnData(row, columnCount)
+      if (!isBlankRow(rowData)) {
+        data += generateRowData(rowData, rowNo, validator)
+      }
+      rowNo += 1
+    })
+    data.toList
+  }
+
+  def getResult(submissions: Array[Future[List[Seq[String]]]]): Future[ListBuffer[Seq[String]]] = {
+    val data: ListBuffer[Seq[String]] = new ListBuffer()
+
+    val result = Future.fold(submissions)(data)((a, b) => b match {
+      case rows if rows.nonEmpty => a ++= rows
+      case _ => a
+    })
+
+    result
+  }
+
+  def checkResult[T](result: Future[T]): Try[T] = {
+    Await.ready(result, Duration.Inf)
+    result.value match {
+      case Some(Success(t)) => Success(t)
+      case Some(Failure(t)) => Failure(t)
+      case None => Failure(new RuntimeException("Unable to retrieve value of future CSV file validation."))
+    }
   }
 
   def addSheetData(schemeInfo: SchemeInfo, sheetName: String, rowCount: Int, ersSchemeData: ListBuffer[Seq[String]], schemeData: ListBuffer[SchemeData]) = {
