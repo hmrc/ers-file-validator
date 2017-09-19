@@ -147,11 +147,14 @@ trait DataGenerator extends DataParser with Metrics {
 
   def getCsvData(iterator: Iterator[String])
                 (implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): ListBuffer[Seq[String]] = {
-    val validator = setValidator(sheetName)
-    val columnCount = getSheet(sheetName)(schemeInfo, hc, request).headerRow.size
-
+    val start = System.currentTimeMillis()
     val chunkSize = current.configuration.getInt("validationChunkSize").getOrElse(defaultChunkSize)
     val cpus = Runtime.getRuntime.availableProcessors()
+
+    Logger.info(s"Validating file ${sheetName} cpus: $cpus chunkSize: $chunkSize")
+
+    val validator = setValidator(sheetName)
+    val columnCount = getSheet(sheetName)(schemeInfo, hc, request).headerRow.size
 
     val rows = getRowsFromFile(iterator)
     val chunks = numberOfChunks(rows.size, chunkSize)
@@ -162,6 +165,9 @@ trait DataGenerator extends DataParser with Metrics {
       case Success(rows) => rows
       case Failure(ex) => throw ex
     }
+
+    val timeTaken = System.currentTimeMillis() - start
+    Logger.info(s"Validation of file ${sheetName} completed in $timeTaken ms")
 
     if (data.isEmpty) {
       throw ERSFileProcessingException(Messages("ers_check_csv_file.noData", sheetName + ".csv"), Messages("ers_check_csv_file.noData"))
