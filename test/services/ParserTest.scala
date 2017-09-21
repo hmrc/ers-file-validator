@@ -79,15 +79,21 @@ class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with 
 
   "parse row with duplicate column data 1" in {
     val result = TestDataParser.parse(emiAdjustmentsXMLRow1.toString)
-    result.right.get.size must equal(17)
+    result.right.get._1.size must equal(17)
   }
 
   besParserTests.foreach(rec => {
     rec._1 in {
       val result = TestDataParser.parse(rec._2.toString)
-      result.right.get.toList.take(rec._3.size) must be(rec._3)
+      result.right.get._1.toList.take(rec._3.size) must be(rec._3)
     }
   })
+
+  "parse row with repeats" in {
+    val result = TestDataParser.parse(emiAdjustmentsRepeatXMLRow1.toString)
+    result.right.get._1.size must equal(17)
+    result.right.get._2 must equal(3)
+  }
 
   "display incorrectSheetName exception in identifyAndDefineSheet method" in {
     def exceptionMessage: String = {
