@@ -220,6 +220,14 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with OneServerPerSuite
       result.foreach(_.data.foreach(_ must be (XMLTestData.emiReplacedExpMandatoryData)))
     }
 
+    "expand repeated rows" in {
+      object dataGenObj extends DataGenerator {
+        override val auditEvents:AuditEvents = mock[AuditEvents]
+      }
+      val result = dataGenObj.getData(XMLTestData.getEMIAdjustmentsRepeatedTemplate)(schemeInfo,hc,request)
+      result.size mustEqual(1)
+      result(0).data.size mustEqual(4)
+    }
   }
 
   "getCsvData" must {

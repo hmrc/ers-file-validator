@@ -40,19 +40,25 @@ import scala.xml._
 
 trait DataParser {
 
-  val repeatAttr = "table:number-columns-repeated"
+  val repeatColumnsAttr = "table:number-columns-repeated"
+  val repeatTableAttr = "table:number-rows-repeated"
   val auditEvents: AuditEvents = AuditEvents
 
-  def parse(row: String): Either[String, Seq[String]] = {
+  def parse(row: String): Either[String, (Seq[String], Int)] = {
     Logger.debug("DataParser: Parse: About to parse row: " + row)
     val xmlRow = Try(Option(XML.loadString(row))).getOrElse(None)
     //    Logger.debug("DataParser: Parse: About to match xmlRow: " + xmlRow)
     xmlRow match {
       case None => Logger.debug("3.1 Parse row left "); Left(row)
       case elem: Option[Elem] => Logger.debug("3.2 Parse row right ")
-        Try(Right(xmlRow.get.child.flatMap(parseColumn(_)))).getOrElse {
+        val cols = Try(Right(xmlRow.get.child.flatMap(parseColumn(_)))).getOrElse {
           Logger.warn(Messages("ers.exceptions.dataParser.fileRetrievalFailed"));
           throw ERSFileProcessingException(Messages("ers.exceptions.dataParser.fileRetrievalFailed"), Messages("ers.exceptions.dataParser.parserFailure"))
+        }
+
+        cols match {
+          case Right(r: Seq[String]) if !isBlankRow(r) => Right(r, repeated(xmlRow))
+          case Right(s: Seq[String]) => Right((s, 1))
         }
       case _ => {
         Logger.warn(Messages("ers.exceptions.dataParser.fileParsingError"))
@@ -61,8 +67,18 @@ trait DataParser {
     }
   }
 
+  def repeated(xmlRow: Option[Elem]): Int = {
+    val rowsRepeated = xmlRow.get.attributes.asAttrMap.get(repeatTableAttr)
+    if (rowsRepeated.isDefined) {
+      rowsRepeated.get.toInt
+    }
+    else {
+      1
+    }
+  }
+
   def parseColumn(col: scala.xml.Node): Seq[String] = {
-    val colsRepeated = col.attributes.asAttrMap.get(repeatAttr)
+    val colsRepeated = col.attributes.asAttrMap.get(repeatColumnsAttr)
 
     if (colsRepeated.nonEmpty && colsRepeated.get.toInt < 50) {
       val cols: scala.collection.mutable.MutableList[String] = scala.collection.mutable.MutableList()
@@ -71,6 +87,8 @@ trait DataParser {
     }
     else Seq(col.text)
   }
+
+  def isBlankRow(data: Seq[String]) = data.mkString("").trim.length == 0
 
 }
 
@@ -112,27 +130,30 @@ trait DataGenerator extends DataParser with Metrics {
           rowNum = 1
           validator = setValidator(sheetName)
         }
-        case _ => rowNum match {
-          case count if count < 9 => {
-            Logger.debug("GetData: incRowNum if count < 9: " + count + " RowNum: " + rowNum)
-            incRowNum()
-          }
-          case 9 => {
-            Logger.debug("GetData: incRowNum if  9: " + rowNum + "sheetColSize: " + sheetColSize)
-            sheetColSize = validateHeaderRow(rowData.right.get, sheetName)
-            incRowNum()
-          }
-          case _ => {
-            val foundData = rowData.right.get
+        case _ =>
+          for (i <- 1 to rowData.right.get._2) {
+            rowNum match {
+              case count if count < 9 => {
+                Logger.debug("GetData: incRowNum if count < 9: " + count + " RowNum: " + rowNum)
+                incRowNum()
+              }
+              case 9 => {
+                Logger.debug("GetData: incRowNum if  9: " + rowNum + "sheetColSize: " + sheetColSize)
+                sheetColSize = validateHeaderRow(rowData.right.get._1, sheetName)
+                incRowNum()
+              }
+              case _ => {
+                val foundData = rowData.right.get._1
 
-            val data = constructColumnData(foundData, sheetColSize)
+                val data = constructColumnData(foundData, sheetColSize)
 
-            if (!isBlankRow(data)) {
-              schemeData.last.data += generateRowData(data, rowNum, validator) //(schemeInfo,sheetName)
+                if (!isBlankRow(data)) {
+                  schemeData.last.data += generateRowData(data, rowNum, validator) //(schemeInfo,sheetName)
+                }
+                incRowNum()
+              }
             }
-            incRowNum()
           }
-        }
       }
     }
 
@@ -312,8 +333,6 @@ trait DataGenerator extends DataParser with Metrics {
       }
     }
   }
-
-  def isBlankRow(data: Seq[String]) = data.mkString("").trim.length == 0
 
   def generateRowData(rowData: Seq[String], rowCount: Int, validator: DataValidator)(implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]) = {
     // ignore case where check if row has data and all the cols are empty
