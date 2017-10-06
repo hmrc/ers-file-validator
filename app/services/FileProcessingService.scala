@@ -26,11 +26,11 @@ import models._
 import play.api.Logger
 import _root_.services.audit.AuditEvents
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.HeaderCarrier
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.mvc.Request
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer

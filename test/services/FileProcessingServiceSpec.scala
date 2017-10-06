@@ -30,12 +30,12 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.json.{Writes, Json}
+import play.api.libs.json.{Json, Writes}
 import play.api.mvc.Request
 import play.api.test.Helpers._
 import services.audit.AuditEvents
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.http.cache.client.CacheMap
-import uk.gov.hmrc.play.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.stream.BulkEntityProcessor
 
 import scala.concurrent.Future

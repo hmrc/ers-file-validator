@@ -29,8 +29,8 @@ import play.api.i18n.Messages
 import play.api.mvc.Request
 import services.XMLTestData._
 import services.audit.AuditEvents
-import uk.gov.hmrc.play.http.HeaderCarrier
 import play.api.i18n.Messages.Implicits._
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.{Cell, DataValidator, Row, ValidationError}
 
 import scala.collection.mutable.ListBuffer
@@ -38,6 +38,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.Success
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 /**
   * Created by raghu on 26/01/16.

@@ -10,16 +10,12 @@ private object AppDependencies {
   import play.core.PlayVersion
   import play.sbt.PlayImport._
 
-  private val playHealthVersion = "2.1.0"
-  private val playMicroServiceBootStrapVersion = "5.16.0"
-  private val playConfigVersion = "4.3.0"
-  private val playGraphiteVersion = "3.2.0"
+
+  private val playMicroServiceBootStrapVersion = "6.9.0"
   private val metricsGraphiteVersion = "3.0.2"
-  private val httpCachingVersion = "6.1.0"
+  private val httpCachingVersion = "7.0.0"
   private val bulkEntityStreamingVersion = "1.0.0"
-  private val playAuthorisationVersion = "4.3.0"
-  private val logbackJsonLoggerVersion = "3.1.0"
-  private val domainVersion = "4.1.0"
+  private val domainVersion = "5.0.0"
   private val tabularDataValidatorVersion = "1.0.0"
   private val scalaXmlVersion = "1.0.6"
   private val scalaParserCombinatorsVersion = "1.0.6"
@@ -36,13 +32,8 @@ private object AppDependencies {
   val compile = Seq(
     ws,
     "uk.gov.hmrc" %% "microservice-bootstrap" % playMicroServiceBootStrapVersion,
-    "uk.gov.hmrc" %% "play-health" % playHealthVersion,
-    "uk.gov.hmrc" %% "play-config" % playConfigVersion,
-    "uk.gov.hmrc" %% "play-authorisation" % playAuthorisationVersion,
-    "uk.gov.hmrc" %% "play-graphite" % playGraphiteVersion,
     "uk.gov.hmrc" %% "domain" % domainVersion,
     "uk.gov.hmrc" %% "http-caching-client" % httpCachingVersion,
-    "uk.gov.hmrc" %% "logback-json-logger" % logbackJsonLoggerVersion,
     "uk.gov.hmrc" %% "bulk-entity-streaming" % bulkEntityStreamingVersion,
     "uk.gov.hmrc" %% "tabular-data-validator" % tabularDataValidatorVersion,
     "org.scala-lang.modules" %% "scala-xml" % scalaXmlVersion,

@@ -19,9 +19,8 @@ package services.audit
 import config.MicroserviceAuditConnector
 import org.joda.time.DateTime
 import play.api.mvc.{Request, Session}
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.DataEvent
-
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

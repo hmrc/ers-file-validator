@@ -19,8 +19,8 @@ package services.audit
 import uk.gov.hmrc.services.validation.ValidationError
 import models.{CallbackData, SchemeInfo}
 import org.apache.commons.lang3.exception.ExceptionUtils
-import uk.gov.hmrc.play.http.HeaderCarrier
 import play.api.mvc.Request
+import uk.gov.hmrc.http.HeaderCarrier
 
 object AuditEvents extends AuditEvents {
   override def auditService : AuditService = AuditService

@@ -23,27 +23,27 @@ import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.libs.ws.WSRequest
 import play.api.mvc.LegacyI18nSupport
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.cache.client.SessionCache
 import uk.gov.hmrc.play.audit.http.HttpAuditing
-import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
 import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
 import uk.gov.hmrc.play.config.{AppName, RunMode, ServicesConfig}
-import uk.gov.hmrc.play.http.HeaderCarrier
 import uk.gov.hmrc.play.http.ws._
+import uk.gov.hmrc.play.microservice.config.LoadAuditingConfig
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
 
-object ERSFileValidatorAuditConnector extends AuditConnector with AppName with RunMode {
-  override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
-}
 
-object WSHttp extends WSGet with WSPut with WSPost with WSDelete with WSPatch with AppName with RunMode with HttpAuditing {
+
+trait WSHttp extends WSGet with HttpGet with HttpPatch with HttpPut with HttpDelete with HttpPost with WSPut with WSPost with WSDelete with WSPatch with AppName with RunMode with HttpAuditing {
   override val hooks = Seq(AuditingHook)
   override val auditConnector = ERSFileValidatorAuditConnector
 }
+object WSHttp extends WSHttp
 
 object WSHttpWithCustomTimeOut extends WSHttp with AppName with RunMode with HttpAuditing {
   override val hooks = Seq(AuditingHook)
@@ -55,12 +55,15 @@ object WSHttpWithCustomTimeOut extends WSHttp with AppName with RunMode with Htt
   }
 }
 
-object MicroserviceAuthConnector extends AuthConnector with ServicesConfig {
+object MicroserviceAuthConnector extends AuthConnector with ServicesConfig with WSHttp{
   override val authBaseUrl: String = baseUrl("auth")
 }
 
 object AuthParamsControllerConfiguration extends AuthParamsControllerConfig {
   lazy val controllerConfigs: Config = ControllerConfiguration.controllerConfigs
+}
+object ERSFileValidatorAuditConnector extends AuditConnector with AppName with RunMode{
+  override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
 }
 
 object ERSFileValidatorSessionCache extends SessionCache with AppName with ServicesConfig with LegacyI18nSupport {

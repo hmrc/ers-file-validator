@@ -19,7 +19,7 @@ package connectors
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
-import config.WSHttpWithCustomTimeOut
+import config.{WSHttp, WSHttpWithCustomTimeOut}
 import metrics.Metrics
 import models.{ERSFileProcessingException, SchemeData}
 import play.api.Logger
@@ -28,6 +28,7 @@ import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.mvc.Request
 import services.audit.AuditEvents
+import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http._
 

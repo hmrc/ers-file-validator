@@ -21,3 +21,4 @@ addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "0.7.0")
 
 addSbtPlugin("uk.gov.hmrc" % "sbt-distributables" % "1.0.0")
 
+

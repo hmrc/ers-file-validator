@@ -19,7 +19,7 @@ package services
 import org.scalatest.{Matchers, WordSpec}
 import play.api.test.FakeRequest
 import services.audit.{AuditService, AuditServiceConnector}
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.DataEvent
 
 class AuditServiceTest   extends WordSpec with Matchers {
