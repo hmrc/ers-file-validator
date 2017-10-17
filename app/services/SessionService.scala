@@ -21,9 +21,11 @@ import models.CallbackData
 import play.api.Logger
 import play.api.libs.json.{Json, Reads}
 import play.api.mvc.Request
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext
+import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-import uk.gov.hmrc.play.http.HeaderCarrier
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -37,7 +39,7 @@ trait SessionService extends SessionCacheWiring {
 
     implicit val callbackDataReads: Reads[CallbackData] = Json.format[CallbackData]
 
-    sessionCache.fetchAndGetEntry(CALLBACK_DATA_KEY)(hc, callbackDataReads)
+    sessionCache.fetchAndGetEntry(CALLBACK_DATA_KEY)(hc, callbackDataReads, MdcLoggingExecutionContext.fromLoggingDetails(hc))
 
   }
 

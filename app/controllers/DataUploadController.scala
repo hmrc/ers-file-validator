@@ -23,7 +23,7 @@ import models._
 import play.api.mvc.{Action, Request}
 import play.api.{Configuration, Logger, Play}
 import services.{FileProcessingService, SessionService}
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.microservice.controller.BaseController
 
 import scala.concurrent.ExecutionContext.Implicits.global

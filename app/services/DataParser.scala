@@ -28,7 +28,7 @@ import play.api.mvc.Request
 import services.ERSTemplatesInfo._
 import services.audit.AuditEvents
 import services.validation.ErsValidator
-import uk.gov.hmrc.play.http.HeaderCarrier
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.{DataValidator, ValidationError}
 
 import scala.collection.mutable.ListBuffer

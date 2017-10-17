@@ -19,14 +19,12 @@ package config
 import com.typesafe.config.Config
 import net.ceedubs.ficus.Ficus._
 import play.api.{Application, Configuration, Play}
-import uk.gov.hmrc.play.audit.filters.{AuditFilter, FrontendAuditFilter}
-import uk.gov.hmrc.play.audit.http.config.LoadAuditingConfig
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
 import uk.gov.hmrc.play.config.{AppName, ControllerConfig, RunMode}
-import uk.gov.hmrc.play.filters.MicroserviceFilterSupport
-import uk.gov.hmrc.play.http.logging.filters.{FrontendLoggingFilter, LoggingFilter}
 import uk.gov.hmrc.play.microservice.bootstrap.DefaultMicroserviceGlobal
+import uk.gov.hmrc.play.microservice.config.LoadAuditingConfig
+import uk.gov.hmrc.play.microservice.filters.{AuditFilter, FrontendLoggingFilter, LoggingFilter, MicroserviceFilterSupport}
 
 object ApplicationGlobal extends DefaultMicroserviceGlobal with RunMode {
 
@@ -74,13 +72,13 @@ object ERSFileValidatorLoggingFilter extends FrontendLoggingFilter with Microser
   override def controllerNeedsLogging(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsLogging
 }
 
-object ERSFileValidatorAuditFilter extends FrontendAuditFilter with RunMode with AppName with MicroserviceFilterSupport {
+object ERSFileValidatorAuditFilter extends RunMode with AppName with MicroserviceFilterSupport {
 
-  override lazy val maskedFormFields = Seq.empty[String]
+   lazy val maskedFormFields = Seq.empty[String]
 
-  override lazy val applicationPort = None
+   lazy val applicationPort = None
 
-  override lazy val auditConnector = ERSFileValidatorAuditConnector
+   lazy val auditConnector = ERSFileValidatorAuditConnector
 
-  override def controllerNeedsAuditing(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsAuditing
+   def controllerNeedsAuditing(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsAuditing
 }

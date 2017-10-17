@@ -29,6 +29,8 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.play.http._
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
+import uk.gov.hmrc.http._
+
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
@@ -69,7 +71,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with OneServerPerSuite with
     "return a positive response on sending sheet data" in {
       implicit val request = FakeRequest()
       implicit val hc: HeaderCarrier = new HeaderCarrier
-      when(mockHttpPost.POST[SchemeData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(HttpResponse(200)))
+      when(mockHttpPost.POST[SchemeData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.successful(HttpResponse(200)))
       TestERSFileValidatorConnector.sendToSubmissions(submissionData, "").map {
         response => response.body must equal(200)
       }
@@ -87,7 +89,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with OneServerPerSuite with
       implicit val hc: HeaderCarrier = new HeaderCarrier
 
       for (i <- 0 until testData.size) {
-        when(mockHttpPost.POST[SchemeData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.failed(testData(i)._1))
+        when(mockHttpPost.POST[SchemeData, HttpResponse](Matchers.any(), Matchers.any(), Matchers.any())(Matchers.any(), Matchers.any(), Matchers.any(), Matchers.any())).thenReturn(Future.failed(testData(i)._1))
 
         def exceptionMessage: String = {
           try {
