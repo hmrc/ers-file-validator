@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 HM Revenue & Customs
+ * Copyright 2018 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,8 @@ import util.control.Breaks._
 class StaxProcessor(inputStream: InputStream) extends Iterator[String] {
 
   val xif : XMLInputFactory = XMLInputFactory.newInstance();
+  xif.setProperty(XMLInputFactory.SUPPORT_DTD, false)
+  xif.setProperty("javax.xml.stream.isSupportingExternalEntities", false)
   xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false)
   xif.setProperty(XMLInputFactory.IS_VALIDATING, false)
 
