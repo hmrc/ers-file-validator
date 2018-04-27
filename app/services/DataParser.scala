@@ -18,6 +18,7 @@ package services
 
 import java.util.concurrent.TimeUnit
 
+import javax.xml.parsers.SAXParserFactory
 import metrics.Metrics
 import models._
 import play.api.Logger
@@ -32,9 +33,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.{DataValidator, ValidationError}
 
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 import scala.xml._
 
@@ -44,9 +45,17 @@ trait DataParser {
   val repeatTableAttr = "table:number-rows-repeated"
   val auditEvents: AuditEvents = AuditEvents
 
+  def secureSAXParser = {
+    val saxParserFactory = SAXParserFactory.newInstance()
+    saxParserFactory.setFeature("http://xml.org/sax/features/external-general-entities", false)
+    saxParserFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+    saxParserFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+    saxParserFactory.newSAXParser()
+  }
+
   def parse(row: String): Either[String, (Seq[String], Int)] = {
     Logger.debug("DataParser: Parse: About to parse row: " + row)
-    val xmlRow = Try(Option(XML.loadString(row))).getOrElse(None)
+    val xmlRow = Try(Option(XML.withSAXParser(secureSAXParser)loadString(row))).getOrElse(None)
     //    Logger.debug("DataParser: Parse: About to match xmlRow: " + xmlRow)
     xmlRow match {
       case None => Logger.debug("3.1 Parse row left "); Left(row)

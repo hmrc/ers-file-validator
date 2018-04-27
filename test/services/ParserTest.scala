@@ -39,10 +39,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.util.Success
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
+import java.io.FileNotFoundException
+import javax.xml.parsers.SAXParserFactory
+import scala.xml._
 
-/**
-  * Created by raghu on 26/01/16.
-  */
+
 class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with MockitoSugar with BeforeAndAfter with Timeouts {
 
   object TestDataParser extends DataParser
@@ -77,6 +78,12 @@ class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with 
   implicit val schemeName = schemeInfo.schemeName
   implicit val hc: HeaderCarrier = mock[HeaderCarrier]
   implicit val request: Request[_] = mock[Request[_]]
+
+  val FileSystemReadXxePayload = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" +
+    "  <!DOCTYPE foo [ " +
+    "  <!ELEMENT foo ANY >" +
+    "  <!ENTITY xxe SYSTEM \"file:///does/not/exist\" >]>" +
+    "<foo>&xxe;</foo>"
 
   "parse row with duplicate column data 1" in {
     val result = TestDataParser.parse(emiAdjustmentsXMLRow1.toString)
@@ -294,4 +301,15 @@ class ParserTest extends PlaySpec with OneServerPerSuite with ScalaFutures with 
     actual.value mustBe expected
   }
 
+  "Show that scala.xml.XML tries to access file system with malicious payload " in {
+    intercept[FileNotFoundException] {
+      XML.loadString(FileSystemReadXxePayload)
+    }
+  }
+
+  "Show that scala.xml.XML can protect against file access when securely configured" in {
+    intercept[SAXParseException] {
+      XML.withSAXParser(TestDataParser.secureSAXParser).loadString(FileSystemReadXxePayload)
+    }
+  }
 }
