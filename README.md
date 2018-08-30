@@ -5,6 +5,6 @@
 Backend microservice to support ERS Frontend microservices in validating data from files, transforming that data
 and sending to protected.
 
-### License
+##### License
 
 This code is open source software licensed under the [Apache 2.0 License]("http://www.apache.org/licenses/LICENSE-2.0.html").
