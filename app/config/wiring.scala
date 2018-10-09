@@ -29,7 +29,7 @@ import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.controllers.AuthParamsControllerConfig
 import uk.gov.hmrc.play.auth.microservice.connectors.AuthConnector
-import uk.gov.hmrc.play.config.{AppName, RunMode, ServicesConfig}
+import uk.gov.hmrc.play.config.{AppName, ServicesConfig}
 import uk.gov.hmrc.play.http.ws._
 import uk.gov.hmrc.play.microservice.config.LoadAuditingConfig
 
@@ -39,13 +39,13 @@ import scala.concurrent.duration._
 
 
 
-trait WSHttp extends WSGet with HttpGet with HttpPatch with HttpPut with HttpDelete with HttpPost with WSPut with WSPost with WSDelete with WSPatch with AppName with RunMode with HttpAuditing {
+trait WSHttp extends WSGet with HttpGet with HttpPatch with HttpPut with HttpDelete with HttpPost with WSPut with WSPost with WSDelete with WSPatch with AppName with HttpAuditing {
   override val hooks = Seq(AuditingHook)
   override val auditConnector = ERSFileValidatorAuditConnector
 }
 object WSHttp extends WSHttp
 
-object WSHttpWithCustomTimeOut extends WSHttp with AppName with RunMode with HttpAuditing {
+object WSHttpWithCustomTimeOut extends WSHttp with AppName with HttpAuditing {
   override val hooks = Seq(AuditingHook)
   override val auditConnector = ERSFileValidatorAuditConnector
 
@@ -62,8 +62,8 @@ object MicroserviceAuthConnector extends AuthConnector with ServicesConfig with 
 object AuthParamsControllerConfiguration extends AuthParamsControllerConfig {
   lazy val controllerConfigs: Config = ControllerConfiguration.controllerConfigs
 }
-object ERSFileValidatorAuditConnector extends AuditConnector with AppName with RunMode{
-  override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
+object ERSFileValidatorAuditConnector extends AuditConnector with AppName {
+  override lazy val auditingConfig = LoadAuditingConfig("auditing")
 }
 
 object ERSFileValidatorSessionCache extends SessionCache with AppName with ServicesConfig with LegacyI18nSupport {

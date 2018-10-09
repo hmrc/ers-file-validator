@@ -39,17 +39,17 @@ object ApplicationConfig extends ApplicationConfig with ServicesConfig with Lega
 
   private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(Messages("ers.exceptions.applicationConfig.missingKey", key)))
 
-  private val contactHost = configuration.getString(s"$env.contact-frontend.host").getOrElse("")
+  private val contactHost = configuration.getString("contact-frontend.host").getOrElse("")
 
-  override lazy val assetsPrefix: String = loadConfig(s"$env.assets.url") + loadConfig(s"$env.assets.version")
+  override lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
   override lazy val betaFeedbackUrl = s"$contactHost/contact/beta-feedback"
   override lazy val betaFeedbackUnauthenticatedUrl = s"$contactHost/contact/beta-feedback-unauthenticated"
-  override lazy val analyticsToken: Option[String] = configuration.getString(s"$env.google-analytics.token")
-  override lazy val analyticsHost: String = configuration.getString(s"$env.google-analytics.host").getOrElse("auto")
+  override lazy val analyticsToken: Option[String] = configuration.getString("google-analytics.token")
+  override lazy val analyticsHost: String = configuration.getString("google-analytics.host").getOrElse("auto")
 
   override lazy val submissionsUrl: String = baseUrl("ers-submissions") + "/ers-submissions/" + "submit-presubmission"
 
-  override lazy val splitLargeSchemes: Boolean = configuration.getBoolean(s"$env.largefiles.enabled").getOrElse(false)
-  override lazy val maxNumberOfRowsPerSubmission: Int = configuration.getInt(s"$env.largefiles.maxrowspersheet").getOrElse(10000)
+  override lazy val splitLargeSchemes: Boolean = configuration.getBoolean("largefiles.enabled").getOrElse(false)
+  override lazy val maxNumberOfRowsPerSubmission: Int = configuration.getInt("largefiles.maxrowspersheet").getOrElse(10000)
 
 }
