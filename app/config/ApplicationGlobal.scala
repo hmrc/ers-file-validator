@@ -51,7 +51,7 @@ object MicroserviceAuthFilter extends AuthorisationFilter with MicroserviceFilte
 }
 
 object MicroserviceAuditConnector extends AuditConnector with MicroserviceFilterSupport {
-  override lazy val auditingConfig = LoadAuditingConfig(".auditing")
+  override lazy val auditingConfig = LoadAuditingConfig("auditing")
 }
 
 object MicroserviceAuditFilter extends AuditFilter with AppName with MicroserviceFilterSupport {
