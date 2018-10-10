@@ -21,12 +21,12 @@ import net.ceedubs.ficus.Ficus._
 import play.api.{Application, Configuration, Play}
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.auth.microservice.filters.AuthorisationFilter
-import uk.gov.hmrc.play.config.{AppName, ControllerConfig, RunMode}
+import uk.gov.hmrc.play.config.{AppName, ControllerConfig}
 import uk.gov.hmrc.play.microservice.bootstrap.DefaultMicroserviceGlobal
 import uk.gov.hmrc.play.microservice.config.LoadAuditingConfig
 import uk.gov.hmrc.play.microservice.filters.{AuditFilter, FrontendLoggingFilter, LoggingFilter, MicroserviceFilterSupport}
 
-object ApplicationGlobal extends DefaultMicroserviceGlobal with RunMode {
+object ApplicationGlobal extends DefaultMicroserviceGlobal {
 
   override val auditConnector = MicroserviceAuditConnector
 
@@ -40,7 +40,7 @@ object ApplicationGlobal extends DefaultMicroserviceGlobal with RunMode {
     super.onStart(app)
   }
 
-  override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig(s"$env.microservice.metrics")
+  override def microserviceMetricsConfig(implicit app: Application): Option[Configuration] = app.configuration.getConfig("microservice.metrics")
 }
 
 object MicroserviceAuthFilter extends AuthorisationFilter with MicroserviceFilterSupport {
@@ -50,8 +50,8 @@ object MicroserviceAuthFilter extends AuthorisationFilter with MicroserviceFilte
   override def controllerNeedsAuth(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsAuth
 }
 
-object MicroserviceAuditConnector extends AuditConnector with RunMode with MicroserviceFilterSupport {
-  override lazy val auditingConfig = LoadAuditingConfig(s"$env.auditing")
+object MicroserviceAuditConnector extends AuditConnector with MicroserviceFilterSupport {
+  override lazy val auditingConfig = LoadAuditingConfig("auditing")
 }
 
 object MicroserviceAuditFilter extends AuditFilter with AppName with MicroserviceFilterSupport {
@@ -72,7 +72,7 @@ object ERSFileValidatorLoggingFilter extends FrontendLoggingFilter with Microser
   override def controllerNeedsLogging(controllerName: String): Boolean = ControllerConfiguration.paramsForController(controllerName).needsLogging
 }
 
-object ERSFileValidatorAuditFilter extends RunMode with AppName with MicroserviceFilterSupport {
+object ERSFileValidatorAuditFilter extends MicroserviceFilterSupport {
 
    lazy val maskedFormFields = Seq.empty[String]
 
