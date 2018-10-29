@@ -29,26 +29,6 @@ class EMIAdjustmentsV3ValidationTest extends PlaySpec with ERSValidationEMIAdjus
     val validator = DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
 
-    "when Column A is answered yes, column B is a mandatory field" in {
-      val cellB = Cell("B", rowNumber, "")
-      val cellA = Cell("A", rowNumber, "yes")
-      val row = Row(1,Seq(cellB,cellA))
-      val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
-      resOpt mustBe Some(List(
-        ValidationError(cellB,"mandatoryB","B01","Enter 'yes' or 'no'.")
-      ))
-    }
-
-    "when Column B is answered yes, column C is a mandatory field" in {
-      val cellC = Cell("C", rowNumber, "")
-      val cellB = Cell("B", rowNumber, "yes")
-      val row = Row(1,Seq(cellC,cellB))
-      val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
-      resOpt mustBe Some(List(
-        ValidationError(cellC,"mandatoryC","C01","Enter 'yes' or 'no'.")
-      ))
-    }
-
     "when Column C is answered yes, column D is a mandatory field" in {
       val cellD = Cell("D", rowNumber, "")
       val cellC = Cell("C", rowNumber, "yes")
@@ -70,9 +50,7 @@ class EMIAdjustmentsV3ValidationTest extends PlaySpec with ERSValidationEMIAdjus
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
       resOpt.get.size mustBe getInvalidRowData.size
     }
-
   }
-
 }
 
 class EMIReplacedV3ValidationTest extends PlaySpec with ERSValidationEMIReplacedTestData with ValidationTestRunner{
