@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,9 @@
 
 package config
 
+import akka.actor.ActorSystem
 import com.typesafe.config.Config
-import play.api.Play
+import play.api.{Configuration, Play}
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
@@ -43,9 +44,18 @@ trait WSHttp extends WSGet with HttpGet with HttpPatch with HttpPut with HttpDel
   override val hooks = Seq(AuditingHook)
   override val auditConnector = ERSFileValidatorAuditConnector
 }
-object WSHttp extends WSHttp
+
+object WSHttp extends WSHttp{
+  override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
+  override protected def appNameConfiguration: Configuration = Play.current.configuration
+  override protected def actorSystem : ActorSystem = akka.actor.ActorSystem(Play.current.configuration.toString)
+}
 
 object WSHttpWithCustomTimeOut extends WSHttp with AppName with HttpAuditing {
+   protected def appNameConfiguration: play.api.Configuration = Play.current.configuration
+   protected def actorSystem: akka.actor.ActorSystem = akka.actor.ActorSystem(Play.current.configuration.toString)
+    protected def configuration: Option[com.typesafe.config.Config] = Some(Play.current.configuration.underlying)
+
   override val hooks = Seq(AuditingHook)
   override val auditConnector = ERSFileValidatorAuditConnector
 
@@ -56,6 +66,12 @@ object WSHttpWithCustomTimeOut extends WSHttp with AppName with HttpAuditing {
 }
 
 object MicroserviceAuthConnector extends AuthConnector with ServicesConfig with WSHttp{
+
+  protected def appNameConfiguration: play.api.Configuration = Play.current.configuration
+  protected def actorSystem: akka.actor.ActorSystem = akka.actor.ActorSystem(Play.current.configuration.toString)
+  protected def configuration: Option[com.typesafe.config.Config] = Some(Play.current.configuration.underlying)
+  protected def mode: play.api.Mode.Mode = Play.current.mode
+  protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
   override val authBaseUrl: String = baseUrl("auth")
 }
 
@@ -64,9 +80,15 @@ object AuthParamsControllerConfiguration extends AuthParamsControllerConfig {
 }
 object ERSFileValidatorAuditConnector extends AuditConnector with AppName {
   override lazy val auditingConfig = LoadAuditingConfig("auditing")
+  override def appName : String = AppName (Play.current.configuration).appName
+  protected def appNameConfiguration: play.api.Configuration = Play.current.configuration
 }
 
 object ERSFileValidatorSessionCache extends SessionCache with AppName with ServicesConfig with LegacyI18nSupport {
+  override def appName : String = AppName (Play.current.configuration).appName
+  protected def appNameConfiguration: play.api.Configuration = Play.current.configuration
+  protected def mode: play.api.Mode.Mode = Play.current.mode
+  protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
   override lazy val http: WSHttp.type = WSHttp
   override lazy val defaultSource: String = "ers-returns-frontend"
   override lazy val baseUri: String = baseUrl("cachable.session-cache")

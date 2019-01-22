@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
-import play.api.Logger
+import play.api.{Logger, Play}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.http._
 import play.api.i18n.Messages
@@ -44,6 +44,8 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with OneServerPerSuite with
   val metrics = mock[Metrics]
 
   object TestERSFileValidatorConnector extends ERSFileValidatorConnector {
+    protected def mode: play.api.Mode.Mode = Play.current.mode
+    protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
     override val httpPost: HttpPost = mockHttpPost
     override val httpGet: HttpGet = mockHttpGet
     override val httpPut: HttpPut = mockHttpPut

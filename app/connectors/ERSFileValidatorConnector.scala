@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,8 @@ import java.util.concurrent.TimeUnit
 import config.{WSHttp, WSHttpWithCustomTimeOut}
 import metrics.Metrics
 import models.{ERSFileProcessingException, SchemeData}
-import play.api.Logger
+import play.api.Mode.Mode
+import play.api.{Configuration, Logger, Play}
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
@@ -91,4 +92,7 @@ trait ERSFileValidatorConnector extends ServicesConfig with Metrics {
   //def source6() = play.api.libs.ws.WS.url("http://localhost:9410/file-stream/ABCDEF123456").getStream().map { response => response._2}
 }
 
-object ERSFileValidatorConnector extends ERSFileValidatorConnector
+object ERSFileValidatorConnector extends ERSFileValidatorConnector{
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+}

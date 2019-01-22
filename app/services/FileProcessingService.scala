@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,9 @@ import config.ApplicationConfig._
 import connectors.ERSFileValidatorConnector
 import metrics.Metrics
 import models._
-import play.api.Logger
+import play.api.{Configuration, Logger, Play}
 import _root_.services.audit.AuditEvents
+import play.api.Mode.Mode
 import uk.gov.hmrc.play.config.ServicesConfig
 import play.api.Play.current
 import play.api.i18n.Messages
@@ -160,4 +161,8 @@ def readCSVFile(callbackData: CallbackData) : Future[Iterator[String]] = {
 }
 
 
-object FileProcessingService extends FileProcessingService
+object FileProcessingService extends FileProcessingService{
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
+
+}

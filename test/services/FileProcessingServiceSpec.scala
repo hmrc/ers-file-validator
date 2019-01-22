@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 HM Revenue & Customs
+ * Copyright 2019 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
+import play.api.Play
 import play.api.libs.iteratee.Enumerator
 import play.api.libs.json.{Json, Writes}
 import play.api.mvc.Request
@@ -72,6 +73,8 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
 
 
   object testFileProcessingService extends FileProcessingService {
+    protected def mode: play.api.Mode.Mode = Play.current.mode
+    protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
     override val sessionService = mockSessionService
     override val ersConnector = mockErsConnector
     override val auditEvents:AuditEvents = mock[AuditEvents]
@@ -83,6 +86,8 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
 
       when(mockErsConnector.sendToSubmissions(Matchers.any[SchemeData](), anyString())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(HttpResponse(200)))
       object testFileProcessingService extends FileProcessingService {
+        protected def mode: play.api.Mode.Mode = Play.current.mode
+        protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
         override val splitSchemes = false
         override val maxNumberOfRows = 1
         override val sessionService = mockSessionService
@@ -112,6 +117,8 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
     when(mockErsConnector.sendToSubmissions(Matchers.any[SchemeData](), anyString())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(HttpResponse(200)))
 
     object testFileProcessingService1 extends FileProcessingService {
+      protected def mode: play.api.Mode.Mode = Play.current.mode
+      protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
       override val sessionService = mockSessionService
       override val ersConnector = mockErsConnector
       override val splitSchemes = true
@@ -135,6 +142,8 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
   "Csv files should be read successfully" in {
 
     object testFileProcessingService extends FileProcessingService {
+      protected def mode: play.api.Mode.Mode = Play.current.mode
+      protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
       override val splitSchemes = false
       override val maxNumberOfRows = 1
       override val sessionService = mockSessionService
