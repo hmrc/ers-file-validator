@@ -48,12 +48,12 @@ trait WSHttp extends WSGet with HttpGet with HttpPatch with HttpPut with HttpDel
 object WSHttp extends WSHttp{
   override protected def configuration: Option[Config] = Some(Play.current.configuration.underlying)
   override protected def appNameConfiguration: Configuration = Play.current.configuration
-  override protected def actorSystem : ActorSystem = akka.actor.ActorSystem(Play.current.configuration.toString)
+  override protected def actorSystem : ActorSystem = akka.actor.ActorSystem()
 }
 
 object WSHttpWithCustomTimeOut extends WSHttp with AppName with HttpAuditing {
    protected def appNameConfiguration: play.api.Configuration = Play.current.configuration
-   protected def actorSystem: akka.actor.ActorSystem = akka.actor.ActorSystem(Play.current.configuration.toString)
+  override protected def actorSystem : ActorSystem = akka.actor.ActorSystem()
     protected def configuration: Option[com.typesafe.config.Config] = Some(Play.current.configuration.underlying)
 
   override val hooks = Seq(AuditingHook)
@@ -68,7 +68,7 @@ object WSHttpWithCustomTimeOut extends WSHttp with AppName with HttpAuditing {
 object MicroserviceAuthConnector extends AuthConnector with ServicesConfig with WSHttp{
 
   protected def appNameConfiguration: play.api.Configuration = Play.current.configuration
-  protected def actorSystem: akka.actor.ActorSystem = akka.actor.ActorSystem(Play.current.configuration.toString)
+  override protected def actorSystem : ActorSystem = akka.actor.ActorSystem()
   protected def configuration: Option[com.typesafe.config.Config] = Some(Play.current.configuration.underlying)
   protected def mode: play.api.Mode.Mode = Play.current.mode
   protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
