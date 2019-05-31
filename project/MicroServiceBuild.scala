@@ -11,7 +11,7 @@ private object AppDependencies {
   import play.sbt.PlayImport._
 
 
-  private val playMicroServiceBootStrapVersion = "10.0.0"
+  private val playMicroServiceBootStrapVersion = "10.6.0"
   private val metricsGraphiteVersion = "3.0.2"
   private val httpCachingVersion = "7.0.0"
   private val bulkEntityStreamingVersion = "1.0.0"
