@@ -16,10 +16,25 @@
 
 package models
 
-import play.api.libs.json.Json
+import org.joda.time.DateTime
+import play.api.libs.json.{Json, OFormat}
+
 import scala.collection.mutable.ListBuffer
 
 case class SchemeData (schemeInfo: SchemeInfo, sheetName: String, numberOfParts: Option[Int], data: ListBuffer[Seq[String]])
 object SchemeData {
-  implicit val format = Json.format[SchemeData]
+  implicit val formatSchemeData: OFormat[SchemeData] = Json.format[SchemeData]
+}
+
+case class SchemeInfo (
+                       schemeRef:String,
+                       timestamp: DateTime = DateTime.now,
+                       schemeId: String,
+                       taxYear: String,
+                       schemeName: String,
+                       schemeType: String
+                     )
+
+object SchemeInfo {
+  implicit val formatSchemeInfo: OFormat[SchemeInfo] = Json.format[SchemeInfo]
 }

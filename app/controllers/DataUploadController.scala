@@ -20,7 +20,9 @@ import java.util.concurrent.TimeUnit
 
 import metrics.Metrics
 import models._
-import play.api.mvc.{Action, Request}
+import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
+import play.api.libs.json.JsValue
+import play.api.mvc.{Action, AnyContent, Request}
 import play.api.{Configuration, Logger, Play}
 import services.{FileProcessingService, SessionService}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -35,38 +37,32 @@ trait DataUploadController extends BaseController with Metrics {
   val sessionService: SessionService
   val fileProcessService : FileProcessingService
 
-  def processFileDataFromFrontend(empRef:String) = Action.async {
+  def processFileDataFromFrontend(empRef: String): Action[AnyContent] = Action {
     implicit request =>
       val startTime =  System.currentTimeMillis()
       Logger.debug("File Processing Request Received At: " + startTime)
       val json = request.body.asJson.get
-      json.validate[FileData].fold(
+      json.validate[UpscanFileData].fold(
         valid = res => {
-          implicit val schemeInfo:SchemeInfo = res.schemeInfo
-          Logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
-
+          implicit val schemeInfo: SchemeInfo = res.schemeInfo
           try {
             val result = fileProcessService.processFile(res.callbackData, empRef)
             deliverFileProcessingMetrics(startTime)
-            Future(Ok(s"${result}"))
-          }
-          catch {
-            case e:ERSFileProcessingException => {
+            Ok(s"${result}")
+          } catch {
+            case e:ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
-              Future(Accepted(e.message))
-            }
-            case er: Exception => {
+              Accepted(e.message)
+            case er: Exception =>
               deliverFileProcessingMetrics(startTime)
               Logger.error(er.getMessage)
-              Future(InternalServerError)
-            }
+              InternalServerError
           }
-
         },
         invalid = e => {
           Logger.error(e.toString())
           deliverFileProcessingMetrics(startTime)
-          Future(BadRequest(e.toString))
+          BadRequest(e.toString)
         }
       )
   }
@@ -74,56 +70,51 @@ trait DataUploadController extends BaseController with Metrics {
   def deliverFileProcessingMetrics(startTime:Long) =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
-  def processCsvFileDataFromFrontend(empRef:String) = Action.async {
+  def processCsvFileDataFromFrontend(empRef:String): Action[JsValue] = Action.async(parse.json) {
     implicit request =>
-
       val startTime =  System.currentTimeMillis()
-      Logger.debug("File Processing Request Received At: " + startTime)
-      val json = request.body.asJson.get
-      json.validate[CsvFileData].fold(
+      request.body.validate[UpscanCsvFileData].fold(
         valid = res => {
-          implicit val schemeInfo: SchemeInfo = res.schemeInfo
+          val schemeInfo: SchemeInfo = res.schemeInfo
           Logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
-          Future.sequence(process(res.callbackData, empRef)(hc, schemeInfo, request)).map { result =>
-//            val totalRowt = result.foldLeft(0) (_ +_._2)
+          Future.sequence(process(res.callbackData, empRef)(hc, schemeInfo, request)).flatMap { result =>
             val totalRowCount = result.foldLeft(0) ((accum,inputTuple) => accum +inputTuple._2)
             sessionService.storeCallbackData(res.callbackData.head, totalRowCount).map {
-              case callback: Option[CallbackData] if callback.isDefined => totalRowCount
+              case callback: Option[UpscanCallback] if callback.isDefined =>
+                Ok(s"${result.foldLeft(0) ((accum,inputTuple) => accum +inputTuple._1)}")
               case _ => Logger.error(s"csv storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
-                throw new ERSFileProcessingException("csv callback data storage in sessioncache failed ", "Exception storing csv callback data")
-            } .recover {
+                throw ERSFileProcessingException("csv callback data storage in sessioncache failed ", "Exception storing csv callback data")
+            } recover {
               case e:Throwable => Logger.error(s"csv storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
                 throw e
             }
-            Ok(s"${result.foldLeft(0) ((accum,inputTuple) => accum +inputTuple._1)}")
-          }.recover {
+          } recover {
             case e: ERSFileProcessingException => {
               Logger.error(e.message)
               deliverFileProcessingMetrics(startTime)
               Accepted(e.message)
             }
             case er => {
+              Logger.error(er.getMessage, er)
               deliverFileProcessingMetrics(startTime)
-              Logger.error(er.getMessage)
               InternalServerError
             }
           }
         },
         invalid = e => {
-          //Logger.error(e.toString())
           deliverFileProcessingMetrics(startTime)
           Future(BadRequest(e.toString))
         }
       )
+
   }
 
-  def process(res:List[CallbackData], empRef: String)(hc:HeaderCarrier, schemeInfo:SchemeInfo,request:Request[_]) = {
+  def process(res: List[UpscanCallback], empRef: String)(hc:HeaderCarrier, schemeInfo:SchemeInfo,request:Request[_]) = {
     for {
       callbackData <- res
     } yield fileProcessService.processCsvFile(callbackData, empRef)(hc, schemeInfo,request)
   }
-
 }
 
 
