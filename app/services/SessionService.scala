@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@ trait SessionService extends SessionCacheWiring {
     val callbackData = data.copy(noOfRows = Some(totalRows))
 
     val cacheMap = sessionCache.cache[UpscanCallback](CALLBACK_DATA_KEY, callbackData)
-    Logger.error("************** \n" + hc.sessionId)
     cacheMap.map(_ =>
       Some(callbackData)
     ).recover { case e:Throwable =>

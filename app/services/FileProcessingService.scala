@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -103,13 +103,10 @@ trait FileProcessingService extends DataGenerator with Metrics {
     def findFileInZip(stream: ZipInputStream): InputStream = {
       Option(stream.getNextEntry) match {
         case Some(entry) if entry.getName == targetFileName =>
-          Logger.error(")+&&&&&&&&&&&&")
           stream
         case Some(a) =>
-          Logger.error("**********" + a.getName)
           findFileInZip(stream)
         case None =>
-          Logger.error("&^&*HIBUHSBDIBASYGUFHBIDUI CGHBJNKM")
           throw ERSFileProcessingException(
             Messages("ers.exceptions.fileProcessingService.failedStream"),
             Messages("ers.exceptions.fileProcessingService.bulkEntity")
