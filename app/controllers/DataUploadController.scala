@@ -18,9 +18,10 @@ package controllers
 
 import java.util.concurrent.TimeUnit
 
+import controllers.auth.{AuthAction, AuthorisedAction}
 import metrics.Metrics
 import models._
-import play.api.mvc.{Action, Request}
+import play.api.mvc.Request
 import play.api.{Configuration, Logger, Play}
 import services.{FileProcessingService, SessionService}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -34,8 +35,10 @@ trait DataUploadController extends BaseController with Metrics {
   val currentConfig: Configuration
   val sessionService: SessionService
   val fileProcessService : FileProcessingService
+  def authorisedAction(empRef: String): AuthAction
 
-  def processFileDataFromFrontend(empRef:String) = Action.async {
+  def processFileDataFromFrontend(empRef:String) =
+    authorisedAction(empRef).async {
     implicit request =>
       val startTime =  System.currentTimeMillis()
       Logger.debug("File Processing Request Received At: " + startTime)
@@ -74,7 +77,7 @@ trait DataUploadController extends BaseController with Metrics {
   def deliverFileProcessingMetrics(startTime:Long) =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
-  def processCsvFileDataFromFrontend(empRef:String) = Action.async {
+  def processCsvFileDataFromFrontend(empRef:String) = authorisedAction(empRef).async {
     implicit request =>
 
       val startTime =  System.currentTimeMillis()
@@ -86,7 +89,7 @@ trait DataUploadController extends BaseController with Metrics {
           Logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
           Future.sequence(process(res.callbackData, empRef)(hc, schemeInfo, request)).map { result =>
-//            val totalRowt = result.foldLeft(0) (_ +_._2)
+//            val totalRowt = result.foldLeft(0) (_ + _._2)
             val totalRowCount = result.foldLeft(0) ((accum,inputTuple) => accum +inputTuple._2)
             sessionService.storeCallbackData(res.callbackData.head, totalRowCount).map {
               case callback: Option[CallbackData] if callback.isDefined => totalRowCount
@@ -131,4 +134,6 @@ object DataUploadController extends DataUploadController {
   val currentConfig = Play.current.configuration
   val sessionService = SessionService
   val fileProcessService = FileProcessingService
+
+  override def authorisedAction(empRef: String): AuthAction = AuthorisedAction(empRef)
 }

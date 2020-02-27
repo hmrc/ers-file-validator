@@ -38,7 +38,8 @@ private object AppDependencies {
     "uk.gov.hmrc" %% "tabular-data-validator" % tabularDataValidatorVersion,
     "org.scala-lang.modules" %% "scala-xml" % scalaXmlVersion,
     "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParserCombinatorsVersion,
-    "com.codahale.metrics" % "metrics-graphite" % metricsGraphiteVersion)
+    "com.codahale.metrics" % "metrics-graphite" % metricsGraphiteVersion,
+    "uk.gov.hmrc" %% "auth-client" % "2.33.0-play-25")
 
   trait TestDependencies {
     lazy val scope: String = "test"
@@ -48,6 +49,7 @@ private object AppDependencies {
   object Test {
     def apply(): Seq[ModuleID] = new TestDependencies {
       override lazy val test = Seq(
+        "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope,
         "org.scalatest" %% "scalatest" % scalaTestVersion % scope,
         "org.scalatestplus.play" %% "scalatestplus-play" % scalaTestPlusPlayVersion % scope,
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
