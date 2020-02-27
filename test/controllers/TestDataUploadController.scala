@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package controllers
 
+import controllers.auth.AuthAction
+import fixtures.WithMockedAuthActions
 import metrics.Metrics
 import models._
 import org.joda.time.DateTime
@@ -26,20 +28,23 @@ import org.scalatest.mock.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.{Request, AnyContentAsJson, Result}
+import play.api.mvc.{AnyContentAsJson, Request, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import services.{FileProcessingService, SessionService}
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class TestDataUploadController extends PlaySpec with MockitoSugar {
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
+class TestDataUploadController extends PlaySpec with MockitoSugar with WithMockedAuthActions {
 
   val mockCurrentConfig = mock[Configuration]
   val mockSessionService = mock[SessionService]
   val mockFileProcessingService = mock[FileProcessingService]
   val metrics = mock[Metrics]
+  val mockAuthAction: AuthAction = mock[AuthAction]
+
 
   val schemeInfo: SchemeInfo = SchemeInfo (
     schemeRef = "XA11000001231275",
@@ -54,6 +59,8 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     val currentConfig = mockCurrentConfig
     val sessionService = mockSessionService
     val fileProcessService = mockFileProcessingService
+    override def authorisedAction(empRef: String): AuthAction = mockAuthAction
+
     when(mockSessionService.storeCallbackData(Matchers.any(),Matchers.any())(Matchers.any(),Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
   }
 
@@ -79,7 +86,9 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     "inflationProofRequest" -> false
   )
 
-  val callbackData = CallbackData(collection = "collection", id = "someid", length = 1000L, name = Some("John"), contentType = Some("content-type"), customMetadata = Some(metaData), None)
+  val callbackData =
+    CallbackData(collection = "collection", id = "someid", length = 1000L, name = Some("John"), contentType = Some("content-type"),
+      customMetadata = Some(metaData), None)
   val d: FileData = FileData(callbackData, schemeInfo)
   val csvData: CsvFileData = CsvFileData(
     List(
@@ -91,9 +100,11 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
 
   "DataUploadController" must {
 
+
     "Successfully receive data" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {
+        mockAnyContentAction
         when(mockFileProcessingService.processFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenReturn(l.size)
         processFileDataFromFrontend(request.withJsonBody(Json.toJson(d))) {
           result =>
@@ -105,6 +116,7 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     "return errors when an incorrect json object is sent to process-file" in {
       reset(mockFileProcessingService)
       running(FakeApplication()){
+        mockAnyContentAction
         when(mockFileProcessingService.processFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenReturn(l.size)
           processFileDataFromFrontend(request.withJsonBody(metaData)){
             result =>
@@ -117,6 +129,7 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     "Throw exception when invalid data is sent" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {
+        mockAnyContentAction
         when(mockFileProcessingService.processFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenThrow(new RuntimeException)
         processFileDataFromFrontend(request.withJsonBody(Json.toJson(d))) {
           result =>
@@ -129,6 +142,7 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     "Return ACCEPTED when ERSFileProcessingException is thrown" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {
+        mockAnyContentAction
         when(mockFileProcessingService.processFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenThrow(new ERSFileProcessingException("Error","Tests",None))
         processFileDataFromFrontend(request.withJsonBody(Json.toJson(d))) {
           result =>
@@ -144,7 +158,9 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     "Successfully receive data" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {
-        when(mockFileProcessingService.processCsvFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),any[Request[_]])).thenReturn(Future(l.size, 100))
+        mockAnyContentAction
+        when(mockFileProcessingService.processCsvFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),
+          any[Request[_]])).thenReturn(Future(l.size, 100))
         processCsvFileDataFromFrontend(request.withJsonBody(Json.toJson(csvData))) {
           result =>
             status(result) must be(OK)
@@ -155,7 +171,9 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     "return errors when an incorrect json object is sent to process-file" in {
       reset(mockFileProcessingService)
       running(FakeApplication()){
-        when(mockFileProcessingService.processCsvFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),any[Request[_]])).thenReturn(Future(l.size, 100))
+        mockAnyContentAction
+        when(mockFileProcessingService.processCsvFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),
+          any[Request[_]])).thenReturn(Future(l.size, 100))
         processCsvFileDataFromFrontend(request.withJsonBody(metaData)){
           result =>
             status(result) must be (BAD_REQUEST)
