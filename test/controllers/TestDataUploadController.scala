@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package controllers
 
+import controllers.auth.AuthAction
+import fixtures.WithMockedAuthActions
 import metrics.Metrics
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
@@ -23,18 +25,21 @@ import org.joda.time.DateTime
 import org.mockito.Matchers
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.stubbing.Answer
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
 import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.mvc.{AnyContentAsJson, Request, Result}
+import play.api.mvc.{Action, AnyContent, AnyContentAsJson, BodyParser, BodyParsers, Request, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import services.{FileProcessingService, SessionService}
+import util.MockAuthAction
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class TestDataUploadController extends PlaySpec with MockitoSugar {
 
@@ -56,14 +61,16 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
     val currentConfig = mockCurrentConfig
     val sessionService = mockSessionService
     val fileProcessService = mockFileProcessingService
-    when(mockSessionService.storeCallbackData(Matchers.any(),Matchers.any())(Matchers.any(),Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
+    override def authorisedAction(empRef: String): AuthAction = MockAuthAction
+    when(mockSessionService.storeCallbackData(Matchers.any(),Matchers.any())(Matchers.any(),Matchers.any()))
+      .thenReturn(Future.successful(Some(callbackData)))
   }
 
   def processFileDataFromFrontend(request: FakeRequest[AnyContentAsJson])(handler: Future[Result] => Any): Unit ={
     handler(TestDataUploadController.processFileDataFromFrontend("empRef").apply(request))
   }
 
-  def processCsvFileDataFromFrontend(request: FakeRequest[JsValue])(handler: Future[Result] => Any): Unit ={
+  def processCsvFileDataFromFrontend(request: Request[JsValue])(handler: Future[Result] => Any): Unit ={
     handler(TestDataUploadController.processCsvFileDataFromFrontend("empRef").apply(request))
   }
 
@@ -82,7 +89,6 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
   )
 
   val callbackData: UpscanCallback = UpscanCallback("John", "downloadUrl", Some(1000L), Some("content-type"), Some(metaData), None)
-  //CallbackData(collection = "collection", id = "someid", length = 1000L, name = Some("John"), contentType = Some("content-type"), customMetadata = FileProcessingServiceSpecSome(metaData), None)
   val d: UpscanFileData = UpscanFileData(callbackData, schemeInfo)
   val csvData: UpscanCsvFileData = UpscanCsvFileData(
     List(
@@ -93,7 +99,6 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
   )
 
   "DataUploadController" must {
-
     "Successfully receive data" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {
@@ -143,7 +148,6 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
   }
 
   "calling processCsvFileDataFromFrontend" must {
-
     "Successfully receive data" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {

@@ -31,9 +31,6 @@ case class UpscanCallback(name: String,
 object UpscanCallback {
   implicit val upscanCallbackWrites: Writes[UpscanCallback] = Json.writes[UpscanCallback].transform(
     (js: JsValue) => js.as[JsObject] + ("_type" -> JsString("UploadedSuccessfully"))
-  ).transform(
-    (js: JsValue) => {Logger.error("Storing: \n" + js.toString())
-      js}
   )
 
   implicit val upscanCallbackReads: Reads[UpscanCallback] = Json.reads[UpscanCallback]

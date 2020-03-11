@@ -18,11 +18,11 @@ package controllers
 
 import java.util.concurrent.TimeUnit
 
+import controllers.auth.{AuthAction, AuthorisedAction}
 import metrics.Metrics
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
-import play.api.libs.json.JsValue
-import play.api.mvc.{Action, AnyContent, Request}
+import play.api.mvc.Request
 import play.api.{Configuration, Logger, Play}
 import services.{FileProcessingService, SessionService}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -36,8 +36,9 @@ trait DataUploadController extends BaseController with Metrics {
   val currentConfig: Configuration
   val sessionService: SessionService
   val fileProcessService : FileProcessingService
+  def authorisedAction(empRef: String): AuthAction
 
-  def processFileDataFromFrontend(empRef: String): Action[AnyContent] = Action {
+  def processFileDataFromFrontend(empRef: String) = authorisedAction(empRef) {
     implicit request =>
       val startTime =  System.currentTimeMillis()
       Logger.debug("File Processing Request Received At: " + startTime)
@@ -70,7 +71,7 @@ trait DataUploadController extends BaseController with Metrics {
   def deliverFileProcessingMetrics(startTime:Long) =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
-  def processCsvFileDataFromFrontend(empRef:String): Action[JsValue] = Action.async(parse.json) {
+  def processCsvFileDataFromFrontend(empRef:String) = authorisedAction(empRef).async(parse.json) {
     implicit request =>
       val startTime =  System.currentTimeMillis()
       request.body.validate[UpscanCsvFileData].fold(
@@ -107,7 +108,6 @@ trait DataUploadController extends BaseController with Metrics {
           Future(BadRequest(e.toString))
         }
       )
-
   }
 
   def process(res: List[UpscanCallback], empRef: String)(hc:HeaderCarrier, schemeInfo:SchemeInfo,request:Request[_]) = {
@@ -122,4 +122,6 @@ object DataUploadController extends DataUploadController {
   val currentConfig = Play.current.configuration
   val sessionService = SessionService
   val fileProcessService = FileProcessingService
+
+  override def authorisedAction(empRef: String): AuthAction = AuthorisedAction(empRef)
 }

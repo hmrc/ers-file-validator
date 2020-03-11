@@ -24,6 +24,7 @@ import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.libs.ws.WSRequest
 import play.api.mvc.LegacyI18nSupport
+import uk.gov.hmrc.auth.core.PlayAuthConnector
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.cache.client.SessionCache
 import uk.gov.hmrc.play.audit.http.HttpAuditing
@@ -65,14 +66,17 @@ object WSHttpWithCustomTimeOut extends WSHttp with AppName with HttpAuditing {
   }
 }
 
-object MicroserviceAuthConnector extends AuthConnector with ServicesConfig with WSHttp{
+object MicroserviceAuthConnector extends PlayAuthConnector with ServicesConfig {
 
   protected def appNameConfiguration: play.api.Configuration = Play.current.configuration
-  override protected def actorSystem : ActorSystem = akka.actor.ActorSystem()
+  protected def actorSystem : ActorSystem = akka.actor.ActorSystem()
   protected def configuration: Option[com.typesafe.config.Config] = Some(Play.current.configuration.underlying)
   protected def mode: play.api.Mode.Mode = Play.current.mode
   protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
-  override val authBaseUrl: String = baseUrl("auth")
+  override val serviceUrl: String = baseUrl("auth")
+
+  override def http: CorePost = WSHttp
+
 }
 
 object AuthParamsControllerConfiguration extends AuthParamsControllerConfig {
