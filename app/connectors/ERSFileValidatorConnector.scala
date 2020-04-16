@@ -46,9 +46,8 @@ trait ERSFileValidatorConnector extends ServicesConfig with Metrics {
 
   lazy val serviceURL = baseUrl("ers-file-validator")
 
-  def upscanFileStream(downloadUrl: String): InputStream = {
+  def upscanFileStream(downloadUrl: String): InputStream =
     new URL(downloadUrl).openStream()
-  }
 
   def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[HttpResponse] = {
     import java.net.URLEncoder

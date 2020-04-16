@@ -170,19 +170,5 @@ class TestDataUploadController extends PlaySpec with MockitoSugar {
       }
 
     }
-
-//    "Throw exception when invalid data is sent" in {
-//      reset(mockFileProcessingService)
-//      running(FakeApplication()) {
-//        when(mockFileProcessingService.processCsvFile(any[CallbackData]())(any(),any[SchemeInfo]())).then(throw new ERSFileProcessingException("",""))
-//        processCsvFileDataFromFrontend(request.withBody(Json.toJson(csvData))) {
-//          result =>
-//            status(result) must be(INTERNAL_SERVER_ERROR)
-//        }
-//
-//      }
-//    }
-
-
   }
 }
