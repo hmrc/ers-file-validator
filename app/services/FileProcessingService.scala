@@ -104,7 +104,7 @@ trait FileProcessingService extends DataGenerator with Metrics {
       Option(stream.getNextEntry) match {
         case Some(entry) if entry.getName == targetFileName =>
           stream
-        case Some(a) =>
+        case Some(_) =>
           findFileInZip(stream)
         case None =>
           throw ERSFileProcessingException(
@@ -140,9 +140,7 @@ trait FileProcessingService extends DataGenerator with Metrics {
     }
   }
 
-  def sendScheme(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier,request: Request[_]): Int = {
-    // auditEvents.rowsPerSheet(callbackData, schemeData.data.size)
-
+  def sendScheme(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Int = {
     if(splitSchemes && (schemeData.data.size > maxNumberOfRows)) {
 
       def numberOfSlices(sizeOfBuffer: Int): Int = {
