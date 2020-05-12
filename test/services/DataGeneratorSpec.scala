@@ -22,7 +22,7 @@ import models.{ERSFileProcessingException, SchemeData, SchemeInfo}
 import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfter, Matchers}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
 import play.api.mvc.Request
 import services.audit.AuditEvents

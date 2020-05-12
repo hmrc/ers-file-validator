@@ -16,8 +16,10 @@
 
 package services
 
-import java.io.{BufferedReader, InputStreamReader}
+import java.io.{BufferedReader, InputStream, InputStreamReader}
+import java.net.URL
 import java.util.concurrent.TimeUnit
+import java.util.zip.ZipInputStream
 
 import config.ApplicationConfig._
 import connectors.ERSFileValidatorConnector
@@ -25,6 +27,7 @@ import metrics.Metrics
 import models._
 import play.api.{Configuration, Logger, Play}
 import _root_.services.audit.AuditEvents
+import models.upscan.UpscanCallback
 import play.api.Mode.Mode
 import uk.gov.hmrc.play.config.ServicesConfig
 import play.api.Play.current
@@ -39,7 +42,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-trait FileProcessingService extends ServicesConfig with DataGenerator with Metrics {
+trait FileProcessingService extends DataGenerator with Metrics {
 
   val splitSchemes = splitLargeSchemes
   val maxNumberOfRows = maxNumberOfRowsPerSubmission
@@ -47,74 +50,81 @@ trait FileProcessingService extends ServicesConfig with DataGenerator with Metri
   val ersConnector: ERSFileValidatorConnector = ERSFileValidatorConnector
   override val auditEvents:AuditEvents = AuditEvents
 
-@throws(classOf[ERSFileProcessingException])
-  def processFile(callbackData: CallbackData, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]) = {
+  @throws(classOf[ERSFileProcessingException])
+  def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]) = {
     val startTime = System.currentTimeMillis()
-    val fileData = readFile(callbackData.collection,callbackData.id)
-    Logger.info(" 2. Invoke Data generator ")
-    deliverBESMetrics(startTime)
-    val result: ListBuffer[SchemeData] = getData(fileData)
-
+    val result = getData(readFile(callbackData.downloadUrl))
     Logger.info("2.1 result contains: " + result)
+    deliverBESMetrics(startTime)
     Logger.debug("No if SchemeData Objects " + result.size)
     val filesWithData = result.filter(_.data.nonEmpty)
     var totalRows = 0
     val res1 = filesWithData.foldLeft(0) {
       (res, el) => {
-        totalRows+= el.data.size
-        res + sendScheme(el,callbackData, empRef)}
+        totalRows += el.data.size
+        res + sendScheme(el, empRef)
+      }
     }
-    sessionService.storeCallbackData(callbackData,totalRows).map {
-      case callback: Option[CallbackData] if callback.isDefined => res1
+    sessionService.storeCallbackData(callbackData, totalRows).map {
+      case callback: Option[UpscanCallback] if callback.isDefined => res1
       case _ => Logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
-        throw new ERSFileProcessingException(("callback data storage in sessioncache failed "), "Exception storing callback data")
-    } .recover {
-      case e:Throwable => Logger.error(s"storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+        throw ERSFileProcessingException(("callback data storage in sessioncache failed "), "Exception storing callback data")
+    }.recover {
+      case e: Throwable => Logger.error(s"storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         throw e
     }
+
     Logger.warn(s"Total rows for schemeRef ${schemeInfo.schemeRef}: $totalRows")
     auditEvents.totalRows(totalRows, schemeInfo)
     res1
   }
 
-  def processCsvFile(callbackData: CallbackData, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo,request: Request[_])={
+  def processCsvFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]) = {
     val startTime = System.currentTimeMillis()
-    readCSVFile(callbackData).map { fileData =>
+    readCSVFile(callbackData.downloadUrl).map { fileData =>
       Logger.info(" 2. Invoke Data generator ")
       deliverBESMetrics(startTime)
 
-      val sheetName = callbackData.name.getOrElse("").replace(".csv","")
+      val sheetName = callbackData.name.replace(".csv","")
       val result: ListBuffer[Seq[String]] = getCsvData(fileData)(schemeInfo, sheetName,hc,request)
       val schemeData: SchemeData = SchemeData(schemeInfo, sheetName, None, result)
 
       Logger.info("2.1 result contains: " + result)
       Logger.debug("No if SchemeData Objects " + result.size)
-      (sendScheme(schemeData, callbackData, empRef), schemeData.data.size)
+      (sendScheme(schemeData, empRef), schemeData.data.size)
     }
   }
 
-  def readFile(collection: String, id: String) : Iterator[String] = {
-    Logger.debug("1. Read File ")
+  private[services] def readFile(downloadUrl: String): Iterator[String] = {
+    val stream = ersConnector.upscanFileStream(downloadUrl)
+    val targetFileName = "content.xml"
+    val zipInputStream = new ZipInputStream(stream)
+    @scala.annotation.tailrec
+    def findFileInZip(stream: ZipInputStream): InputStream = {
+      Option(stream.getNextEntry) match {
+        case Some(entry) if entry.getName == targetFileName =>
+          stream
+        case Some(_) =>
+          findFileInZip(stream)
+        case None =>
+          throw ERSFileProcessingException(
+            Messages("ers.exceptions.fileProcessingService.failedStream"),
+            Messages("ers.exceptions.fileProcessingService.bulkEntity")
+          )
+      }
+    }
+    val contentInputStream = findFileInZip(zipInputStream)
+    new StaxProcessor(contentInputStream)
+  }
+
+  def readCSVFile(downloadUrl: String): Future[Iterator[String]] = {
     try {
-      val stream = ersConnector.readAttachmentUri(collection, id)
-      new StaxProcessor(stream)
-    }
-    catch {
-      case _: Throwable => throw new ERSFileProcessingException(Messages("ers.exceptions.fileProcessingService.failedStream"), Messages("ers.exceptions.fileProcessingService.stax"))
+      val reader = new BufferedReader(new InputStreamReader(ersConnector.upscanFileStream(downloadUrl)))
+      Future(reader.lines().iterator().asScala)
+    } catch {
+      case _: Throwable => throw ERSFileProcessingException(Messages("ers.exceptions.fileProcessingService.failedStream"), Messages("ers.exceptions.fileProcessingService.bulkEntity"))
     }
   }
-
-  val converter : (String) => Seq[String] = _.split(",")
-
-def readCSVFile(callbackData: CallbackData) : Future[Iterator[String]] = {
-  try {
-    val reader = new BufferedReader(new InputStreamReader(ersConnector.readAttachmentUri(callbackData.collection, callbackData.id),"UTF-8"))
-    Future(reader.lines().iterator().asScala)
-  }catch {
-    case e : Throwable => throw new ERSFileProcessingException(Messages("ers.exceptions.fileProcessingService.failedStream"), Messages("ers.exceptions.fileProcessingService.bulkEntity"))
-  }
-}
-
 
   def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]) = {
     Logger.debug("Sheedata sending to ers-submission " + ersSchemeData.sheetName)
@@ -130,9 +140,7 @@ def readCSVFile(callbackData: CallbackData) : Future[Iterator[String]] = {
     }
   }
 
-  def sendScheme(schemeData: SchemeData, callbackData: CallbackData, empRef: String)(implicit hc: HeaderCarrier,request: Request[_]): Int = {
-    // auditEvents.rowsPerSheet(callbackData, schemeData.data.size)
-
+  def sendScheme(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Int = {
     if(splitSchemes && (schemeData.data.size > maxNumberOfRows)) {
 
       def numberOfSlices(sizeOfBuffer: Int): Int = {
@@ -161,8 +169,4 @@ def readCSVFile(callbackData: CallbackData) : Future[Iterator[String]] = {
 }
 
 
-object FileProcessingService extends FileProcessingService{
-  override protected def mode: Mode = Play.current.mode
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
-
-}
+object FileProcessingService extends FileProcessingService

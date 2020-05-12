@@ -16,22 +16,22 @@
 
 package connectors
 
+import java.io.InputStream
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
-import config.{WSHttp, WSHttpWithCustomTimeOut}
+import config.WSHttpWithCustomTimeOut
 import metrics.Metrics
 import models.{ERSFileProcessingException, SchemeData}
 import play.api.Mode.Mode
-import play.api.{Configuration, Logger, Play}
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.mvc.Request
+import play.api.{Configuration, Logger, Play}
 import services.audit.AuditEvents
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -46,10 +46,8 @@ trait ERSFileValidatorConnector extends ServicesConfig with Metrics {
 
   lazy val serviceURL = baseUrl("ers-file-validator")
 
-  def readAttachmentUri(collection: String, id: String) = {
-    val urladdress = s"${baseUrl("attachments")}/attachments-internal/${collection}/${id}"
-    new URL(urladdress).openStream()
-  }
+  def upscanFileStream(downloadUrl: String): InputStream =
+    new URL(downloadUrl).openStream()
 
   def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[HttpResponse] = {
     import java.net.URLEncoder

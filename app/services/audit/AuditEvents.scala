@@ -17,7 +17,7 @@
 package services.audit
 
 import uk.gov.hmrc.services.validation.ValidationError
-import models.{CallbackData, SchemeInfo}
+import models.SchemeInfo
 import org.apache.commons.lang3.exception.ExceptionUtils
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
@@ -80,13 +80,6 @@ trait AuditEvents {
       "schemeType"->schemeInfo.schemeType,
       "taxYear"->schemeInfo.taxYear,
       "timestamp"->schemeInfo.timestamp.toString))
-    true
-  }
-
-  def callbackResult(callbackData: CallbackData) (implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
-    val eventMap = Map("callbackData" -> callbackData.toString)
-
-    auditService.sendEvent("ERSCallbackResult", eventMap)
     true
   }
 }

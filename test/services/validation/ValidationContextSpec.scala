@@ -17,7 +17,7 @@
 package services.validation
 
 import org.apache.commons.lang3.StringUtils
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 
 class ValidationContextSpec extends PlaySpec with MockitoSugar {

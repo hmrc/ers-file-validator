@@ -29,7 +29,7 @@ trait WithMockedAuthActions {
 
   val mockAuthAction: AuthAction
 
-  def mockAnyContentAction: OngoingStubbing[Action[AnyContent]] =
+  def mockAnyContentAction: OngoingStubbing[Action[AnyContent]] = {
     when(mockAuthAction.async(Matchers.any[Request[AnyContent] => Future[Result]]()))
       .thenAnswer(new Answer[Action[AnyContent]] {
         override def answer(invocation: InvocationOnMock): Action[AnyContent] = {
@@ -40,5 +40,6 @@ trait WithMockedAuthActions {
           }
         }
       })
+  }
 
 }

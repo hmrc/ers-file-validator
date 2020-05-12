@@ -16,27 +16,28 @@
 
 package services
 
-import java.io.ByteArrayInputStream
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, File, FileInputStream, FileOutputStream, InputStream, PipedOutputStream}
+import java.nio.file.Files
+import java.util.zip.{GZIPOutputStream, ZipEntry, ZipFile, ZipInputStream, ZipOutputStream}
 
 import connectors.ERSFileValidatorConnector
 import metrics.Metrics
 import models._
+import models.upscan.UpscanCallback
+import org.apache.commons.io.IOUtils
 import org.joda.time.DateTime
 import org.mockito.Matchers
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
-import play.api.Play
 import play.api.libs.iteratee.Enumerator
-import play.api.libs.json.{Json, Writes}
 import play.api.mvc.Request
 import play.api.test.Helpers._
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.http.cache.client.CacheMap
 import uk.gov.hmrc.stream.BulkEntityProcessor
 
 import scala.concurrent.Future
@@ -62,8 +63,8 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
     schemeType = "EMI"
   )
 
-  val callbackData = CallbackData("ers-files", "id1", 1024, Option("csop.ods"), Option("ods"), None,None)
-  val callbackDataCSV = CallbackData("ers-files", "id1", 1024, Option("EMI40_Adjustments_V3"), Option("csv"), None,None)
+  val callbackData: UpscanCallback = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)
+  val callbackDataCSV: UpscanCallback = UpscanCallback("EMI40_Adjustments_V3", "downloadUrl", Some(1024), Some("csv"), None, None)
   val metrics = mock[Metrics]
 
   def xmlSourceData() =  Future.successful(Enumerator(xmlData1.toString.getBytes()))
@@ -73,8 +74,6 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
 
 
   object testFileProcessingService extends FileProcessingService {
-    protected def mode: play.api.Mode.Mode = Play.current.mode
-    protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
     override val sessionService = mockSessionService
     override val ersConnector = mockErsConnector
     override val auditEvents:AuditEvents = mock[AuditEvents]
@@ -83,16 +82,13 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
   "The File Processing Service" must {
 
     "yield a list of scheme data from file data" in {
-
       when(mockErsConnector.sendToSubmissions(Matchers.any[SchemeData](), anyString())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(HttpResponse(200)))
       object testFileProcessingService extends FileProcessingService {
-        protected def mode: play.api.Mode.Mode = Play.current.mode
-        protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
         override val splitSchemes = false
         override val maxNumberOfRows = 1
         override val sessionService = mockSessionService
         override val ersConnector = mockErsConnector
-        override def readFile(collection: String, id: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
+        override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
         override val auditEvents:AuditEvents = mock[AuditEvents]
 
         when(mockSessionService.storeCallbackData(Matchers.any(),Matchers.any())(Matchers.any(),Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
@@ -102,10 +98,18 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
     }
 
     XMLTestData.staxIntegrationTests.foreach( rec => {
+      val tempOdsPath = Files.createTempFile("file", ".ods").toFile
+      val zip = new ZipOutputStream(new FileOutputStream(tempOdsPath))
+      val entry = new ZipEntry("content.xml")
+      entry.setExtra(rec._2.toString.getBytes())
+      zip.putNextEntry(entry)
+      zip.close()
+      val inputStream = new FileInputStream(tempOdsPath)
 
       rec._1 in {
-        when(mockErsConnector.readAttachmentUri(Matchers.any(),Matchers.any())).thenReturn(new ByteArrayInputStream(rec._2.toString.getBytes()))
-        val result = testFileProcessingService.readFile(callbackData.collection,callbackData.id)
+        when(mockErsConnector.upscanFileStream(Matchers.eq(callbackData.downloadUrl)))
+          .thenReturn(inputStream)
+        val result = testFileProcessingService.readFile(callbackData.downloadUrl)
         result.map(_ must be (rec._3))
       }
     })
@@ -117,16 +121,14 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
     when(mockErsConnector.sendToSubmissions(Matchers.any[SchemeData](), anyString())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(HttpResponse(200)))
 
     object testFileProcessingService1 extends FileProcessingService {
-      protected def mode: play.api.Mode.Mode = Play.current.mode
-      protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
       override val sessionService = mockSessionService
       override val ersConnector = mockErsConnector
       override val splitSchemes = true
       override val maxNumberOfRows = 1
-      override def readFile(collection: String, id: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
       override val auditEvents:AuditEvents = mock[AuditEvents]
 
-      when(mockSessionService.storeCallbackData(any[CallbackData],any[Int])
+      when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])
         (Matchers.any(), any[HeaderCarrier])).thenReturn(Future.successful(Some(callbackData)))
     }
 
@@ -142,13 +144,11 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
   "Csv files should be read successfully" in {
 
     object testFileProcessingService extends FileProcessingService {
-      protected def mode: play.api.Mode.Mode = Play.current.mode
-      protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
       override val splitSchemes = false
       override val maxNumberOfRows = 1
       override val sessionService = mockSessionService
       override val ersConnector = mockErsConnector
-      override def readFile(collection: String, id: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
+      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
       override val auditEvents:AuditEvents = mock[AuditEvents]
     }
 
@@ -157,10 +157,10 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
 
 
     for((csv,i) <- csvList.zipWithIndex){
-      when(mockErsConnector.readAttachmentUri(Matchers.any(),Matchers.any())).thenReturn(
-        new ByteArrayInputStream(csv.getBytes))
+      when(mockErsConnector.upscanFileStream(Matchers.eq(callbackData.downloadUrl)))
+        .thenReturn(new ByteArrayInputStream(csv.getBytes))
 
-      val result = await(testFileProcessingService.readCSVFile(callbackData))
+      val result = await(testFileProcessingService.readCSVFile(callbackData.downloadUrl))
       result.foreach{ seq =>
         for((value,count) <- seq.zipWithIndex){
           value mustBe expectedDataList(i)(count)

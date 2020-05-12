@@ -17,16 +17,15 @@
 package services
 
 import models._
-
+import models.upscan.UpscanCallback
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mock.MockitoSugar
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
 import play.api.libs.json._
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.cache.client.{CacheMap, SessionCache}
-
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.duration._
@@ -46,63 +45,19 @@ class SessionServiceSpec extends PlaySpec with OneServerPerSuite with ScalaFutur
   val hc = HeaderCarrier()
 
   "Session service" must {
-
-    "successfully store arbitrary string" in {
-
-      val foo = "bar"
-      val json = Json.toJson[String](foo)
-      when(TestSessionService.sessionCache.cache[String]
-        (any[String], any[String])
-        (any[Writes[String]], any[HeaderCarrier], any()))
-        .thenReturn(Future.successful(CacheMap("sessionValue", Map("fookey" -> json))))
-
-      val result = Await.result(TestSessionService.storeString("fookey", foo)(request, hc), 10 seconds)
-
-      result.get must be("bar")
-    }
-
-    "fail to store string" in {
-      val foo = "bar"
-      val json = Json.toJson[String](foo)
-      when(TestSessionService.sessionCache.cache[String]
-        (any[String], any[String])
-        (any[Writes[String]], any[HeaderCarrier], any()))
-        .thenReturn(Future.failed(new RuntimeException))
-
-
-      val result = Await.result(TestSessionService.storeString("fookey", foo)(request, hc), 10 seconds)
-      result must be(None)
-    }
-
     "successfully store attachments callback post data" in {
-      val postData = CallbackData(id = "theid", collection = "thecollection", length = 1000L, name = Some("thefilename"), contentType = None, customMetadata
-        = None, noOfRows = None)
+      val postData: UpscanCallback = UpscanCallback("thefilename", "downloadUrl", Some(1000L))
 
-      val json = Json.toJson[CallbackData](postData)
-      when(TestSessionService.sessionCache.cache[CallbackData]
-        (any[String], any[CallbackData])
-        (any[Writes[CallbackData]], any[HeaderCarrier], any()))
+      val json = Json.toJson[UpscanCallback](postData)
+      when(TestSessionService.sessionCache.cache[UpscanCallback]
+        (any[String], any[UpscanCallback])
+        (any[Writes[UpscanCallback]], any[HeaderCarrier], any()))
         .thenReturn(Future.successful(CacheMap("sessionValue", Map(SessionService.CALLBACK_DATA_KEY -> json))))
 
-      val result: Option[CallbackData] = Await.result(TestSessionService.storeCallbackData(postData, 1000)(request, hc), 10 seconds)
+      val result: Option[UpscanCallback] = Await.result(TestSessionService.storeCallbackData(postData, 1000)(request, hc), 10 seconds)
 
-      result.get.length must be(1000L)
-      result.get.noOfRows.get must be (1000)
-
+      result.get.length must be(Some(1000L))
+      result.get.noOfRows must be (Some(1000))
     }
-
-
-    "successfully retrieve callback post data" in {
-      val postData = CallbackData(id = "theid", collection = "thecollection", length = 1000L, name = Some("thefilename"), contentType = None, customMetadata
-        = None, noOfRows = None)
-
-      when(TestSessionService.sessionCache.fetchAndGetEntry[CallbackData](any())(any(), any(), any())).thenReturn(Future.successful(Some
-        (postData)))
-
-      val result = Await.result(TestSessionService.retrieveCallbackData()(request, hc), 10 seconds)
-
-      result.get.id must be("theid")
-    }
-
-     }
+  }
 }

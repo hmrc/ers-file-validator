@@ -20,31 +20,33 @@ import controllers.auth.AuthAction
 import fixtures.WithMockedAuthActions
 import metrics.Metrics
 import models._
+import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
 import org.joda.time.DateTime
 import org.mockito.Matchers
 import org.mockito.Matchers._
 import org.mockito.Mockito._
-import org.scalatest.mock.MockitoSugar
+import org.mockito.invocation.InvocationOnMock
+import org.mockito.stubbing.Answer
+import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.Configuration
-import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.{AnyContentAsJson, Request, Result}
+import play.api.libs.json.{JsObject, JsValue, Json}
+import play.api.mvc.{Action, AnyContent, AnyContentAsJson, BodyParser, BodyParsers, Request, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeApplication, FakeRequest}
 import services.{FileProcessingService, SessionService}
+import util.MockAuthAction
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class TestDataUploadController extends PlaySpec with MockitoSugar with WithMockedAuthActions {
+class TestDataUploadController extends PlaySpec with MockitoSugar {
 
   val mockCurrentConfig = mock[Configuration]
   val mockSessionService = mock[SessionService]
   val mockFileProcessingService = mock[FileProcessingService]
   val metrics = mock[Metrics]
-  val mockAuthAction: AuthAction = mock[AuthAction]
-
 
   val schemeInfo: SchemeInfo = SchemeInfo (
     schemeRef = "XA11000001231275",
@@ -59,16 +61,16 @@ class TestDataUploadController extends PlaySpec with MockitoSugar with WithMocke
     val currentConfig = mockCurrentConfig
     val sessionService = mockSessionService
     val fileProcessService = mockFileProcessingService
-    override def authorisedAction(empRef: String): AuthAction = mockAuthAction
-
-    when(mockSessionService.storeCallbackData(Matchers.any(),Matchers.any())(Matchers.any(),Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
+    override def authorisedAction(empRef: String): AuthAction = MockAuthAction
+    when(mockSessionService.storeCallbackData(Matchers.any(),Matchers.any())(Matchers.any(),Matchers.any()))
+      .thenReturn(Future.successful(Some(callbackData)))
   }
 
   def processFileDataFromFrontend(request: FakeRequest[AnyContentAsJson])(handler: Future[Result] => Any): Unit ={
     handler(TestDataUploadController.processFileDataFromFrontend("empRef").apply(request))
   }
 
-  def processCsvFileDataFromFrontend(request: FakeRequest[AnyContentAsJson])(handler: Future[Result] => Any): Unit ={
+  def processCsvFileDataFromFrontend(request: Request[JsValue])(handler: Future[Result] => Any): Unit ={
     handler(TestDataUploadController.processCsvFileDataFromFrontend("empRef").apply(request))
   }
 
@@ -86,11 +88,9 @@ class TestDataUploadController extends PlaySpec with MockitoSugar with WithMocke
     "inflationProofRequest" -> false
   )
 
-  val callbackData =
-    CallbackData(collection = "collection", id = "someid", length = 1000L, name = Some("John"), contentType = Some("content-type"),
-      customMetadata = Some(metaData), None)
-  val d: FileData = FileData(callbackData, schemeInfo)
-  val csvData: CsvFileData = CsvFileData(
+  val callbackData: UpscanCallback = UpscanCallback("John", "downloadUrl", Some(1000L), Some("content-type"), Some(metaData), None)
+  val d: UpscanFileData = UpscanFileData(callbackData, schemeInfo)
+  val csvData: UpscanCsvFileData = UpscanCsvFileData(
     List(
       callbackData,
       callbackData
@@ -99,13 +99,10 @@ class TestDataUploadController extends PlaySpec with MockitoSugar with WithMocke
   )
 
   "DataUploadController" must {
-
-
     "Successfully receive data" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {
-        mockAnyContentAction
-        when(mockFileProcessingService.processFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenReturn(l.size)
+        when(mockFileProcessingService.processFile(any[UpscanCallback](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenReturn(l.size)
         processFileDataFromFrontend(request.withJsonBody(Json.toJson(d))) {
           result =>
             status(result) must be(OK)
@@ -116,8 +113,7 @@ class TestDataUploadController extends PlaySpec with MockitoSugar with WithMocke
     "return errors when an incorrect json object is sent to process-file" in {
       reset(mockFileProcessingService)
       running(FakeApplication()){
-        mockAnyContentAction
-        when(mockFileProcessingService.processFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenReturn(l.size)
+        when(mockFileProcessingService.processFile(any[UpscanCallback](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenReturn(l.size)
           processFileDataFromFrontend(request.withJsonBody(metaData)){
             result =>
               status(result) must be (BAD_REQUEST)
@@ -129,8 +125,7 @@ class TestDataUploadController extends PlaySpec with MockitoSugar with WithMocke
     "Throw exception when invalid data is sent" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {
-        mockAnyContentAction
-        when(mockFileProcessingService.processFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenThrow(new RuntimeException)
+        when(mockFileProcessingService.processFile(any[UpscanCallback](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenThrow(new RuntimeException)
         processFileDataFromFrontend(request.withJsonBody(Json.toJson(d))) {
           result =>
             status(result) must be(INTERNAL_SERVER_ERROR)
@@ -142,8 +137,7 @@ class TestDataUploadController extends PlaySpec with MockitoSugar with WithMocke
     "Return ACCEPTED when ERSFileProcessingException is thrown" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {
-        mockAnyContentAction
-        when(mockFileProcessingService.processFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenThrow(new ERSFileProcessingException("Error","Tests",None))
+        when(mockFileProcessingService.processFile(any[UpscanCallback](), anyString())(any(),any[SchemeInfo](),Matchers.any())).thenThrow(new ERSFileProcessingException("Error","Tests",None))
         processFileDataFromFrontend(request.withJsonBody(Json.toJson(d))) {
           result =>
             status(result) must be(ACCEPTED)
@@ -154,14 +148,11 @@ class TestDataUploadController extends PlaySpec with MockitoSugar with WithMocke
   }
 
   "calling processCsvFileDataFromFrontend" must {
-
     "Successfully receive data" in {
       reset(mockFileProcessingService)
       running(FakeApplication()) {
-        mockAnyContentAction
-        when(mockFileProcessingService.processCsvFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),
-          any[Request[_]])).thenReturn(Future(l.size, 100))
-        processCsvFileDataFromFrontend(request.withJsonBody(Json.toJson(csvData))) {
+        when(mockFileProcessingService.processCsvFile(any[UpscanCallback](), anyString())(any(),any[SchemeInfo](),any[Request[_]])).thenReturn(Future(l.size, 100))
+        processCsvFileDataFromFrontend(request.withBody(Json.toJson(csvData))) {
           result =>
             status(result) must be(OK)
         }
@@ -171,29 +162,13 @@ class TestDataUploadController extends PlaySpec with MockitoSugar with WithMocke
     "return errors when an incorrect json object is sent to process-file" in {
       reset(mockFileProcessingService)
       running(FakeApplication()){
-        mockAnyContentAction
-        when(mockFileProcessingService.processCsvFile(any[CallbackData](), anyString())(any(),any[SchemeInfo](),
-          any[Request[_]])).thenReturn(Future(l.size, 100))
-        processCsvFileDataFromFrontend(request.withJsonBody(metaData)){
+        when(mockFileProcessingService.processCsvFile(any[UpscanCallback](), anyString())(any(),any[SchemeInfo](),any[Request[_]])).thenReturn(Future(l.size, 100))
+        processCsvFileDataFromFrontend(request.withBody(metaData)){
           result =>
             status(result) must be (BAD_REQUEST)
         }
       }
 
     }
-
-//    "Throw exception when invalid data is sent" in {
-//      reset(mockFileProcessingService)
-//      running(FakeApplication()) {
-//        when(mockFileProcessingService.processCsvFile(any[CallbackData]())(any(),any[SchemeInfo]())).then(throw new ERSFileProcessingException("",""))
-//        processCsvFileDataFromFrontend(request.withJsonBody(Json.toJson(csvData))) {
-//          result =>
-//            status(result) must be(INTERNAL_SERVER_ERROR)
-//        }
-//
-//      }
-//    }
-
-
   }
 }
