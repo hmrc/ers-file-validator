@@ -53,6 +53,7 @@ trait DataUploadController extends BaseController with Metrics {
           } catch {
             case e:ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
+							Logger.error(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException - ${e.getMessage}")
               Accepted(e.message)
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)
