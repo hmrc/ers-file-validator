@@ -52,10 +52,8 @@ trait FileProcessingService extends DataGenerator with Metrics {
 
   @throws(classOf[ERSFileProcessingException])
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]) = {
-    val startTime = System.currentTimeMillis()
     val result = getData(readFile(callbackData.downloadUrl))
     Logger.info("2.1 result contains: " + result)
-    deliverBESMetrics(startTime)
     Logger.debug("No if SchemeData Objects " + result.size)
     val filesWithData = result.filter(_.data.nonEmpty)
     var totalRows = 0
@@ -114,7 +112,9 @@ trait FileProcessingService extends DataGenerator with Metrics {
       }
     }
     val contentInputStream = findFileInZip(zipInputStream)
-    new StaxProcessor(contentInputStream)
+		deliverBESMetrics(System.currentTimeMillis())
+
+		new StaxProcessor(contentInputStream)
   }
 
   def readCSVFile(downloadUrl: String): Future[Iterator[String]] = {
