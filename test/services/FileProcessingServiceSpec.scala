@@ -88,7 +88,7 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
         override val maxNumberOfRows = 1
         override val sessionService = mockSessionService
         override val ersConnector = mockErsConnector
-        override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
+        override def readFile(downloadUrl: String, time: Long = System.currentTimeMillis()) = XMLTestData.getEMIAdjustmentsTemplateSTAX
         override val auditEvents:AuditEvents = mock[AuditEvents]
 
         when(mockSessionService.storeCallbackData(Matchers.any(),Matchers.any())(Matchers.any(),Matchers.any())).thenReturn(Future.successful(Some(callbackData)))
@@ -125,7 +125,7 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
       override val ersConnector = mockErsConnector
       override val splitSchemes = true
       override val maxNumberOfRows = 1
-      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+      override def readFile(downloadUrl: String, time: Long = System.currentTimeMillis()) = XMLTestData.getEMIAdjustmentsTemplateLarge
       override val auditEvents:AuditEvents = mock[AuditEvents]
 
       when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])
@@ -148,7 +148,7 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with OneServer
       override val maxNumberOfRows = 1
       override val sessionService = mockSessionService
       override val ersConnector = mockErsConnector
-      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
+      override def readFile(downloadUrl: String, time: Long = System.currentTimeMillis()) = XMLTestData.getEMIAdjustmentsTemplateSTAX
       override val auditEvents:AuditEvents = mock[AuditEvents]
     }
 

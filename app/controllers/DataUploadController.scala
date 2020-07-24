@@ -41,7 +41,7 @@ trait DataUploadController extends BaseController with Metrics {
   def processFileDataFromFrontend(empRef: String) = authorisedAction(empRef) {
     implicit request =>
       val startTime =  System.currentTimeMillis()
-      Logger.debug("File Processing Request Received At: " + startTime)
+      Logger.info("File Processing Request Received At: " + startTime)
       val json = request.body.asJson.get
       json.validate[UpscanFileData].fold(
         valid = res => {

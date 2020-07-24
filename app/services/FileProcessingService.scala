@@ -52,9 +52,10 @@ trait FileProcessingService extends DataGenerator with Metrics {
 
   @throws(classOf[ERSFileProcessingException])
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]) = {
-    val result = getData(readFile(callbackData.downloadUrl))
+		val startTime: Long =  System.currentTimeMillis()
+		val result = getData(readFile(callbackData.downloadUrl, startTime))
     Logger.info("2.1 result contains: " + result)
-    Logger.debug("No if SchemeData Objects " + result.size)
+    Logger.info("No if SchemeData Objects " + result.size)
     val filesWithData = result.filter(_.data.nonEmpty)
     var totalRows = 0
     val res1 = filesWithData.foldLeft(0) {
@@ -88,15 +89,16 @@ trait FileProcessingService extends DataGenerator with Metrics {
       val schemeData: SchemeData = SchemeData(schemeInfo, sheetName, None, result)
 
       Logger.info("2.1 result contains: " + result)
-      Logger.debug("No if SchemeData Objects " + result.size)
+      Logger.info("No if SchemeData Objects " + result.size)
       (sendScheme(schemeData, empRef), schemeData.data.size)
     }
   }
 
-  private[services] def readFile(downloadUrl: String): Iterator[String] = {
-    val stream = ersConnector.upscanFileStream(downloadUrl)
+  private[services] def readFile(downloadUrl: String, time: Long = System.currentTimeMillis()): Iterator[String] = {
+    val stream: InputStream = ersConnector.upscanFileStream(downloadUrl)
     val targetFileName = "content.xml"
-    val zipInputStream = new ZipInputStream(stream)
+    val zipInputStream: ZipInputStream = new ZipInputStream(stream)
+
     @scala.annotation.tailrec
     def findFileInZip(stream: ZipInputStream): InputStream = {
       Option(stream.getNextEntry) match {
@@ -112,7 +114,7 @@ trait FileProcessingService extends DataGenerator with Metrics {
       }
     }
     val contentInputStream = findFileInZip(zipInputStream)
-		deliverBESMetrics(System.currentTimeMillis())
+		deliverBESMetrics(time)
 
 		new StaxProcessor(contentInputStream)
   }
@@ -127,7 +129,7 @@ trait FileProcessingService extends DataGenerator with Metrics {
   }
 
   def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]) = {
-    Logger.debug("Sheedata sending to ers-submission " + ersSchemeData.sheetName)
+    Logger.info("Sheedata sending to ers-submission " + ersSchemeData.sheetName)
     val result = ersConnector.sendToSubmissions(ersSchemeData, empRef).onComplete {
       case Success(suc) => {
         auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
@@ -153,7 +155,7 @@ trait FileProcessingService extends DataGenerator with Metrics {
       val slices: Int = numberOfSlices(schemeData.data.size)
       for(i <- 0 until slices * maxNumberOfRows by maxNumberOfRows) {
         val scheme = new SchemeData(schemeData.schemeInfo, schemeData.sheetName, Option(slices), schemeData.data.slice(i, (i + maxNumberOfRows)))
-        Logger.debug("The size of the scheme data is " + scheme.data.size + " and i is " + i)
+        Logger.info("The size of the scheme data is " + scheme.data.size + " and i is " + i)
         sendSchemeData(scheme, empRef)
       }
       slices
