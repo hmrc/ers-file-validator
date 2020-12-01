@@ -19,26 +19,29 @@ package controllers
 import java.util.concurrent.TimeUnit
 
 import controllers.auth.{AuthAction, AuthorisedAction}
+import javax.inject.{Inject, Singleton}
 import metrics.Metrics
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
-import play.api.mvc.Request
-import play.api.{Configuration, Logger, Play}
+import play.api.Logger
+import play.api.mvc.{Action, AnyContent, Request}
 import services.{FileProcessingService, SessionService}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-trait DataUploadController extends BaseController with Metrics {
+@Singleton
+class DataUploadController @Inject()(sessionService: SessionService,
+                                     fileProcessService: FileProcessingService,
+                                     authConnector: DefaultAuthConnector,
+                                     implicit val ec: ExecutionContext
+                                     ) extends BaseController with Metrics {
 
-  val currentConfig: Configuration
-  val sessionService: SessionService
-  val fileProcessService : FileProcessingService
-  def authorisedAction(empRef: String): AuthAction
+  def authorisedAction(empRef: String): AuthAction = AuthorisedAction(empRef, authConnector)
 
-  def processFileDataFromFrontend(empRef: String) = authorisedAction(empRef) {
+  def processFileDataFromFrontend(empRef: String): Action[AnyContent] = authorisedAction(empRef) {
     implicit request =>
       val startTime =  System.currentTimeMillis()
       Logger.debug("File Processing Request Received At: " + startTime)
@@ -118,13 +121,4 @@ trait DataUploadController extends BaseController with Metrics {
       callbackData <- res
     } yield fileProcessService.processCsvFile(callbackData, empRef)(hc, schemeInfo,request)
   }
-}
-
-
-object DataUploadController extends DataUploadController {
-  val currentConfig = Play.current.configuration
-  val sessionService = SessionService
-  val fileProcessService = FileProcessingService
-
-  override def authorisedAction(empRef: String): AuthAction = AuthorisedAction(empRef)
 }

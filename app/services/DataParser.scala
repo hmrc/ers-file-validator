@@ -18,6 +18,7 @@ package services
 
 import java.util.concurrent.TimeUnit
 
+import javax.inject.{Inject, Singleton}
 import javax.xml.parsers.SAXParserFactory
 import metrics.Metrics
 import models._
@@ -33,9 +34,8 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.{DataValidator, ValidationError}
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import scala.xml._
 
@@ -43,7 +43,6 @@ trait DataParser {
 
   val repeatColumnsAttr = "table:number-columns-repeated"
   val repeatTableAttr = "table:number-rows-repeated"
-  val auditEvents: AuditEvents = AuditEvents
 
   def secureSAXParser = {
     val saxParserFactory = SAXParserFactory.newInstance()
@@ -101,7 +100,10 @@ trait DataParser {
 
 }
 
-trait DataGenerator extends DataParser with Metrics {
+@Singleton
+class DataGenerator @Inject()(auditEvents: AuditEvents,
+                              implicit val ec: ExecutionContext)
+  extends DataParser with Metrics {
 
   val defaultChunkSize: Int = 10000
 

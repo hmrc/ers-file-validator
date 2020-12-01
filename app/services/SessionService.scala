@@ -16,18 +16,18 @@
 
 package services
 
-import config.SessionCacheWiring
+import config.ERSFileValidatorSessionCache
+import javax.inject.{Inject, Singleton}
 import models.upscan.UpscanCallback
 import play.api.Logger
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-object SessionService extends SessionService
-
-trait SessionService extends SessionCacheWiring {
+@Singleton
+class SessionService @Inject()(sessionCache: ERSFileValidatorSessionCache,
+                               implicit val ec: ExecutionContext) {
 
   val CALLBACK_DATA_KEY = "callback_data_key"
 

@@ -11,9 +11,9 @@ private object AppDependencies {
   import play.sbt.PlayImport._
 
 
-  private val playMicroServiceBootStrapVersion = "10.6.0"
+  private val bootstrapPlayVersion = "5.4.0"
   private val metricsGraphiteVersion = "3.0.2"
-  private val httpCachingVersion = "7.0.0"
+  private val httpCachingVersion = "9.1.0-play-25"
   private val bulkEntityStreamingVersion = "1.0.0"
   private val domainVersion = "5.3.0"
   private val tabularDataValidatorVersion = "1.0.0"
@@ -31,7 +31,7 @@ private object AppDependencies {
 
   val compile = Seq(
     ws,
-    "uk.gov.hmrc" %% "microservice-bootstrap" % playMicroServiceBootStrapVersion,
+    "uk.gov.hmrc" %% "bootstrap-play-25" % bootstrapPlayVersion,
     "uk.gov.hmrc" %% "domain" % domainVersion,
     "uk.gov.hmrc" %% "http-caching-client" % httpCachingVersion,
     "uk.gov.hmrc" %% "bulk-entity-streaming" % bulkEntityStreamingVersion,

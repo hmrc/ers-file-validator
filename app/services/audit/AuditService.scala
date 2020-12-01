@@ -16,40 +16,23 @@
 
 package services.audit
 
-import config.MicroserviceAuditConnector
+import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.mvc.{Request, Session}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.audit.model.DataEvent
+import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
 
-trait AuditServiceConnector {
-  def auditData(dataEvent : DataEvent)(implicit hc : HeaderCarrier) : Unit
-}
-
-object AuditServiceConnector extends AuditServiceConnector {
-
-
-  lazy val auditConnector = MicroserviceAuditConnector
-
-  override def auditData(dataEvent : DataEvent)(implicit hc : HeaderCarrier) : Unit = {
-    auditConnector.sendEvent(dataEvent)
-  }
-
-}
-
-object AuditService extends AuditService {
-  override def auditConnector : AuditServiceConnector = AuditServiceConnector
-}
-
-trait AuditService {
+@Singleton
+class AuditService @Inject()(auditConnector: DefaultAuditConnector,
+                             implicit val ec: ExecutionContext) {
   val auditSource = "ers-file-validator"
 
-  def auditConnector : AuditServiceConnector
-
-  def sendEvent(transactionName : String, details: Map[String, String])(implicit request: Request[_], hc: HeaderCarrier) =
-    auditConnector.auditData(buildEvent(transactionName, details))
+  def sendEvent(transactionName : String, details: Map[String, String])(implicit request: Request[_], hc: HeaderCarrier): Future[AuditResult] =
+    auditConnector.sendEvent(buildEvent(transactionName, details))
 
   private def buildEvent( transactionName: String,  details: Map[String, String])(implicit request: Request[_], hc: HeaderCarrier) =
     DataEvent(
@@ -59,13 +42,10 @@ trait AuditService {
       detail = details
     )
 
-
   private def generateTags(session: Session, hc: HeaderCarrier): Map[String, String] =
     hc.headers.toMap ++
       hc.headers.toMap ++
       Map("dateTime" ->  getDateTime.toString)
-
-
 
   private def getDateTime = new DateTime
 

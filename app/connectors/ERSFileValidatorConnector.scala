@@ -20,31 +20,29 @@ import java.io.InputStream
 import java.net.URL
 import java.util.concurrent.TimeUnit
 
-import config.WSHttpWithCustomTimeOut
+import config.ApplicationConfig
+import javax.inject.{Inject, Singleton}
 import metrics.Metrics
 import models.{ERSFileProcessingException, SchemeData}
-import play.api.Mode.Mode
+import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages
 import play.api.i18n.Messages.Implicits._
 import play.api.mvc.Request
-import play.api.{Configuration, Logger, Play}
 import services.audit.AuditEvents
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
+class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
+                                          http: DefaultHttpClient,
+                                          auditEvents: AuditEvents,
+                                          implicit val ec: ExecutionContext)
+  extends Metrics {
 
-trait ERSFileValidatorConnector extends ServicesConfig with Metrics {
-  val httpPost: HttpPost = WSHttpWithCustomTimeOut
-  val httpGet: HttpGet = WSHttpWithCustomTimeOut
-  val httpPut: HttpPut = WSHttpWithCustomTimeOut
-
-  val auditEvents: AuditEvents = AuditEvents
-
-  lazy val serviceURL = baseUrl("ers-file-validator")
+  lazy val serviceURL: String = appConfig.fileValidatorBaseUrl
 
   def upscanFileStream(downloadUrl: String): InputStream =
     new URL(downloadUrl).openStream()
@@ -54,7 +52,7 @@ trait ERSFileValidatorConnector extends ServicesConfig with Metrics {
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
     val startTime = System.currentTimeMillis()
-    val result = httpPost.POST(s"${baseUrl("ers-submissions")}/ers/${encodedEmpRef}/submit-presubmission", schemeData).recover {
+    val result = http.POST(s"${appConfig.submissionsUrl}/ers/${encodedEmpRef}/submit-presubmission", schemeData).recover {
       case nf: BadRequestException => {
         deliverSendToSubmissionsMetrics(startTime)
         Logger.error(Messages("ers.exceptions.fileValidatorConnector.badRequest") + nf.getMessage)
@@ -84,13 +82,6 @@ trait ERSFileValidatorConnector extends ServicesConfig with Metrics {
     result
   }
 
-  def deliverSendToSubmissionsMetrics(startTime: Long) =
+  def deliverSendToSubmissionsMetrics(startTime: Long): Unit =
     metrics.sendToSubmissionsTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
-
-  //def source6() = play.api.libs.ws.WS.url("http://localhost:9410/file-stream/ABCDEF123456").getStream().map { response => response._2}
-}
-
-object ERSFileValidatorConnector extends ERSFileValidatorConnector{
-  override protected def mode: Mode = Play.current.mode
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }

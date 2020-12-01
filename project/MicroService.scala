@@ -1,5 +1,6 @@
-import play.routes.compiler.StaticRoutesGenerator
-import play.sbt.routes.RoutesKeys.routesGenerator
+
+import play.sbt.PlayImport.PlayKeys
+import play.sbt.routes.RoutesKeys.{InjectedRoutesGenerator, routesGenerator}
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
@@ -8,8 +9,6 @@ import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 import uk.gov.hmrc.versioning.SbtGitVersioning
 import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
-import uk.gov.hmrc.SbtAutoBuildPlugin
-import uk.gov.hmrc.SbtArtifactory
 
 trait MicroService {
 
@@ -50,7 +49,7 @@ trait MicroService {
       parallelExecution in Test := false,
       fork in Test := false,
       retrieveManaged := true,
-      routesGenerator := StaticRoutesGenerator
+      routesGenerator := InjectedRoutesGenerator
     )
     .settings(Repositories.playPublishingSettings: _*)
     .settings(inConfig(TemplateTest)(Defaults.testSettings): _*)
@@ -64,6 +63,7 @@ trait MicroService {
       parallelExecution in IntegrationTest := false)
     .settings(resolvers += Resolver.bintrayRepo("hmrc", "releases"), resolvers += Resolver.jcenterRepo)
     .settings(majorVersion := 1)
+    .settings(PlayKeys.playDefaultPort := 9226)
 }
 
 private object TestPhases {

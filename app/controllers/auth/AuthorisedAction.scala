@@ -16,7 +16,6 @@
 
 package controllers.auth
 
-import config.MicroserviceAuthConnector
 import play.api.Logger
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc.{ActionBuilder, ActionFunction, Request, Result}
@@ -28,9 +27,10 @@ import uk.gov.hmrc.play.HeaderCarrierConverter
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-case class AuthorisedAction(slashSeparatedEmpRef: String)(implicit val ec: ExecutionContext) extends AuthAction {
+case class AuthorisedAction(slashSeparatedEmpRef: String, authConnector: AuthConnector)
+                           (implicit val ec: ExecutionContext)
+  extends AuthAction {
   override val optionalEmpRef: Option[EmpRef] = Try(EmpRef.fromIdentifiers(slashSeparatedEmpRef)).toOption
-  override def authConnector: AuthConnector = MicroserviceAuthConnector
 }
 
 trait AuthAction extends AuthorisedFunctions with ActionBuilder[Request] with ActionFunction[Request, Request] {
