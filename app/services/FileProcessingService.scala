@@ -17,25 +17,20 @@
 package services
 
 import java.io.{BufferedReader, InputStream, InputStreamReader}
-import java.net.URL
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
 
-import connectors.ERSFileValidatorConnector
-import metrics.Metrics
-import models._
-import play.api.{Configuration, Logger, Play}
 import _root_.services.audit.AuditEvents
 import config.ApplicationConfig
+import connectors.ERSFileValidatorConnector
 import javax.inject.{Inject, Singleton}
+import metrics.Metrics
+import models._
 import models.upscan.UpscanCallback
-import play.api.Mode.Mode
-import uk.gov.hmrc.play.config.ServicesConfig
-import play.api.Play.current
-import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
+import play.api.Logger
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.ErrorResponseMessages
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -56,6 +51,7 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
   @throws(classOf[ERSFileProcessingException])
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]): Int = {
     val startTime = System.currentTimeMillis()
+    Logger.info("2.0 start: ")
     val result = dataGenerator.getData(readFile(callbackData.downloadUrl))
     Logger.info("2.1 result contains: " + result)
     deliverBESMetrics(startTime)
@@ -111,8 +107,8 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
           findFileInZip(stream)
         case None =>
           throw ERSFileProcessingException(
-            Messages("ers.exceptions.fileProcessingService.failedStream"),
-            Messages("ers.exceptions.fileProcessingService.bulkEntity")
+            s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
+            s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}"
           )
       }
     }
@@ -125,7 +121,9 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
       val reader = new BufferedReader(new InputStreamReader(ersConnector.upscanFileStream(downloadUrl)))
       Future(reader.lines().iterator().asScala)
     } catch {
-      case _: Throwable => throw ERSFileProcessingException(Messages("ers.exceptions.fileProcessingService.failedStream"), Messages("ers.exceptions.fileProcessingService.bulkEntity"))
+      case _: Throwable => throw ERSFileProcessingException(
+        s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
+        s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}")
     }
   }
 

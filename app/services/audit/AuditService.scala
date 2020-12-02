@@ -31,7 +31,7 @@ class AuditService @Inject()(auditConnector: DefaultAuditConnector,
                              implicit val ec: ExecutionContext) {
   val auditSource = "ers-file-validator"
 
-  def sendEvent(transactionName : String, details: Map[String, String])(implicit request: Request[_], hc: HeaderCarrier): Future[AuditResult] =
+  def sendEvent(transactionName : String, details: Map[String, String])(implicit request: Request[_], hc: HeaderCarrier): Unit =
     auditConnector.sendEvent(buildEvent(transactionName, details))
 
   private def buildEvent( transactionName: String,  details: Map[String, String])(implicit request: Request[_], hc: HeaderCarrier) =
@@ -47,6 +47,6 @@ class AuditService @Inject()(auditConnector: DefaultAuditConnector,
       hc.headers.toMap ++
       Map("dateTime" ->  getDateTime.toString)
 
-  private def getDateTime = new DateTime
+  protected def getDateTime = new DateTime
 
 }

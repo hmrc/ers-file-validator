@@ -22,21 +22,18 @@ import play.api.Configuration
 import play.api.libs.ws.{WSClient, WSRequest}
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.cache.client.SessionCache
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
-
-import scala.concurrent.duration._
 
 
 
 @Singleton
-class WSHttp @Inject()(auditConnector: AuditConnector, wsClient: WSClient, configuration: Configuration, actorSystem: ActorSystem)
-  extends DefaultHttpClient(configuration, auditConnector, wsClient, actorSystem) {
+class WSHttp @Inject()(httpAuditing: HttpAuditing, wsClient: WSClient, configuration: Configuration, appConfig: ApplicationConfig, actorSystem: ActorSystem)
+  extends DefaultHttpClient(configuration, httpAuditing, wsClient, actorSystem) {
 
 
   def buildRequestWithTimeout(uri: String)(implicit hc: HeaderCarrier): WSRequest = {
-    val ersTimeOut = configuration.getInt("ers-file-validator-timeout-seconds").getOrElse(20).seconds
-    buildRequest(uri).withRequestTimeout(ersTimeOut)
+    buildRequest(uri).withRequestTimeout(appConfig.ersTimeOut)
   }
 }
 
@@ -45,10 +42,6 @@ class ERSFileValidatorSessionCache @Inject()(val http: DefaultHttpClient,
                                              appConfig: ApplicationConfig)
   extends SessionCache {
 
-//  override def appName : String
-//  protected def appNameConfiguration: play.api.Configuration = Play.current.configuration
-//  protected def mode: play.api.Mode.Mode = Play.current.mode
-//  protected def runModeConfiguration: play.api.Configuration = Play.current.configuration
   lazy val defaultSource: String = "ers-returns-frontend"
   lazy val baseUri: String = appConfig.sessionCacheBaseUri
   lazy val domain: String = appConfig.sessionCacheDomain

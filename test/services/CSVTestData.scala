@@ -35,5 +35,4 @@ trait CSVTestData {
     emiAdjustmentsCollection,
     csopOptionsExercisedCollection
   )
-
 }

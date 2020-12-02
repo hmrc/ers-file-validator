@@ -16,48 +16,57 @@
 
 package services
 
-import models._
+import config.ERSFileValidatorSessionCache
 import models.upscan.UpscanCallback
-import org.mockito.Matchers._
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.{OneServerPerSuite, PlaySpec}
+import org.scalatestplus.mockito.MockitoSugar
+import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json._
 import play.api.test.FakeRequest
-import uk.gov.hmrc.http.cache.client.{CacheMap, SessionCache}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.cache.client.CacheMap
 
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
-class SessionServiceSpec extends PlaySpec with OneServerPerSuite with ScalaFutures with MockitoSugar {
+class SessionServiceSpec extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures with MockitoSugar {
 
-  object TestSessionService extends SessionService {
-
-    val mockSessionCache = mock[SessionCache]
-
-    override def sessionCache: SessionCache = mockSessionCache
-
-  }
-
+  val mockSessionCache: ERSFileValidatorSessionCache = mock[ERSFileValidatorSessionCache]
+  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
+  val sessionService = new SessionService(mockSessionCache, ec)
   implicit val request = FakeRequest()
   val hc = HeaderCarrier()
 
-  "Session service" must {
+  "storeCallbackData" must {
     "successfully store attachments callback post data" in {
       val postData: UpscanCallback = UpscanCallback("thefilename", "downloadUrl", Some(1000L))
 
       val json = Json.toJson[UpscanCallback](postData)
-      when(TestSessionService.sessionCache.cache[UpscanCallback]
+      when(mockSessionCache.cache[UpscanCallback]
         (any[String], any[UpscanCallback])
         (any[Writes[UpscanCallback]], any[HeaderCarrier], any()))
-        .thenReturn(Future.successful(CacheMap("sessionValue", Map(SessionService.CALLBACK_DATA_KEY -> json))))
+        .thenReturn(Future.successful(CacheMap("sessionValue", Map(sessionService.CALLBACK_DATA_KEY -> json))))
 
-      val result: Option[UpscanCallback] = Await.result(TestSessionService.storeCallbackData(postData, 1000)(request, hc), 10 seconds)
+      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(request, hc), 10 seconds)
 
       result.get.length must be(Some(1000L))
       result.get.noOfRows must be (Some(1000))
+    }
+
+    "return a None when cache can't be returned" in {
+      val postData: UpscanCallback = UpscanCallback("thefilename", "downloadUrl", Some(1000L))
+
+      val json = Json.toJson[UpscanCallback](postData)
+      when(mockSessionCache.cache[UpscanCallback]
+        (any[String], any[UpscanCallback])
+        (any[Writes[UpscanCallback]], any[HeaderCarrier], any()))
+        .thenReturn(Future.failed(new Exception("")))
+
+      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(request, hc), 10 seconds)
+      result mustBe None
     }
   }
 }

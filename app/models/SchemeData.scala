@@ -17,7 +17,8 @@
 package models
 
 import org.joda.time.DateTime
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{Format, JodaReads, JsResult, JsValue, Json, OFormat}
+import play.api.libs.json.JodaWrites._
 
 import scala.collection.mutable.ListBuffer
 
@@ -36,5 +37,11 @@ case class SchemeInfo (
                      )
 
 object SchemeInfo {
+
+  implicit val dateFormatDefault: Format[DateTime] = new Format[DateTime] {
+    override def reads(json: JsValue): JsResult[DateTime] = JodaReads.DefaultJodaDateTimeReads.reads(json)
+    override def writes(o: DateTime): JsValue = JodaDateTimeNumberWrites.writes(o)
+  }
+
   implicit val formatSchemeInfo: OFormat[SchemeInfo] = Json.format[SchemeInfo]
 }

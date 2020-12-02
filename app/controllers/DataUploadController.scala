@@ -18,28 +18,29 @@ package controllers
 
 import java.util.concurrent.TimeUnit
 
-import controllers.auth.{AuthAction, AuthorisedAction}
+import controllers.auth.Authorisation
 import javax.inject.{Inject, Singleton}
 import metrics.Metrics
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
 import play.api.Logger
-import play.api.mvc.{Action, AnyContent, Request}
+import play.api.libs.json.JsValue
+import play.api.mvc.{Action, AnyContent, ControllerComponents, DefaultActionBuilder, PlayBodyParsers, Request}
 import services.{FileProcessingService, SessionService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class DataUploadController @Inject()(sessionService: SessionService,
                                      fileProcessService: FileProcessingService,
-                                     authConnector: DefaultAuthConnector,
+                                     val authConnector: DefaultAuthConnector,
+                                     val cc: ControllerComponents,
+                                     val defaultActionBuilder: DefaultActionBuilder,
                                      implicit val ec: ExecutionContext
-                                     ) extends BaseController with Metrics {
-
-  def authorisedAction(empRef: String): AuthAction = AuthorisedAction(empRef, authConnector)
+                                     ) extends BackendController(cc) with Metrics with Authorisation {
 
   def processFileDataFromFrontend(empRef: String): Action[AnyContent] = authorisedAction(empRef) {
     implicit request =>
@@ -52,30 +53,30 @@ class DataUploadController @Inject()(sessionService: SessionService,
           try {
             val result = fileProcessService.processFile(res.callbackData, empRef)
             deliverFileProcessingMetrics(startTime)
-            Ok(result.toString)
+            Future.successful(Ok(result.toString))
           } catch {
             case e:ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
 							Logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException - ${e.getMessage}")
-              Accepted(e.message)
+              Future.successful(Accepted(e.message))
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)
               Logger.error(er.getMessage)
-              InternalServerError
+              Future.successful(InternalServerError)
           }
         },
         invalid = e => {
           Logger.error(e.toString())
           deliverFileProcessingMetrics(startTime)
-          BadRequest(e.toString)
+          Future.successful(BadRequest(e.toString))
         }
       )
   }
 
-  def deliverFileProcessingMetrics(startTime:Long) =
+  def deliverFileProcessingMetrics(startTime:Long): Unit =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
-  def processCsvFileDataFromFrontend(empRef:String) = authorisedAction(empRef).async(parse.json) {
+  def processCsvFileDataFromFrontend(empRef:String): Action[JsValue] = authorisedActionWithBody(empRef) {
     implicit request =>
       val startTime =  System.currentTimeMillis()
       request.body.validate[UpscanCsvFileData].fold(

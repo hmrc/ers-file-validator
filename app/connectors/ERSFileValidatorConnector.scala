@@ -18,6 +18,7 @@ package connectors
 
 import java.io.InputStream
 import java.net.URL
+import java.util.NoSuchElementException
 import java.util.concurrent.TimeUnit
 
 import config.ApplicationConfig
@@ -25,13 +26,11 @@ import javax.inject.{Inject, Singleton}
 import metrics.Metrics
 import models.{ERSFileProcessingException, SchemeData}
 import play.api.Logger
-import play.api.Play.current
-import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
+import utils.ErrorResponseMessages
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -42,8 +41,6 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
                                           implicit val ec: ExecutionContext)
   extends Metrics {
 
-  lazy val serviceURL: String = appConfig.fileValidatorBaseUrl
-
   def upscanFileStream(downloadUrl: String): InputStream =
     new URL(downloadUrl).openStream()
 
@@ -52,34 +49,31 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
     val startTime = System.currentTimeMillis()
-    val result = http.POST(s"${appConfig.submissionsUrl}/ers/${encodedEmpRef}/submit-presubmission", schemeData).recover {
-      case nf: BadRequestException => {
+    http.POST(s"${appConfig.submissionsUrl}/ers/${encodedEmpRef}/submit-presubmission", schemeData).map { res =>
+      deliverSendToSubmissionsMetrics(startTime)
+      res
+    }.recover {
+      case nf: BadRequestException =>
         deliverSendToSubmissionsMetrics(startTime)
-        Logger.error(Messages("ers.exceptions.fileValidatorConnector.badRequest") + nf.getMessage)
+        Logger.error(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf)
         auditEvents.auditRunTimeError(nf, nf.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.badRequest"), nf.getMessage)
-      }
-      case nf: NotFoundException => {
+        throw new ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf.getMessage)
+      case nf: NotFoundException =>
         deliverSendToSubmissionsMetrics(startTime)
-        Logger.error(Messages("ers.exceptions.fileValidatorConnector.notFound") + nf.getMessage)
+        Logger.error(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf)
         auditEvents.auditRunTimeError(nf, nf.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.notFound"), nf.getMessage)
-      }
-      case nf: ServiceUnavailableException => {
+        throw new ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf.getMessage)
+      case nf: ServiceUnavailableException =>
         deliverSendToSubmissionsMetrics(startTime)
-        Logger.error(Messages("ers.exceptions.fileValidatorConnector.serviceUnavailable") + nf.getMessage)
+        Logger.error(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf)
         auditEvents.auditRunTimeError(nf, nf.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.serviceUnavailable"), nf.getMessage)
-      }
-      case e => {
-        Logger.error(Messages("ers.exceptions.fileValidatorConnector.failedSendingData") + e.getMessage)
+        throw new ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf.getMessage)
+      case e =>
+        Logger.error(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e)
         deliverSendToSubmissionsMetrics(startTime)
         auditEvents.auditRunTimeError(e, e.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(Messages("ers.exceptions.fileValidatorConnector.failedSendingData"), e.getMessage)
-      }
+        throw new ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage)
     }
-    deliverSendToSubmissionsMetrics(startTime)
-    result
   }
 
   def deliverSendToSubmissionsMetrics(startTime: Long): Unit =

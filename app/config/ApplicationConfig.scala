@@ -17,30 +17,23 @@
 package config
 
 import javax.inject.{Inject, Singleton}
-import play.api.Mode.Mode
-import play.api.{Configuration, Environment, Play}
-import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 @Singleton
-class ApplicationConfig @Inject()(val runModeConfiguration: Configuration, val environment: Environment)
-  extends ServicesConfig {
-  override protected def mode: Mode = Play.current.mode
+class ApplicationConfig @Inject()(config: ServicesConfig) {
 
-
-  private def loadConfig(key: String) = runModeConfiguration.getString(key).getOrElse(throw new Exception(s"Missing Key: ${key}"))
-  private val contactHost = runModeConfiguration.getString("contact-frontend.host").getOrElse("")
+  private def loadConfig(key: String) = config.getString(key)
 
   lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
-
-  lazy val betaFeedbackUrl = s"$contactHost/contact/beta-feedback"
-  lazy val betaFeedbackUnauthenticatedUrl = s"$contactHost/contact/beta-feedback-unauthenticated"
-  lazy val analyticsToken: Option[String] = runModeConfiguration.getString("google-analytics.token")
-  lazy val analyticsHost: String = runModeConfiguration.getString("google-analytics.host").getOrElse("auto")
-  lazy val fileValidatorBaseUrl: String = baseUrl("ers-file-validator")
-  lazy val maxNumberOfRowsPerSubmission: Int = runModeConfiguration.getInt("largefiles.maxrowspersheet").getOrElse(10000)
-  lazy val submissionsUrl: String = baseUrl("ers-submissions")
-  lazy val splitLargeSchemes: Boolean = runModeConfiguration.getBoolean("largefiles.enabled").getOrElse(false)
-  lazy val sessionCacheBaseUri: String = baseUrl("cachable.session-cache")
-  lazy val sessionCacheDomain: String = getConfString("cachable.session-cache.domain", throw new Exception("Could not find config ''cachable.session-cache.domain''"))
-
+  lazy val analyticsHost: String = config.getString("google-analytics.host")
+  lazy val analyticsToken: String = config.getString("govuk-tax.google-analytics.token")
+  lazy val ersTimeOut: FiniteDuration = config.getInt("ers-file-validator-timeout-seconds").seconds
+  lazy val maxNumberOfRowsPerSubmission: Int = config.getInt("largefiles.maxrowspersheet")
+  lazy val sessionCacheBaseUri: String = config.baseUrl("cachable.session-cache")
+  lazy val sessionCacheDomain: String = config.getConfString("cachable.session-cache.domain", throw new Exception("Could not find config ''cachable.session-cache.domain''"))
+  lazy val splitLargeSchemes: Boolean = config.getBoolean("largefiles.enabled")
+  lazy val submissionsUrl: String = config.baseUrl("ers-submissions")
+  lazy val validationChunkSize: Int = config.getInt("validationChunkSize")
 }

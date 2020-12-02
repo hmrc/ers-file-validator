@@ -18,20 +18,19 @@ package services
 
 import java.util.concurrent.TimeUnit
 
+import config.ApplicationConfig
 import javax.inject.{Inject, Singleton}
 import javax.xml.parsers.SAXParserFactory
 import metrics.Metrics
 import models._
 import play.api.Logger
-import play.api.Play.current
-import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
 import play.api.mvc.Request
 import services.ERSTemplatesInfo._
 import services.audit.AuditEvents
 import services.validation.ErsValidator
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.{DataValidator, ValidationError}
+import utils.ErrorResponseMessages
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
@@ -60,8 +59,10 @@ trait DataParser {
       case None => Logger.debug("3.1 Parse row left "); Left(row)
       case elem: Option[Elem] => Logger.debug("3.2 Parse row right ")
         val cols = Try(Right(xmlRow.get.child.flatMap(parseColumn(_)))).getOrElse {
-          Logger.warn(Messages("ers.exceptions.dataParser.fileRetrievalFailed"));
-          throw ERSFileProcessingException(Messages("ers.exceptions.dataParser.fileRetrievalFailed"), Messages("ers.exceptions.dataParser.parserFailure"))
+          Logger.warn(s"${ErrorResponseMessages.dataParserFileRetrievalFailed}");
+          throw ERSFileProcessingException(
+            s"${ErrorResponseMessages.dataParserFileRetrievalFailed}",
+            s"${ErrorResponseMessages.dataParserParserFailure}")
         }
 
         cols match {
@@ -69,8 +70,10 @@ trait DataParser {
           case Right(s: Seq[String]) => Right((s, 1))
         }
       case _ => {
-        Logger.warn(Messages("ers.exceptions.dataParser.fileParsingError"))
-        throw ERSFileProcessingException(Messages("ers.exceptions.dataParser.fileParsingError"), Messages("ers.exceptions.dataParser.parsingOfFileData"))
+        Logger.warn(s"${ErrorResponseMessages.dataParserFileParsingError}")
+        throw ERSFileProcessingException(
+          s"${ErrorResponseMessages.dataParserFileParsingError}",
+          s"${ErrorResponseMessages.dataParserParsingOfFileData}")
       }
     }
   }
@@ -102,6 +105,7 @@ trait DataParser {
 
 @Singleton
 class DataGenerator @Inject()(auditEvents: AuditEvents,
+                              config: ApplicationConfig,
                               implicit val ec: ExecutionContext)
   extends DataParser with Metrics {
 
@@ -120,7 +124,9 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
     def checkForMissingHeaders(rowNum: Int) = {
       if (rowNum > 0 && rowNum < 9) {
-        throw ERSFileProcessingException(Messages("ers.exceptions.dataParser.incorrectHeader"), Messages("ers.exceptions.dataParser.incorrectHeader"))
+        throw ERSFileProcessingException(
+          s"${ErrorResponseMessages.dataParserIncorrectHeader}",
+          s"${ErrorResponseMessages.dataParserIncorrectHeader}")
       }
     }
 
@@ -170,7 +176,9 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
     checkForMissingHeaders(rowNum)
     if (schemeData.foldLeft(0)((sum, obj) => sum + obj.data.size) == 0) {
-      throw ERSFileProcessingException(Messages("ers.exceptions.dataParser.noData"), Messages("ers.exceptions.dataParser.noData"))
+      throw ERSFileProcessingException(
+        s"${ErrorResponseMessages.dataParserNoData}",
+        s"${ErrorResponseMessages.dataParserNoData}")
     }
     deliverDataIteratorMetrics(startTime)
     Logger.debug("The SchemeData that GetData finally returns: " + schemeData)
@@ -180,7 +188,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   def getCsvData(iterator: Iterator[String])
                 (implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): ListBuffer[Seq[String]] = {
     val start = System.currentTimeMillis()
-    val chunkSize = current.configuration.getInt("validationChunkSize").getOrElse(defaultChunkSize)
+    val chunkSize = config.validationChunkSize
     val cpus = Runtime.getRuntime.availableProcessors()
 
     Logger.info(s"Validating file ${sheetName} cpus: $cpus chunkSize: $chunkSize")
@@ -202,7 +210,9 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     Logger.info(s"Validation of file ${sheetName} completed in $timeTaken ms")
 
     if (data.isEmpty) {
-      throw ERSFileProcessingException(Messages("ers_check_csv_file.noData", sheetName + ".csv"), Messages("ers_check_csv_file.noData"))
+      throw ERSFileProcessingException(
+        s"${ErrorResponseMessages.ersCheckCsvFileNoData(sheetName + ".csv")}",
+        s"${ErrorResponseMessages.ersCheckCsvFileNoData()}")
     }
     data
   }
@@ -297,7 +307,9 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       case e: Exception => {
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
         Logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
-        throw new ERSFileProcessingException(Messages("ers.exceptions.dataParser.configFailure"), "Could not set the validator ")
+        throw new ERSFileProcessingException(
+          s"${ErrorResponseMessages.dataParserConfigFailure}",
+          "Could not set the validator ")
       }
     }
   }
@@ -312,8 +324,10 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       }
       case _ => {
         auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
-        Logger.warn(Messages("ers.exceptions.dataParser.incorrectSchemeType") + data)
-        throw ERSFileProcessingException(Messages("ers.exceptions.dataParser.incorrectSchemeType"), Messages("ers.exceptions.dataParser.incorrectSchemeType") + data)
+        Logger.warn(s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
+        throw ERSFileProcessingException(
+          s"${ErrorResponseMessages.dataParserIncorrectSchemeType()}",
+          s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
       }
     }
   }
@@ -322,8 +336,10 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     Logger.info(s"Looking for sheetName: ${sheetName}")
     ersSheets.getOrElse(sheetName, {
       auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-      Logger.warn(Messages("ers.exceptions.dataParser.unidentifiableSheetName") + sheetName)
-      throw ERSFileProcessingException(Messages("ers.exceptions.dataParser.incorrectSheetName"), Messages("ers.exceptions.dataParser.unidentifiableSheetName") + " " + sheetName)
+      Logger.warn(s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
+      throw ERSFileProcessingException(
+        s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+        s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
     })
   }
 
@@ -335,13 +351,14 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     val dataTrim = data.map(_.replaceAll(headerFormat, ""))
 
     Logger.debug("5.3  case 9 sheetName =" + sheetName + "data = " + dataTrim + "header == -> " + header)
-    dataTrim == header match {
-      case true => header.size
-      case _ => {
-        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Header row invalid")
-        Logger.warn("Error while reading File + Incorrect ERS Template")
-        throw ERSFileProcessingException(Messages("ers.exceptions.dataParser.incorrectHeader"), Messages("ers.exceptions.dataParser.headersDontMatch"))
-      }
+    if(dataTrim == header) {
+      header.size
+    } else {
+      auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Header row invalid")
+      Logger.warn("Error while reading File + Incorrect ERS Template")
+      throw ERSFileProcessingException(
+        s"${ErrorResponseMessages.dataParserIncorrectHeader}",
+        s"${ErrorResponseMessages.dataParserHeadersDontMatch}")
     }
   }
 
@@ -357,12 +374,16 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         err.map {
           auditEvents.validationErrorAudit(_, schemeInfo, sheetName)
         }
-        throw ERSFileProcessingException(Messages("ers.exceptions.dataParser.fileInvalid"), Messages("ers.exceptions.dataParser.validationFailure"))
+        throw ERSFileProcessingException(
+          s"${ErrorResponseMessages.dataParserFileInvalid}",
+          s"${ErrorResponseMessages.dataParserValidationFailure}")
       }
       case _ => {
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
         Logger.warn("Error while Validating File + Formatting errors present ")
-        throw ERSFileProcessingException(Messages("ers.exceptions.dataParser.fileInvalid"), Messages("ers.exceptions.dataParser.validationFailure"))
+        throw ERSFileProcessingException(
+          s"${ErrorResponseMessages.dataParserFileInvalid}",
+          s"${ErrorResponseMessages.dataParserValidationFailure}")
       }
     }
   }

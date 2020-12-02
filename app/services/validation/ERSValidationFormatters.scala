@@ -26,7 +26,7 @@ trait ERSValidationFormatters {
   val ERSValidationFormat2DecimalPlaces = """([0-9]+\.[0-9]{2})"""
   val ERSValidationFormatNumber = """([0-9]*|0|[0-9]*\.[0-9]+)"""
   val ERSValidationFormatNumberMax11 = """([0-9]{0,11}|[0-9]{0,11}\.[0-9]+)"""
-  val ERSValidationFormat4DecimalPlaces = """([0-9]+\.[0-9]{4})""""
+  val ERSValidationFormat4DecimalPlaces = """([0-9]+\.[0-9]{4})"""
   val ERSValidationFormatNumberMax13 = """([0-9]{0,13}|[0-9]{0,13}\.[0-9]+)"""
   val ERSValidationFormatYesNo = """(?i)(\byes\b)|(\bno\b)"""
   val ERSValidationFormatHMRCRef = """([0-9a-zA-Z]{1,10})"""

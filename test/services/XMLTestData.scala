@@ -18,7 +18,6 @@ package services
 
 import java.io.ByteArrayInputStream
 
-import play.api.libs.iteratee.Enumerator
 import services.besIntegrationTestData.BESIntegrationTestData
 import headers.HeaderData
 import scala.collection.mutable.ListBuffer
@@ -101,8 +100,6 @@ object XMLTestData extends BESIntegrationTestData with HeaderData{
   staxIntegrationTests += (("Stream CSOP Options Granted xml Row", csopOptionsGrantedXML, csopOptionsGrantedXMLRow1))
   staxIntegrationTests += (("Stream CSOP Options RCL xml Row", csopOptionsRCLXML, csopOptionsRCLXMLRow1))
   staxIntegrationTests += (("Stream CSOP Options Exercised xml Row", csopOptionsExercisedXML, csopOptionsExercisedXMLRow1))
-
-  def getMockTestData(testData:Elem) = Future.successful(Enumerator(testData.toString.getBytes()))
 
   // besParserTests += (("parse row with duplicate column data", emiAdjustmentsXMLRow1, emiAdjustmentsExpData))
   // besParserTests += (("parse EMI xml Row and retrieve row data " ,  emiXMLRow1 , emiRowExpData))
