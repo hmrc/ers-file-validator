@@ -18,27 +18,31 @@ package controllers
 
 import java.util.concurrent.TimeUnit
 
-import controllers.auth.{AuthAction, AuthorisedAction}
+import controllers.auth.Authorisation
+import javax.inject.{Inject, Singleton}
 import metrics.Metrics
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
-import play.api.mvc.Request
-import play.api.{Configuration, Logger, Play}
+import play.api.Logger
+import play.api.libs.json.JsValue
+import play.api.mvc.{Action, AnyContent, ControllerComponents, DefaultActionBuilder, PlayBodyParsers, Request}
 import services.{FileProcessingService, SessionService}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-trait DataUploadController extends BaseController with Metrics {
+@Singleton
+class DataUploadController @Inject()(sessionService: SessionService,
+                                     fileProcessService: FileProcessingService,
+                                     val authConnector: DefaultAuthConnector,
+                                     val cc: ControllerComponents,
+                                     val defaultActionBuilder: DefaultActionBuilder,
+                                     implicit val ec: ExecutionContext
+                                     ) extends BackendController(cc) with Metrics with Authorisation {
 
-  val currentConfig: Configuration
-  val sessionService: SessionService
-  val fileProcessService : FileProcessingService
-  def authorisedAction(empRef: String): AuthAction
-
-  def processFileDataFromFrontend(empRef: String) = authorisedAction(empRef) {
+  def processFileDataFromFrontend(empRef: String): Action[AnyContent] = authorisedAction(empRef) {
     implicit request =>
       val startTime =  System.currentTimeMillis()
       Logger.debug("File Processing Request Received At: " + startTime)
@@ -49,30 +53,30 @@ trait DataUploadController extends BaseController with Metrics {
           try {
             val result = fileProcessService.processFile(res.callbackData, empRef)
             deliverFileProcessingMetrics(startTime)
-            Ok(result.toString)
+            Future.successful(Ok(result.toString))
           } catch {
             case e:ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
 							Logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException - ${e.getMessage}")
-              Accepted(e.message)
+              Future.successful(Accepted(e.message))
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)
               Logger.error(er.getMessage)
-              InternalServerError
+              Future.successful(InternalServerError)
           }
         },
         invalid = e => {
           Logger.error(e.toString())
           deliverFileProcessingMetrics(startTime)
-          BadRequest(e.toString)
+          Future.successful(BadRequest(e.toString))
         }
       )
   }
 
-  def deliverFileProcessingMetrics(startTime:Long) =
+  def deliverFileProcessingMetrics(startTime:Long): Unit =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
-  def processCsvFileDataFromFrontend(empRef:String) = authorisedAction(empRef).async(parse.json) {
+  def processCsvFileDataFromFrontend(empRef:String): Action[JsValue] = authorisedActionWithBody(empRef) {
     implicit request =>
       val startTime =  System.currentTimeMillis()
       request.body.validate[UpscanCsvFileData].fold(
@@ -118,13 +122,4 @@ trait DataUploadController extends BaseController with Metrics {
       callbackData <- res
     } yield fileProcessService.processCsvFile(callbackData, empRef)(hc, schemeInfo,request)
   }
-}
-
-
-object DataUploadController extends DataUploadController {
-  val currentConfig = Play.current.configuration
-  val sessionService = SessionService
-  val fileProcessService = FileProcessingService
-
-  override def authorisedAction(empRef: String): AuthAction = AuthorisedAction(empRef)
 }

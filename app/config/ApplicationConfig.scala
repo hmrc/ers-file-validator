@@ -16,45 +16,24 @@
 
 package config
 
-import play.api.Mode.Mode
-import play.api.{Configuration, Play}
-import play.api.Play._
-import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
-import play.api.mvc.LegacyI18nSupport
-import uk.gov.hmrc.play.config.ServicesConfig
+import javax.inject.{Inject, Singleton}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-trait ApplicationConfig {
-  val assetsPrefix: String
-  val betaFeedbackUrl: String
-  val betaFeedbackUnauthenticatedUrl: String
-  val analyticsToken: Option[String]
-  val analyticsHost: String
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
-  val submissionsUrl: String
+@Singleton
+class ApplicationConfig @Inject()(config: ServicesConfig) {
 
-  val splitLargeSchemes: Boolean
-  val maxNumberOfRowsPerSubmission: Int
-}
+  private def loadConfig(key: String) = config.getString(key)
 
-object ApplicationConfig extends ApplicationConfig with ServicesConfig with LegacyI18nSupport {
-
-  override protected def mode: Mode = Play.current.mode
-  override protected def runModeConfiguration: Configuration = Play.current.configuration
-
-  private def loadConfig(key: String) = configuration.getString(key).getOrElse(throw new Exception(Messages("ers.exceptions.applicationConfig.missingKey", key)))
-
-  private val contactHost = configuration.getString("contact-frontend.host").getOrElse("")
-
-  override lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
-  override lazy val betaFeedbackUrl = s"$contactHost/contact/beta-feedback"
-  override lazy val betaFeedbackUnauthenticatedUrl = s"$contactHost/contact/beta-feedback-unauthenticated"
-  override lazy val analyticsToken: Option[String] = configuration.getString("google-analytics.token")
-  override lazy val analyticsHost: String = configuration.getString("google-analytics.host").getOrElse("auto")
-
-  override lazy val submissionsUrl: String = baseUrl("ers-submissions") + "/ers-submissions/" + "submit-presubmission"
-
-  override lazy val splitLargeSchemes: Boolean = configuration.getBoolean("largefiles.enabled").getOrElse(false)
-  override lazy val maxNumberOfRowsPerSubmission: Int = configuration.getInt("largefiles.maxrowspersheet").getOrElse(10000)
-
+  lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
+  lazy val analyticsHost: String = config.getString("google-analytics.host")
+  lazy val analyticsToken: String = config.getString("govuk-tax.google-analytics.token")
+  lazy val ersTimeOut: FiniteDuration = config.getInt("ers-file-validator-timeout-seconds").seconds
+  lazy val maxNumberOfRowsPerSubmission: Int = config.getInt("largefiles.maxrowspersheet")
+  lazy val sessionCacheBaseUri: String = config.baseUrl("cachable.session-cache")
+  lazy val sessionCacheDomain: String = config.getConfString("cachable.session-cache.domain", throw new Exception("Could not find config ''cachable.session-cache.domain''"))
+  lazy val splitLargeSchemes: Boolean = config.getBoolean("largefiles.enabled")
+  lazy val submissionsUrl: String = config.baseUrl("ers-submissions")
+  lazy val validationChunkSize: Int = config.getInt("validationChunkSize")
 }

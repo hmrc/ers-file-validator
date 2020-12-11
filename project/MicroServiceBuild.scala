@@ -10,41 +10,32 @@ private object AppDependencies {
   import play.core.PlayVersion
   import play.sbt.PlayImport._
 
-
-  private val playMicroServiceBootStrapVersion = "10.6.0"
-  private val metricsGraphiteVersion = "3.0.2"
-  private val httpCachingVersion = "7.0.0"
-  private val bulkEntityStreamingVersion = "1.0.0"
-  private val domainVersion = "5.3.0"
-  private val tabularDataValidatorVersion = "1.0.0"
-  private val scalaXmlVersion = "1.0.6"
-  private val scalaParserCombinatorsVersion = "1.0.6"
-  private val scalaTestVersion = "3.0.4"
-  private val scalaTestPlusPlayVersion = "2.0.1"
-  private val pegdownVersion = "1.6.0"
-  private val jsoupVersion = "1.10.3"
-  private val hmrcTestVersion = "3.3.0"
-  private val wiremockVersion = "1.58"
-  private val cryptoVersion = "4.4.0"
-  private val mockitoCoreVerison = "1.10.19"
-
-
   val compile = Seq(
-    ws,
-    "uk.gov.hmrc" %% "microservice-bootstrap" % playMicroServiceBootStrapVersion,
-    "uk.gov.hmrc" %% "domain" % domainVersion,
-    "uk.gov.hmrc" %% "http-caching-client" % httpCachingVersion,
-    "uk.gov.hmrc" %% "bulk-entity-streaming" % bulkEntityStreamingVersion,
-    "uk.gov.hmrc" %% "tabular-data-validator" % tabularDataValidatorVersion,
-    "org.scala-lang.modules" %% "scala-xml" % scalaXmlVersion,
-    "org.scala-lang.modules" %% "scala-parser-combinators" % scalaParserCombinatorsVersion,
-    "com.codahale.metrics" % "metrics-graphite" % metricsGraphiteVersion,
-    "uk.gov.hmrc" %% "auth-client" % "2.33.0-play-25")
+  ws,
+  "uk.gov.hmrc" %% "bootstrap-backend-play-26" % "3.1.0",
+  "uk.gov.hmrc" %% "domain" % "5.10.0-play-26",
+  "uk.gov.hmrc" %% "http-caching-client" % "9.1.0-play-26",
+  "uk.gov.hmrc" %% "bulk-entity-streaming" % "1.0.0",
+  "uk.gov.hmrc" %% "tabular-data-validator" % "1.0.0",
+  "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
+  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
+  "com.codahale.metrics" % "metrics-graphite" % "3.0.2",
+  "com.typesafe.play" %% "play-json-joda" % "2.6.10",
+  "uk.gov.hmrc" %% "auth-client" % "3.2.0-play-26")
 
   trait TestDependencies {
     lazy val scope: String = "test"
     lazy val test: Seq[ModuleID] = ???
   }
+
+  private val scalaTestVersion = "3.0.9"
+  private val scalaTestPlusPlayVersion = "3.1.3"
+  private val pegdownVersion = "1.6.0"
+  private val jsoupVersion = "1.13.1"
+  private val hmrcTestVersion = "3.3.0"
+  private val wiremockVersion = "2.26.3"
+  private val cryptoVersion = "5.6.0"
+  private val mockitoCoreVerison = "3.3.3"
 
   object Test {
     def apply(): Seq[ModuleID] = new TestDependencies {
@@ -55,7 +46,7 @@ private object AppDependencies {
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "org.jsoup" % "jsoup" % jsoupVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-        "com.github.tomakehurst" % "wiremock" % wiremockVersion % scope,
+        "com.github.tomakehurst" % "wiremock-jre8" % wiremockVersion % scope,
         "uk.gov.hmrc" %% "crypto" % cryptoVersion,
         "org.mockito" % "mockito-core" % mockitoCoreVerison % scope
       )
@@ -71,7 +62,7 @@ private object AppDependencies {
         "org.pegdown" % "pegdown" % pegdownVersion % scope,
         "org.jsoup" % "jsoup" % jsoupVersion % scope,
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
-        "com.github.tomakehurst" % "wiremock" % wiremockVersion % scope,
+        "com.github.tomakehurst" % "wiremock-jre8" % wiremockVersion % scope,
         "uk.gov.hmrc" %% "hmrctest" % hmrcTestVersion % scope
       )
     }.test

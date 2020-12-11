@@ -16,19 +16,15 @@
 
 package services.audit
 
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.services.validation.ValidationError
 import models.SchemeInfo
 import org.apache.commons.lang3.exception.ExceptionUtils
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
 
-object AuditEvents extends AuditEvents {
-  override def auditService : AuditService = AuditService
-}
-
-trait AuditEvents {
-
-  def auditService: AuditService
+@Singleton
+class AuditEvents @Inject()(auditService: AuditService) {
 
   def eventMap(schemeInfo: SchemeInfo, sheetName : String): Map[String, String] ={
     Map(

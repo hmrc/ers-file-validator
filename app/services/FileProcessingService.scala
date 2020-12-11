@@ -17,43 +17,42 @@
 package services
 
 import java.io.{BufferedReader, InputStream, InputStreamReader}
-import java.net.URL
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
 
-import config.ApplicationConfig._
+import _root_.services.audit.AuditEvents
+import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
+import javax.inject.{Inject, Singleton}
 import metrics.Metrics
 import models._
-import play.api.{Configuration, Logger, Play}
-import _root_.services.audit.AuditEvents
 import models.upscan.UpscanCallback
-import play.api.Mode.Mode
-import uk.gov.hmrc.play.config.ServicesConfig
-import play.api.Play.current
-import play.api.i18n.Messages
-import play.api.i18n.Messages.Implicits._
+import play.api.Logger
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
+import utils.ErrorResponseMessages
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-trait FileProcessingService extends DataGenerator with Metrics {
+@Singleton
+class FileProcessingService @Inject()(dataGenerator: DataGenerator,
+                                      auditEvents: AuditEvents,
+                                      ersConnector: ERSFileValidatorConnector,
+                                      sessionService: SessionService,
+                                      appConfig: ApplicationConfig,
+                                      implicit val ec: ExecutionContext) extends Metrics {
 
-  val splitSchemes = splitLargeSchemes
-  val maxNumberOfRows = maxNumberOfRowsPerSubmission
-  val sessionService: SessionService = SessionService
-  val ersConnector: ERSFileValidatorConnector = ERSFileValidatorConnector
-  override val auditEvents:AuditEvents = AuditEvents
+  val splitSchemes: Boolean = appConfig.splitLargeSchemes
+  val maxNumberOfRows: Int = appConfig.maxNumberOfRowsPerSubmission
 
   @throws(classOf[ERSFileProcessingException])
-  def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]) = {
+  def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]): Int = {
     val startTime = System.currentTimeMillis()
-    val result = getData(readFile(callbackData.downloadUrl))
+    Logger.info("2.0 start: ")
+    val result = dataGenerator.getData(readFile(callbackData.downloadUrl))
     Logger.info("2.1 result contains: " + result)
     deliverBESMetrics(startTime)
     Logger.debug("No if SchemeData Objects " + result.size)
@@ -79,14 +78,14 @@ trait FileProcessingService extends DataGenerator with Metrics {
     res1
   }
 
-  def processCsvFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]) = {
+  def processCsvFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[(Int, Int)] = {
     val startTime = System.currentTimeMillis()
     readCSVFile(callbackData.downloadUrl).map { fileData =>
       Logger.info(" 2. Invoke Data generator ")
       deliverBESMetrics(startTime)
 
       val sheetName = callbackData.name.replace(".csv","")
-      val result: ListBuffer[Seq[String]] = getCsvData(fileData)(schemeInfo, sheetName,hc,request)
+      val result: ListBuffer[Seq[String]] = dataGenerator.getCsvData(fileData)(schemeInfo, sheetName,hc,request)
       val schemeData: SchemeData = SchemeData(schemeInfo, sheetName, None, result)
 
       Logger.info("2.1 result contains: " + result)
@@ -108,8 +107,8 @@ trait FileProcessingService extends DataGenerator with Metrics {
           findFileInZip(stream)
         case None =>
           throw ERSFileProcessingException(
-            Messages("ers.exceptions.fileProcessingService.failedStream"),
-            Messages("ers.exceptions.fileProcessingService.bulkEntity")
+            s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
+            s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}"
           )
       }
     }
@@ -122,11 +121,13 @@ trait FileProcessingService extends DataGenerator with Metrics {
       val reader = new BufferedReader(new InputStreamReader(ersConnector.upscanFileStream(downloadUrl)))
       Future(reader.lines().iterator().asScala)
     } catch {
-      case _: Throwable => throw ERSFileProcessingException(Messages("ers.exceptions.fileProcessingService.failedStream"), Messages("ers.exceptions.fileProcessingService.bulkEntity"))
+      case _: Throwable => throw ERSFileProcessingException(
+        s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
+        s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}")
     }
   }
 
-  def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]) = {
+  def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Unit = {
     Logger.debug("Sheedata sending to ers-submission " + ersSchemeData.sheetName)
     val result = ersConnector.sendToSubmissions(ersSchemeData, empRef).onComplete {
       case Success(suc) => {
@@ -164,9 +165,6 @@ trait FileProcessingService extends DataGenerator with Metrics {
     }
   }
 
-  def deliverBESMetrics(startTime:Long) =
+  def deliverBESMetrics(startTime:Long): Unit =
     metrics.besTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 }
-
-
-object FileProcessingService extends FileProcessingService
