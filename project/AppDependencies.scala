@@ -14,7 +14,6 @@ object AppDependencies {
     "uk.gov.hmrc" %% "tabular-data-validator" % "0.1.0",
     "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
-    "com.codahale.metrics" % "metrics-graphite" % "3.0.2",
     "com.typesafe.play" %% "play-json-joda" % "2.6.10",
     "uk.gov.hmrc" %% "auth-client" % "3.2.0-play-26")
 
