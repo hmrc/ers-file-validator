@@ -44,35 +44,35 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
   def upscanFileStream(downloadUrl: String): InputStream =
     new URL(downloadUrl).openStream()
 
-  def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[HttpResponse] = {
+  def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, HttpResponse]] = {
     import java.net.URLEncoder
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
     val startTime = System.currentTimeMillis()
-    http.POST(s"${appConfig.submissionsUrl}/ers/${encodedEmpRef}/submit-presubmission", schemeData).map { res =>
+    http.POST(s"${appConfig.submissionsUrl}/ers/${encodedEmpRef}/submit-presubmission", schemeData).map { response =>
       deliverSendToSubmissionsMetrics(startTime)
-      res
+      Right(response)
     }.recover {
       case nf: BadRequestException =>
         deliverSendToSubmissionsMetrics(startTime)
         Logger.error(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf)
         auditEvents.auditRunTimeError(nf, nf.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf.getMessage)
+        Left(ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf.getMessage))
       case nf: NotFoundException =>
         deliverSendToSubmissionsMetrics(startTime)
         Logger.error(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf)
         auditEvents.auditRunTimeError(nf, nf.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf.getMessage)
+        Left(ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf.getMessage))
       case nf: ServiceUnavailableException =>
         deliverSendToSubmissionsMetrics(startTime)
         Logger.error(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf)
         auditEvents.auditRunTimeError(nf, nf.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf.getMessage)
+        Left(ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf.getMessage))
       case e =>
         Logger.error(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e)
         deliverSendToSubmissionsMetrics(startTime)
         auditEvents.auditRunTimeError(e, e.toString, schemeData.schemeInfo, schemeData.sheetName)
-        throw new ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage)
+        Left(ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage))
     }
   }
 

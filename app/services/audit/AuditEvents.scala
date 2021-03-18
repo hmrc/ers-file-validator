@@ -17,7 +17,7 @@
 package services.audit
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.services.validation.ValidationError
+import uk.gov.hmrc.services.validation.models.ValidationError
 import models.SchemeInfo
 import org.apache.commons.lang3.exception.ExceptionUtils
 import play.api.mvc.Request

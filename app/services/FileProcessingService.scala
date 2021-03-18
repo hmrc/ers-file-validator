@@ -42,6 +42,7 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
                                       auditEvents: AuditEvents,
                                       ersConnector: ERSFileValidatorConnector,
                                       sessionService: SessionService,
+                                      processCsvService: ProcessCsvService,
                                       appConfig: ApplicationConfig,
                                       implicit val ec: ExecutionContext) extends Metrics {
 
@@ -52,7 +53,7 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]): Int = {
     val startTime = System.currentTimeMillis()
     Logger.info("2.0 start: ")
-    val result = dataGenerator.getData(readFile(callbackData.downloadUrl))
+    val result = dataGenerator.getErrors(readFile(callbackData.downloadUrl))
     Logger.info("2.1 result contains: " + result)
     deliverBESMetrics(startTime)
     Logger.debug("No if SchemeData Objects " + result.size)
@@ -80,6 +81,8 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
 
   def processCsvFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[(Int, Int)] = {
     val startTime = System.currentTimeMillis()
+
+
     readCSVFile(callbackData.downloadUrl).map { fileData =>
       Logger.info(" 2. Invoke Data generator ")
       deliverBESMetrics(startTime)
@@ -129,11 +132,11 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
 
   def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Unit = {
     Logger.debug("Sheedata sending to ers-submission " + ersSchemeData.sheetName)
-    val result = ersConnector.sendToSubmissions(ersSchemeData, empRef).onComplete {
-      case Success(suc) => {
+    val result = ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
+      case Right(_) => {
         auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
       }
-      case Failure(ex) => {
+      case Left(ex) => {
         auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         Logger.error(ex.getMessage)
         throw new ERSFileProcessingException(ex.toString, ex.getStackTrace.toString)

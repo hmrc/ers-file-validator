@@ -202,7 +202,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
         schemeType = "CSOP"
       )
       val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getData(XMLTestData.getInvalidCSOPWithoutHeaders)(schemeInfo, hc, request)
+        dataGenerator.getErrors(XMLTestData.getInvalidCSOPWithoutHeaders)(schemeInfo, hc, request)
       }
       result.message mustBe "Incorrect ERS Template - Header doesn't match"
     }
@@ -217,7 +217,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
         schemeType = "CSOP"
       )
       val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getData(XMLTestData.getInvalidCSOPWith2Sheets1WithoutHeaders)(schemeInfo, hc, request)
+        dataGenerator.getErrors(XMLTestData.getInvalidCSOPWith2Sheets1WithoutHeaders)(schemeInfo, hc, request)
       }
       result.message mustBe "Incorrect ERS Template - Header doesn't match"
     }
@@ -232,17 +232,17 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
         schemeType = "CSOP"
       )
       val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getData(XMLTestData.getCSOPWithoutData)(schemeInfo, hc, request)
+        dataGenerator.getErrors(XMLTestData.getCSOPWithoutData)(schemeInfo, hc, request)
       }
       result.message mustBe "The file that you chose doesn’t have any data after row 9. The reportable events data must start in cell A10.<br/><a href=\"https://www.gov.uk/government/collections/employment-related-securities\">Use the ERS guidance documents</a> to help you create error-free files."
     }
 
     "get Data for Iterator of Strings" in {
-      val result = dataGenerator.getData(XMLTestData.getEMIAdjustmentsTemplate)(schemeInfo,hc,request)
+      val result = dataGenerator.getErrors(XMLTestData.getEMIAdjustmentsTemplate)(schemeInfo,hc,request)
       result.size must be (1)
       result.foreach(_.data.foreach(_ mustBe (XMLTestData.emiAdjustmentsExpData)))
       try {
-        dataGenerator.getData(XMLTestData.getIncorrectsheetNameTemplate)(schemeInfo,hc,request)
+        dataGenerator.getErrors(XMLTestData.getIncorrectsheetNameTemplate)(schemeInfo,hc,request)
       } catch {
         case e:Throwable => e.getMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
       }
@@ -250,13 +250,13 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
     }
 
     "get mandatory Data for Iterator of Strings" in {
-      val result = dataGenerator.getData(XMLTestData.getEMIReplacedTemplate)(schemeInfo,hc,request)
+      val result = dataGenerator.getErrors(XMLTestData.getEMIReplacedTemplate)(schemeInfo,hc,request)
       result.size must be (1)
       result.foreach(_.data.foreach(_ must be (XMLTestData.emiReplacedExpMandatoryData)))
     }
 
     "expand repeated rows" in {
-      val result = dataGenerator.getData(XMLTestData.getEMIAdjustmentsRepeatedTemplate)(schemeInfo,hc,request)
+      val result = dataGenerator.getErrors(XMLTestData.getEMIAdjustmentsRepeatedTemplate)(schemeInfo,hc,request)
       result.size mustEqual(1)
       result(0).data.size mustEqual(4)
     }

@@ -90,7 +90,7 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with GuiceOneA
       val listBuffer = ListBuffer(
         Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
       )
-      when(mockDataGenerator.getData(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V3", listBuffer))
+      when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V3", listBuffer))
       when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(HttpResponse(200)))
       when(mockSessionService.storeCallbackData(any(),any())(any(),any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
@@ -127,7 +127,7 @@ class FileProcessingServiceSpec extends PlaySpec with CSVTestData with GuiceOneA
       Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544"),
       Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
     )
-    when(mockDataGenerator.getData(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V3", listBuffer))
+    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V3", listBuffer))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(HttpResponse(200)))
     when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any(), any[HeaderCarrier])).thenReturn(Future.successful(Some(callbackData)))
