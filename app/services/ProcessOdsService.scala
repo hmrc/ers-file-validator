@@ -16,13 +16,13 @@
 
 package services
 
-import java.io.{BufferedReader, InputStream, InputStreamReader}
+import java.io.InputStream
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
-
 import _root_.services.audit.AuditEvents
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
+
 import javax.inject.{Inject, Singleton}
 import metrics.Metrics
 import models._
@@ -30,20 +30,17 @@ import models.upscan.UpscanCallback
 import play.api.Logger
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
-import utils.ErrorResponseMessages
+import utils.{ErrorResponseMessages, ValidationUtils}
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class FileProcessingService @Inject()(dataGenerator: DataGenerator,
-                                      auditEvents: AuditEvents,
-                                      ersConnector: ERSFileValidatorConnector,
-                                      sessionService: SessionService,
-                                      appConfig: ApplicationConfig,
-                                      implicit val ec: ExecutionContext) extends Metrics {
+class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
+                                  auditEvents: AuditEvents,
+                                  ersConnector: ERSFileValidatorConnector,
+                                  sessionService: SessionService,
+                                  appConfig: ApplicationConfig,
+                                  implicit val ec: ExecutionContext) extends Metrics {
 
   val splitSchemes: Boolean = appConfig.splitLargeSchemes
   val maxNumberOfRows: Int = appConfig.maxNumberOfRowsPerSubmission
@@ -52,7 +49,7 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]): Int = {
     val startTime = System.currentTimeMillis()
     Logger.info("2.0 start: ")
-    val result = dataGenerator.getData(readFile(callbackData.downloadUrl))
+    val result = dataGenerator.getErrors(readFile(callbackData.downloadUrl))
     Logger.info("2.1 result contains: " + result)
     deliverBESMetrics(startTime)
     Logger.debug("No if SchemeData Objects " + result.size)
@@ -78,22 +75,6 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
     res1
   }
 
-  def processCsvFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[(Int, Int)] = {
-    val startTime = System.currentTimeMillis()
-    readCSVFile(callbackData.downloadUrl).map { fileData =>
-      Logger.info(" 2. Invoke Data generator ")
-      deliverBESMetrics(startTime)
-
-      val sheetName = callbackData.name.replace(".csv","")
-      val result: ListBuffer[Seq[String]] = dataGenerator.getCsvData(fileData)(schemeInfo, sheetName,hc,request)
-      val schemeData: SchemeData = SchemeData(schemeInfo, sheetName, None, result)
-
-      Logger.info("2.1 result contains: " + result)
-      Logger.debug("No if SchemeData Objects " + result.size)
-      (sendScheme(schemeData, empRef), schemeData.data.size)
-    }
-  }
-
   private[services] def readFile(downloadUrl: String): Iterator[String] = {
     val stream = ersConnector.upscanFileStream(downloadUrl)
     val targetFileName = "content.xml"
@@ -116,42 +97,22 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
     new StaxProcessor(contentInputStream)
   }
 
-  def readCSVFile(downloadUrl: String): Future[Iterator[String]] = {
-    try {
-      val reader = new BufferedReader(new InputStreamReader(ersConnector.upscanFileStream(downloadUrl)))
-      Future(reader.lines().iterator().asScala)
-    } catch {
-      case _: Throwable => throw ERSFileProcessingException(
-        s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
-        s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}")
-    }
-  }
-
   def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Unit = {
-    Logger.debug("Sheedata sending to ers-submission " + ersSchemeData.sheetName)
-    val result = ersConnector.sendToSubmissions(ersSchemeData, empRef).onComplete {
-      case Success(suc) => {
+    Logger.debug("Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
+    ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
+      case Right(_) =>
         auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
-      }
-      case Failure(ex) => {
+      case Left(ex) =>
         auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         Logger.error(ex.getMessage)
-        throw new ERSFileProcessingException(ex.toString, ex.getStackTrace.toString)
-      }
+        throw ERSFileProcessingException(ex.toString, ex.getStackTrace.toString)
     }
   }
 
   def sendScheme(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Int = {
     if(splitSchemes && (schemeData.data.size > maxNumberOfRows)) {
 
-      def numberOfSlices(sizeOfBuffer: Int): Int = {
-        if(sizeOfBuffer%maxNumberOfRows > 0)
-          sizeOfBuffer/maxNumberOfRows + 1
-        else
-          sizeOfBuffer/maxNumberOfRows
-      }
-
-      val slices: Int = numberOfSlices(schemeData.data.size)
+      val slices: Int = ValidationUtils.numberOfSlices(schemeData.data.size, maxNumberOfRows)
       for(i <- 0 until slices * maxNumberOfRows by maxNumberOfRows) {
         val scheme = new SchemeData(schemeData.schemeInfo, schemeData.sheetName, Option(slices), schemeData.data.slice(i, (i + maxNumberOfRows)))
         Logger.debug("The size of the scheme data is " + scheme.data.size + " and i is " + i)

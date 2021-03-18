@@ -32,27 +32,21 @@
 
 package services
 
-import uk.gov.hmrc.services.validation.{Cell, ValidationError}
-import models.{SchemeData, SchemeInfo, ValidationErrorData}
+import uk.gov.hmrc.services.validation.models._
+import models.{SchemeData, SchemeInfo}
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
-import org.mockito.Mock
-import org.mockito.Mockito.{times, verify, when}
+import org.mockito.Mockito.{times, verify}
 import org.scalatest.{Matchers, WordSpec}
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.mockito.MockitoSugar.mock
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import services.audit.{AuditEvents, AuditService}
-import uk.gov.hmrc.audit.HandlerResult.Success
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.play.audit.model.DataEvent
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
 
 class AuditEventsSpec extends WordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
 

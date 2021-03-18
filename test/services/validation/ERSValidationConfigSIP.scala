@@ -17,13 +17,14 @@
 package services.validation
 
 import com.typesafe.config.ConfigFactory
-import uk.gov.hmrc.services.validation.{Cell, DataValidator, Row, ValidationError}
+import uk.gov.hmrc.services.validation.DataValidator
+import uk.gov.hmrc.services.validation.models._
 import org.scalatestplus.play.PlaySpec
 import services.validation.SIPTestData.{ERSValidationSIPAwardsTestData, ERSValidationSIPOutTestData}
 
 class SIPAwardsV3ValidationTest extends PlaySpec with ERSValidationSIPAwardsTestData with ValidationTestRunner{
 
-  val validator = DataValidator(ConfigFactory.load.getConfig("ers-sip-awards-validation-config"))
+  val validator = new DataValidator(ConfigFactory.load.getConfig("ers-sip-awards-validation-config"))
 
   "Ers Validation tests for SIP Awards" should {
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
@@ -32,53 +33,53 @@ class SIPAwardsV3ValidationTest extends PlaySpec with ERSValidationSIPAwardsTest
       val cellD = Cell("D", rowNumber, "")
       val cellC = Cell("C", rowNumber, "2")
       val row = Row(1,Seq(cellD,cellC))
-      val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
-      resOpt mustBe Some(List(
+      val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellD,"mandatoryD","D01","Enter 'yes' or 'no'.")
-      ))
     }
 
     "when awards Column C is answered 1, column E is a mandatory field" in {
       val cellE = Cell("E", rowNumber, "")
       val cellC= Cell("C", rowNumber, "1")
       val row = Row(1, Seq(cellE, cellC))
-      val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
-      resOpt mustBe Some(List(
+      val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellE, "mandatoryE", "E01", "Enter the ratio of the matching shares (numbers must be separated by a ':' or '/', for example, 2:1 or 2/1).")
-      ))
     }
 
     "when awards Column O is answered NO, column P is a mandatory field" in {
       val cellP = Cell("P", rowNumber, "")
       val cellO= Cell("O", rowNumber, "NO")
       val row = Row(1, Seq(cellP, cellO))
-      val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
-      resOpt mustBe Some(List(
+      val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no'.")
-      ))
     }
 
     "when awards Column P is answered YES, column Q is a mandatory field" in {
       val cellQ = Cell("Q", rowNumber, "")
       val cellP= Cell("P", rowNumber, "YES")
       val row = Row(1, Seq(cellQ, cellP))
-      val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
-      resOpt mustBe Some(List(
+      val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellQ, "mandatoryQ", "Q01", "Enter the HMRC reference (must be less than 11 characters).")
-      ))
     }
 
 
   }
   "when a valid row of data is provided, no ValidationErrors should be raised" in {
     val row = Row(1,getValidRowData)
-    val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
+    val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
     resOpt mustBe None
   }
 
   "when a invalid row of data is provided, a list of ValidationErrors should be raised" in {
     val row = Row(1,getInvalidRowData)
-    val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
+    val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
     resOpt.get.size mustBe getInvalidRowData.size
   }
 
@@ -86,7 +87,7 @@ class SIPAwardsV3ValidationTest extends PlaySpec with ERSValidationSIPAwardsTest
 }
 class SIPOutV3ValidationTest extends PlaySpec with ERSValidationSIPOutTestData with ValidationTestRunner{
 
-  val validator = DataValidator(ConfigFactory.load.getConfig("ers-sip-out-validation-config"))
+  val validator = new DataValidator(ConfigFactory.load.getConfig("ers-sip-out-validation-config"))
 
   "Ers Validation tests for SIP Out" should {
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
@@ -96,31 +97,31 @@ class SIPOutV3ValidationTest extends PlaySpec with ERSValidationSIPOutTestData w
     val cellP = Cell("P", rowNumber, "")
     val cellO= Cell("O", rowNumber, "NO")
     val row = Row(1, Seq(cellP, cellO))
-    val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
-    resOpt mustBe Some(List(
+    val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
+    resOpt.get must contain (
       ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no'.")
-    ))
+    )
   }
 
   "when awards Column P is answered NO, column Q is a mandatory field" in {
     val cellQ = Cell("Q", rowNumber, "")
     val cellP= Cell("P", rowNumber, "NO")
     val row = Row(1, Seq(cellQ, cellP))
-    val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
-    resOpt mustBe Some(List(
+    val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
+    resOpt.get must contain (
       ValidationError(cellQ, "mandatoryQ", "Q01", "Enter 'yes' or 'no'.")
-    ))
+    )
   }
 
   "when a valid row of data is provided, no ValidationErrors should be raised" in {
     val row = Row(1,getValidRowData)
-    val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
+    val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
     resOpt mustBe None
   }
 
   "when a invalid row of data is provided, a list of ValidationErrors should be raised" in {
     val row = Row(1,getInvalidRowData)
-    val resOpt: Option[List[ValidationError]] = validator.validateRow(row, Some(ValidationContext))
+    val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
     resOpt.get.size mustBe getInvalidRowData.size
   }
 }

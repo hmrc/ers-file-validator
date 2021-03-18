@@ -16,7 +16,8 @@
 
 package services.validation.SAYETestData
 
-import uk.gov.hmrc.services.validation.Cell
+
+import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
 
 trait ERSValidationSAYEGrantedTestData {
@@ -91,7 +92,7 @@ trait ERSValidationSAYEGrantedTestData {
     //A
     None,
     Some(List(ValidationErrorData("error.1", "001", "Enter a date that matches the yyyy-mm-dd pattern."))),
-    Some(List(ValidationErrorData("MANDATORY", "100", "Enter a date that matches the yyyy-mm-dd pattern."))),
+    Some(List(ValidationErrorData("error.1", "001", "Enter a date that matches the yyyy-mm-dd pattern."))),
     //B
     None,
     Some(List(ValidationErrorData("error.2", "002", "Must be a whole number and be less than 1,000,000."))),
@@ -114,7 +115,7 @@ trait ERSValidationSAYEGrantedTestData {
     //F
     None,
     Some(List(ValidationErrorData("error.6","006","Enter 'yes' or 'no'."))),
-    Some(List(ValidationErrorData("MANDATORY", "100", "Enter 'yes' or 'no'."))),
+    Some(List(ValidationErrorData("error.6","006","Enter 'yes' or 'no'."))),
     //G
     None,
     Some(List(ValidationErrorData("error.7","007","Enter 'yes' or 'no'."))),

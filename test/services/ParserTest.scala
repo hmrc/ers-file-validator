@@ -29,12 +29,8 @@ import play.api.mvc.Request
 import services.XMLTestData._
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.services.validation.{Cell, DataValidator, Row, ValidationError}
 
-import scala.collection.mutable.ListBuffer
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
-import scala.concurrent.duration.Duration
-import scala.util.Success
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import java.io.FileNotFoundException
 
 import scala.xml._
@@ -47,23 +43,7 @@ class ParserTest extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures wit
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  val dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig, ec)
-
-  class MockDataValidator(rowValidator: () => Option[List[ValidationError]]) extends DataValidator {
-    override def validateRow(row: Row, contextObjectOpt: Option[AnyRef]): Option[List[ValidationError]] = rowValidator.apply()
-
-    override def validateRows(rows: List[List[String]], contextObjectOpt: Option[AnyRef], firstRowNum: Int, ignoreBlankRows: Boolean): Option[List[ValidationError]] = ???
-
-    override def validateRowsBuffered(rows: List[List[String]], errorBuffer: ListBuffer[ValidationError], contextObjectOpt: Option[AnyRef], firstRowNum: Int, ignoreBlankRows: Boolean): Unit = ???
-
-    override def validateRows(rows: List[List[String]], contextObjectOpt: Option[AnyRef], zeroBased: Boolean): Option[List[ValidationError]] = ???
-
-    override def validateCellBuffered(cell: Cell, errorBuffer: ListBuffer[ValidationError], contextObjectOpt: Option[AnyRef]): Unit = ???
-
-    override def validateRowBuffered(row: Row, errorBuffer: ListBuffer[ValidationError], contextObjectOpt: Option[AnyRef]): Unit = ???
-
-    override def validateCell(cell: Cell, contextObjectOpt: Option[AnyRef]): Option[List[ValidationError]] = ???
-  }
+  val dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig)
 
   private val nl: String = System.lineSeparator()
   private val timeout = 200
@@ -160,144 +140,6 @@ class ParserTest extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures wit
         dataGenerator.getSheet("abc")(schemeInfo, hc, request)
       }
       result.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
-    }
-
-    private def getRowsFromFileFixture = new {
-      val content = s"field1, field2, field3${nl}field1${nl}field1, field2"
-      val sheetName = "Other_Options_V3.csv"
-    }
-
-    "fetch all rows from the CSV file" in {
-      val fixture = getRowsFromFileFixture
-      val iterator = fixture.content.split(nl).iterator
-      val actual = dataGenerator.getRowsFromFile(iterator)
-      val expected: List[List[String]] = fixture.content.split(nl).toList.map(s => s.split(",").toList)
-      actual mustBe expected
-    }
-
-    "handle empty CSV files" in {
-      val actual = dataGenerator.getRowsFromFile(Iterator.empty)
-      actual.isEmpty mustBe true
-    }
-
-    "return the correct number of chunks" in {
-      dataGenerator.numberOfChunks(0, 1) mustBe 0
-      dataGenerator.numberOfChunks(1, 2) mustBe 1
-      dataGenerator.numberOfChunks(2, 2) mustBe 1
-      dataGenerator.numberOfChunks(9, 2) mustBe 5
-    }
-
-    private def submitChunksFixture = new {
-      val rows = List(
-        List("field1", "field2"),
-        List("field1", "field2"),
-        List("field1", "field2"),
-        List("field1", "field2"),
-        List("field1", "field2")
-      )
-    }
-
-    "submit the correct number of futures" in {
-      val fixture = submitChunksFixture
-
-      val rowValidator = () => Some(List.empty[ValidationError])
-      val dataValidator = new MockDataValidator(rowValidator)
-
-      val actual = dataGenerator.submitChunks(fixture.rows, 3, 2, 3, dataValidator)
-      actual.length mustBe 3
-    }
-
-    "process all rows" in {
-      val fixture = submitChunksFixture
-      var count = 0
-
-      val rowValidator = () => {
-        count+=1
-        None
-      }
-
-      val dataValidator = new MockDataValidator(rowValidator)
-
-      val actual = dataGenerator.submitChunks(fixture.rows, 3, 2, 3, dataValidator)
-
-      for (future <- actual) {
-        failAfter(awaitTimeout) {
-          Await.ready(future, Duration.Inf)
-        }
-      }
-
-      count mustBe fixture.rows.size
-    }
-
-    private def processChunkFixture = new {
-      val chunk = List(
-        List("field1", "field2"),
-        List("field1", "field2"),
-        List("field1", "field2")
-      )
-    }
-
-    "process each row in the chunk" in {
-      val fixture = processChunkFixture
-      var count: Int = 0
-
-      val rowValidator = () => {
-        count += 1
-        None
-      }
-
-      val dataValidator = new MockDataValidator(rowValidator)
-
-      dataGenerator.processChunk(fixture.chunk, 1, 3, dataValidator)
-      count mustBe fixture.chunk.size
-    }
-
-    "throw exception when CSV file contains errors" in {
-      val fixture = processChunkFixture
-
-      val rowValidator = () => {
-        Some(List(ValidationError(Cell("AA", 1, "bad"), "bad data", "bad cell AA", "cell AA is bad")))
-      }
-
-      val dataValidator = new MockDataValidator(rowValidator)
-
-      intercept[ERSFileProcessingException] {
-        dataGenerator.processChunk(fixture.chunk, 1, 3, dataValidator)
-      }
-    }
-
-    "aggregate chunk results corectly" in {
-      val row1 = List(Seq("field1", "field2"))
-      val row2 = List.empty[Seq[String]]
-      val row3 = List(Seq("field3", "field4", "field5"))
-
-      val submissions: Array[Future[List[Seq[String]]]] = Array(
-        Future(row1),
-        Future(row2),
-        Future(row3)
-      )
-
-      val expected = Some(Success(List(row1, row2, row3).flatten))
-      val actual = dataGenerator.getResult(submissions)
-
-      failAfter(awaitTimeout) {
-        Await.ready(actual, Duration.Inf)
-      }
-
-      actual.value mustBe expected
-    }
-
-    "aggregate to an empty list when there are no chunk results" in {
-      val submissions = Array.empty[Future[List[Seq[String]]]]
-
-      val expected = Some(Success(List.empty[Seq[String]]))
-      val actual = dataGenerator.getResult(submissions)
-
-      failAfter(awaitTimeout) {
-        Await.ready(actual, Duration.Inf)
-      }
-
-      actual.value mustBe expected
     }
 
     "Show that scala.xml.XML tries to access file system with malicious payload " in {
