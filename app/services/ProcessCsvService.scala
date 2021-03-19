@@ -46,7 +46,6 @@ import scala.util.{Failure, Success, Try}
 class ProcessCsvService @Inject()(auditEvents: AuditEvents,
                                   dataGenerator: DataGenerator,
                                   appConfig: ApplicationConfig,
-                                  fileProcessingService: FileProcessingService,
                                   ersConnector: ERSFileValidatorConnector,
                                  )(implicit executionContext: ExecutionContext,
                                    actorSystem: ActorSystem) {

@@ -39,8 +39,7 @@ import scala.util.{Failure, Success, Try}
 
 @Singleton
 class DataGenerator @Inject()(auditEvents: AuditEvents,
-                              config: ApplicationConfig,
-                              processCsvService: ProcessCsvService)(
+                              config: ApplicationConfig)(
   implicit val ec: ExecutionContext) extends DataParser with Metrics {
 
   val defaultChunkSize: Int = 10000

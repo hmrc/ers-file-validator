@@ -42,7 +42,6 @@ class FileProcessingService @Inject()(dataGenerator: DataGenerator,
                                       auditEvents: AuditEvents,
                                       ersConnector: ERSFileValidatorConnector,
                                       sessionService: SessionService,
-                                      processCsvService: ProcessCsvService,
                                       appConfig: ApplicationConfig,
                                       implicit val ec: ExecutionContext) extends Metrics {
 
