@@ -43,7 +43,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
                                      processCsvService: ProcessCsvService,
                                      val authConnector: DefaultAuthConnector,
                                      val cc: ControllerComponents,
-                                     val defaultActionBuilder: DefaultActionBuilder,
+                                     val defaultActionBuilder: DefaultActionBuilder
                                      )(implicit val ec: ExecutionContext, actorSystem: ActorSystem)
   extends BackendController(cc) with Metrics with Authorisation {
 
