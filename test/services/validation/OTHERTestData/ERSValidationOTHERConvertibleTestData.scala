@@ -146,25 +146,25 @@ trait ERSValidationOTHERConvertibleTestData {
       //A
       None,
       Some(List(ValidationErrorData("error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a date that matches the yyyy-mm-dd pattern."))),
+      Some(List(ValidationErrorData("error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))),
       //B
       None,
       Some(List(ValidationErrorData("error.2","002","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.2","002","Enter 'yes' or 'no'."))),
       //C
       None,
       Some(List(ValidationErrorData("error.3","003","Enter the scheme reference number (it should be an 8 digit number)."))),
       //D
       None,
       Some(List(ValidationErrorData("error.4","004","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(List(ValidationErrorData("error.4","004","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //E
       None,
       Some(List(ValidationErrorData("error.5","005","Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."))),
       //F
       None,
       Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //G
       None,
       Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
@@ -174,7 +174,7 @@ trait ERSValidationOTHERConvertibleTestData {
       //I
       None,
       Some(List(ValidationErrorData("error.9","009","Enter a date that matches the yyyy-mm-dd pattern."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a date that matches the yyyy-mm-dd pattern."))),
+      Some(List(ValidationErrorData("error.9","009","Enter a date that matches the yyyy-mm-dd pattern."))),
       //J
       None,
       Some(List(ValidationErrorData("error.10","010","Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
@@ -193,15 +193,15 @@ trait ERSValidationOTHERConvertibleTestData {
       //M
       None,
       Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
       //N
       None,
       Some(List(ValidationErrorData("error.14","014","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.14","014","Enter 'yes' or 'no'."))),
       //O
       None,
       Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter 'yes' or 'no'.")))
+      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
     )
     expectedResults
   }

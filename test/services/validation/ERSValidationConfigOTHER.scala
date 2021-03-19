@@ -254,9 +254,9 @@ class OTHEROtherBenefitsV3ValidationTest extends PlaySpec with ERSValidationOTHE
     val cellB = Cell("B", rowNumber, "yes")
     val row = Row(1,Seq(cellC,cellB))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt.get must contain (
+    assert(resOpt.isDefined)
+    resOpt.get must contain
       ValidationError(cellC,"mandatoryB","MB","Enter the scheme reference number (it should be an 8 digit number).")
-    )
   }
 }
 
@@ -273,9 +273,9 @@ class OTHERConvertibleV3ValidationTest extends PlaySpec with ERSValidationOTHERC
     val cellB = Cell("B", rowNumber, "yes")
     val row = Row(1, Seq(cellC, cellB))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt.get must contain (
+    assert(resOpt.isDefined)
+    resOpt.get must contain
       ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number).")
-    )
   }
 
   "when a valid row of data is provided, no ValidationErrors should be raised" in {
@@ -303,9 +303,9 @@ class OTHERNotionalV3ValidationTest extends PlaySpec with ERSValidationOTHERNoti
       val cellB = Cell("B", rowNumber, "yes")
       val row = Row(1, Seq(cellC, cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt.get must contain (
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number).")
-      )
     }
   }
 
@@ -367,9 +367,9 @@ class OTHERSoldV3ValidationTest extends PlaySpec with ERSValidationOTHERSoldTest
       val cellB = Cell("B", rowNumber, "yes")
       val row = Row(1, Seq(cellC, cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt.get must contain (
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number).")
-      )
     }
   }
 

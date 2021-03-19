@@ -201,11 +201,11 @@ trait ERSValidationCSOPExercisedTestData {
       //I
       None,
       Some(List(ValidationErrorData("error.9", "009", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY", "100", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.9", "009", "Enter 'yes' or 'no'."))),
       //J
       None,
       Some(List(ValidationErrorData("error.10", "010", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY", "100", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.10", "010", "Enter 'yes' or 'no'."))),
       //K
       None,
       Some(List(ValidationErrorData("error.11", "011","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
@@ -230,11 +230,11 @@ trait ERSValidationCSOPExercisedTestData {
       //P
       None,
       Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY", "100", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'."))),
       //Q
       None,
       Some(List(ValidationErrorData("error.17", "017", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY", "100", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.17", "017", "Enter 'yes' or 'no'."))),
       //R
       None,
       Some(List(ValidationErrorData("error.18", "018","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
@@ -243,11 +243,11 @@ trait ERSValidationCSOPExercisedTestData {
       //S
       None,
       Some(List(ValidationErrorData("error.19", "019", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY", "100", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.19", "019", "Enter 'yes' or 'no'."))),
       //T
       None,
       Some(List(ValidationErrorData("error.20", "020", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY", "100", "Enter 'yes' or 'no'.")))
+      Some(List(ValidationErrorData("error.20", "020", "Enter 'yes' or 'no'."))),
       )
     expectedResults
   }

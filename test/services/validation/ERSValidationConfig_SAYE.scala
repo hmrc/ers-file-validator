@@ -32,8 +32,9 @@ class ERSValidationConfig_SAYE_SayeGrantedTests extends PlaySpec with ERSValidat
       val cellF = Cell("F", rowNumber, "no")
       val row = Row(1, Seq(cellG, cellF))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
-        ValidationError(cellG, "mandatoryG", "G01", "Enter 'yes' or 'no'.")))
+      assert(resOpt.isDefined)
+      resOpt.get must contain
+        ValidationError(cellG, "mandatoryG", "G01", "Enter 'yes' or 'no'.")
     }
 
     "make Q8 mandatory when Q6 is answered with yes" in {
@@ -41,9 +42,9 @@ class ERSValidationConfig_SAYE_SayeGrantedTests extends PlaySpec with ERSValidat
       val cellG = Cell("G", rowNumber, "yes")
       val row = Row(1,Seq(cellH,cellG))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellH,"mandatoryH","G02","Enter the HMRC reference (must be less than 11 characters).")
-      ))
     }
   }
 }

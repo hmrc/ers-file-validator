@@ -33,9 +33,9 @@ class CSOPOptionsGrantedV3ValidationCSOPTest extends PlaySpec with ERSValidation
       val cellF = Cell("F", rowNumber, "no")
       val row = Row(1,Seq(cellG,cellF))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt.get must contain (
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellG,"mandatoryG","G01","Enter 'yes' or 'no'.")
-      )
     }
 
     "when sharesListedOnSE is answered yes, hmrcRef is a mandatory field" in {
@@ -43,9 +43,9 @@ class CSOPOptionsGrantedV3ValidationCSOPTest extends PlaySpec with ERSValidation
       val cellG = Cell("G", rowNumber, "yes")
       val row = Row(1,Seq(cellH,cellG))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt.get must contain (
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellH,"mandatoryH","G02","Enter the HMRC reference (must be less than 11 characters).")
-      )
     }
 
     "when a valid row of data is provided, no ValidationErrors should be raised" in {
@@ -76,9 +76,9 @@ class CSOPOptionsRCLTest extends PlaySpec with ERSValidationCSOPRCLTestData with
       val cellB = Cell("B", rowNumber, "yes")
       val row = Row(1,Seq(cellB,cellC))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellC,"mandatoryC","C01","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it).")
-      ))
     }
 
   }
@@ -97,9 +97,9 @@ class CSOPOptionsExercisedTest extends PlaySpec with ERSValidationCSOPExercisedT
       val cellN = Cell("N", rowNumber, "yes")
       val row = Row(1,Seq(cellO,cellN))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellO,"mandatoryO","O01","Enter the HMRC reference (must be less than 11 characters).")
-      ))
     }
 
     "when payeOperatedApplied is answered yes, deductibleAmount must be answered" in {
@@ -107,9 +107,9 @@ class CSOPOptionsExercisedTest extends PlaySpec with ERSValidationCSOPExercisedT
       val cellQ = Cell("Q", rowNumber, "yes")
       val row = Row(1,Seq(cellR,cellQ))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      assert(resOpt.isDefined)
+      resOpt.get must contain
         ValidationError(cellR,"mandatoryR","R01","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it).")
-      ))
     }
 
   }

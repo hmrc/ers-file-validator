@@ -169,7 +169,7 @@ trait ERSValidationSIPAwardsTestData {
       //column A
       None,
       Some(List(ValidationErrorData("error.1", "001", "Enter a date that matches the yyyy-mm-dd pattern."))),
-      Some(List(ValidationErrorData("MANDATORY", "100", "Enter a date that matches the yyyy-mm-dd pattern."))),
+      Some(List(ValidationErrorData("error.1", "001", "Enter a date that matches the yyyy-mm-dd pattern."))),
       //column B
       None,
       Some(List(ValidationErrorData("error.2", "002", "Must be a whole number and be less than 1,000,000."))),
@@ -182,7 +182,7 @@ trait ERSValidationSIPAwardsTestData {
       Some(List(ValidationErrorData("error.3", "003", "Enter '1', '2', '3' or '4'."))),
       Some(List(ValidationErrorData("error.3", "003", "Enter '1', '2', '3' or '4'."))),
       Some(List(ValidationErrorData("error.3", "003", "Enter '1', '2', '3' or '4'."))),
-      Some(List(ValidationErrorData("MANDATORY", "100", "Enter '1', '2', '3' or '4'."))),
+      Some(List(ValidationErrorData("error.3", "003", "Enter '1', '2', '3' or '4'."))),
       //column D
       None,
       Some(List(ValidationErrorData("error.4", "004", "Enter 'yes' or 'no'."))),
@@ -231,7 +231,7 @@ trait ERSValidationSIPAwardsTestData {
       //column O
       None,
       Some(List(ValidationErrorData("error.15", "015", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY", "100", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.15", "015", "Enter 'yes' or 'no'."))),
       //column P
       None,
       Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'."))),
