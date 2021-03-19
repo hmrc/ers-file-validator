@@ -30,7 +30,7 @@ import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
 import play.api.Logger
 import play.api.libs.json.JsValue
 import play.api.mvc.{Action, AnyContent, ControllerComponents, DefaultActionBuilder, PlayBodyParsers, Request}
-import services.{FileProcessingService, ProcessCsvService, SessionService}
+import services.{ProcessOdsService, ProcessCsvService, SessionService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -39,7 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class DataUploadController @Inject()(sessionService: SessionService,
-                                     fileProcessService: FileProcessingService,
+                                     processOdsService: ProcessOdsService,
                                      processCsvService: ProcessCsvService,
                                      val authConnector: DefaultAuthConnector,
                                      val cc: ControllerComponents,
@@ -56,7 +56,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
         valid = res => {
           implicit val schemeInfo: SchemeInfo = res.schemeInfo
           try {
-            val result = fileProcessService.processFile(res.callbackData, empRef)
+            val result = processOdsService.processFile(res.callbackData, empRef)
             deliverFileProcessingMetrics(startTime)
             Future.successful(Ok(result.toString))
           } catch {
@@ -89,6 +89,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
           val schemeInfo: SchemeInfo = res.schemeInfo
           Logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
+
           val processedFiles: List[Future[Either[Throwable, CsvFileContents]]] = processCsvService.processFiles(res, readFileCsv)
 
           val extractedSchemeData: Seq[Future[Either[Throwable, (Int, Int)]]] = processedFiles.map{ list =>
@@ -96,11 +97,11 @@ class DataUploadController @Inject()(sessionService: SessionService,
 
           Future.sequence(extractedSchemeData).flatMap{ oneFileResults => oneFileResults.find(_.isLeft) match {
             case Some(Left(throwable: ERSFileProcessingException)) =>
-              Logger.error(throwable.message)
+              Logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] ERS file processing exception: ${throwable.message}")
               deliverFileProcessingMetrics(startTime)
               Future(Accepted(throwable.message))
             case Some(Left(throwable)) =>
-              Logger.error(throwable.getMessage, throwable)
+              Logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] Unknown exception: ${throwable.getMessage}, full exception: $throwable")
               deliverFileProcessingMetrics(startTime)
               Future(InternalServerError)
             case None =>
@@ -113,7 +114,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
                 case _ =>
                   Logger.error(
                     s"[DataUploadController][processCsvFileDataFromFrontend] csv storeCallbackData failed" +
-                      s" while storing data, timestamp: ${System.currentTimeMillis()}.")
+                      s" while storing data, timestamp: ${java.time.LocalTime.now()}.")
                   val exception = ERSFileProcessingException("csv callback data storage in sessioncache failed ", "Exception storing csv callback data")
                   deliverFileProcessingMetrics(startTime)
                   Accepted(exception.message)
@@ -134,12 +135,4 @@ class DataUploadController @Inject()(sessionService: SessionService,
   }
 
   private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] = Http()(actorSystem).singleRequest(request)
-
-
-  def process(res: List[UpscanCallback], empRef: String)
-             (hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): List[Future[(Int, Int)]] = {
-    for {
-      callbackData <- res
-    } yield fileProcessService.processCsvFile(callbackData, empRef)(hc, schemeInfo,request)
-  }
 }

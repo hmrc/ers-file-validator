@@ -16,17 +16,17 @@
 
 package services.validation
 
-import scala.util.matching.Regex
-import uk.gov.hmrc.services.validation.models.{Row, Cell}
+import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 import uk.gov.hmrc.services.validation.DataValidator
 import play.api.Logger
 
 object ErsValidator {
-  val colNames = List("A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP")
+  val colNames = List("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S",
+    "T", "U", "V", "W", "X", "Y", "Z", "AA", "AB", "AC", "AD", "AE", "AF", "AG", "AH", "AI", "AJ", "AK", "AL", "AM", "AN", "AO", "AP")
 
-  def validateRow(rowData:Seq[String],rowNumber:Int, validator: DataValidator) = {
-  try {
-    validator.validateRow(Row(rowNumber, getCells(rowData,rowNumber)))
+  def validateRow(rowData: Seq[String], rowNumber: Int, validator: DataValidator): Option[List[ValidationError]] = {
+    try {
+      validator.validateRow(Row(rowNumber, getCells(rowData, rowNumber)))
     } catch {
       case e: Exception => {
         Logger.warn(e.toString)
@@ -35,7 +35,7 @@ object ErsValidator {
     }
   }
 
-  def getCells(rowData:Seq[String],rowNumber:Int) =
-        (rowData zip colNames ).map{case(cellValue,col) => Cell(col.toString,rowNumber,cellValue)}
+  def getCells(rowData: Seq[String], rowNumber: Int) =
+    (rowData zip colNames).map { case (cellValue, col) => Cell(col, rowNumber, cellValue) }
 
 }

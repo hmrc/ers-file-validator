@@ -73,7 +73,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
       when(mockHttpClient.POST[SchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrl), argEq[SchemeData](submissionData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
         .thenReturn(Future.successful(HttpResponse(200)))
       ersFileValidatorConnector.sendToSubmissions(submissionData, empRef).map {
-        response => response.body must equal(200)
+        response => response.right.get.body must equal(200)
       }
     }
 

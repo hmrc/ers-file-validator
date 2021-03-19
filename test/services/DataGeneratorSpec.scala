@@ -32,7 +32,8 @@ import play.api.mvc.Request
 import services.audit.AuditEvents
 import services.headers.HeaderData
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.services.validation.{Cell, DataValidator, ValidationError}
+import uk.gov.hmrc.services.validation.DataValidator
+import uk.gov.hmrc.services.validation.models._
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
@@ -43,7 +44,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  val dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig, ec)
+  val dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig)
 
   val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
@@ -176,7 +177,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
   }
 
   "generateRowData" should {
-    val validator = DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
+    val validator = new DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
 
     "return the data when parsed correctly and no errors are found" in {
       val result = dataGenerator.generateRowData(XMLTestData.emiAdjustmentsExpData, 10, validator)(schemeInfo, "Other_Grants_V3", hc, request)
@@ -259,35 +260,6 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
       val result = dataGenerator.getErrors(XMLTestData.getEMIAdjustmentsRepeatedTemplate)(schemeInfo,hc,request)
       result.size mustEqual(1)
       result(0).data.size mustEqual(4)
-    }
-  }
-
-  "addSheetData" should {
-    "should return an empty list buffer if it's size is >= 10 " in {
-      val dataList: ListBuffer[SchemeData] = ListBuffer()
-      val result = dataGenerator.addSheetData(schemeInfo, "EMI40_Adjustments_V3", 12, ListBuffer(XMLTestData.emiAdjustmentsExpData), dataList)
-      result.size mustEqual (0)
-    }
-  }
-
-  "getCsvData" should {
-    "validate csv from the ninth row" in {
-      when(mockAppConfig.validationChunkSize).thenReturn(10000)
-      val x = Iterator(
-        "no,no,yes,3,2015-12-09,John,Barry,Doe,AA123456A,123/XZ55555555,10.1234,100.12,10.1234,10.1234",
-        "no,no,yes,3,2015-12-09,John,Barry,Doe,AA123456A,123/XZ55555555,10.1234,100.12,10.1234,10.1234",
-        "no,no,yes,3,2015-12-09,John,Barry,Doe,AA123456A,123/XZ55555555,10.1234,100.12,10.1234,10.1234"
-      )
-
-      val result = dataGenerator.getCsvData(x)(schemeInfo, "EMI40_Adjustments_V3",hc,request)
-      result.size must be (3)
-    }
-
-    "throw an exception if csv file is empty" in {
-      val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getCsvData(Iterator())(schemeInfo, "EMI40_Adjustments_V3",hc,request)
-      }
-      result.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload EMI40_Adjustments_V3.csv as part of your annual return."
     }
   }
 

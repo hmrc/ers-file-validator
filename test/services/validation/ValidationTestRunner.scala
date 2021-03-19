@@ -16,7 +16,8 @@
 
 package services.validation
 
-import uk.gov.hmrc.services.validation.{ValidationError, Cell, DataValidator}
+import uk.gov.hmrc.services.validation.DataValidator
+import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
 import org.scalatestplus.play.PlaySpec
 
@@ -41,7 +42,7 @@ trait ValidationTestRunner extends PlaySpec{
   def runTests(validator:DataValidator, descriptions: List[String], testDatas:List[Cell], expectedResults:List[Option[List[ValidationErrorData]]]) = {
       for (x <- 0 until descriptions.length) {
         descriptions(x) in {
-          validator.validateCell(testDatas(x), Some(ValidationContext)) mustBe resultBuilder(testDatas(x), expectedResults(x))
+          validator.validateCell(testDatas(x)) mustBe resultBuilder(testDatas(x), expectedResults(x))
         }
       }
   }

@@ -118,129 +118,14 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     schemeData
   }
 
-  def getCsvData(iterator: Iterator[String])
-                (implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): ListBuffer[Seq[String]] = {
-    val start = System.currentTimeMillis()
-    val chunkSize = config.validationChunkSize
-    val cpus = Runtime.getRuntime.availableProcessors()
-
-    Logger.info(s"Validating file ${sheetName} cpus: $cpus chunkSize: $chunkSize")
-
-    val validator = setValidator(sheetName)
-    val columnCount = getSheet(sheetName)(schemeInfo, hc, request).headerRow.size
-
-    val rows = getRowsFromFile(iterator)
-    val chunks = numberOfChunks(rows.size, chunkSize)
-    val submissions = submitChunks(rows, chunks, chunkSize, columnCount, validator)
-    val result = getResult(submissions)
-
-    val data = checkResult(result) match {
-      case Success(rows) => rows
-      case Failure(ex) => throw ex
-    }
-
-    val timeTaken = System.currentTimeMillis() - start
-    Logger.info(s"Validation of file ${sheetName} completed in $timeTaken ms")
-
-    if (data.isEmpty) {
-      throw ERSFileProcessingException(
-        s"${ErrorResponseMessages.ersCheckCsvFileNoData(sheetName + ".csv")}",
-        s"${ErrorResponseMessages.ersCheckCsvFileNoData()}")
-    }
-    data
-  }
-
-  def getRowsFromFile(iterator: Iterator[String]): List[List[String]] = {
-    val rows: ListBuffer[List[String]] = new ListBuffer()
-    while (iterator.hasNext) {
-      val row = iterator.next().split(",").toList
-      rows += row
-    }
-    rows.toList
-  }
-
-  def numberOfChunks(rows: Int, chunkSize: Int): Int = {
-    val chunks: Int = (rows / chunkSize) + (if (rows % chunkSize == 0) 0 else 1)
-    chunks
-  }
-
-  def submitChunks(
-                    rows: List[List[String]],
-                    chunks: Int,
-                    chunkSize: Int,
-                    columnCount: Int,
-                    validator: DataValidator)
-                  (implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): Array[Future[List[Seq[String]]]] = {
-
-    val futures = new Array[Future[List[Seq[String]]]](chunks)
-
-    for (chunk <- 1 to chunks) {
-      val chunkStart = (chunk - 1) * chunkSize + 1
-      val chunkEnd = (chunk * chunkSize).min(rows.size)
-
-      futures(chunk - 1) = Future {
-        val chunk = rows.slice(chunkStart - 1, chunkEnd)
-        processChunk(chunk, chunkStart, columnCount, validator)
-      }
-    }
-    futures
-  }
-
-  def processChunk(
-                    chunk: List[List[String]],
-                    chunkStart: Int,
-                    columnCount: Int,
-                    validator: DataValidator)
-                  (implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): List[Seq[String]] = {
-
-    val data: ListBuffer[Seq[String]] = new ListBuffer()
-    var rowNo = chunkStart
-    chunk.foreach(row => {
-      val rowData: Seq[String] = constructColumnData(row, columnCount)
-      if (!isBlankRow(rowData)) {
-        data += generateRowData(rowData, rowNo, validator)
-      }
-      rowNo += 1
-    })
-    data.toList
-  }
-
-  def getResult(submissions: Array[Future[List[Seq[String]]]]): Future[ListBuffer[Seq[String]]] = {
-    val data: ListBuffer[Seq[String]] = new ListBuffer()
-
-    val result = Future.fold(submissions)(data)((a, b) => b match {
-      case rows if rows.nonEmpty => a ++= rows
-      case _ => a
-    })
-
-    result
-  }
-
-  def checkResult[T](result: Future[T]): Try[T] = {
-    Await.ready(result, Duration.Inf)
-    result.value match {
-      case Some(Success(t)) => Success(t)
-      case Some(Failure(t)) => Failure(t)
-      case None => Failure(new RuntimeException("Unable to retrieve value of future CSV file validation."))
-    }
-  }
-
-  def addSheetData(schemeInfo: SchemeInfo, sheetName: String, rowCount: Int, ersSchemeData: ListBuffer[Seq[String]], schemeData: ListBuffer[SchemeData]) = {
-    if (!sheetName.isEmpty && rowCount >= 10) {
-      schemeData += SchemeData(schemeInfo, sheetName, None, ersSchemeData.dropRight(0))
-      ersSchemeData.clear
-    }
-    ersSchemeData
-  }
-
-  def setValidator(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]) = {
+  def setValidator(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): DataValidator = {
     try {
       ERSValidationConfigs.getValidator(ersSheets(sheetName).configFileName)
     } catch {
       case e: Exception => {
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
         Logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
-        throw new ERSFileProcessingException(
+        throw ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserConfigFailure}",
           "Could not set the validator ")
       }
@@ -261,27 +146,22 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     }
   }
 
-  def identifyAndDefineSheet(data: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]) = {
+  def identifyAndDefineSheet(data: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): String = {
     Logger.debug("5.1  case 0 identifyAndDefineSheet  ")
     val res = getSheet(data)
-    res.schemeType.toLowerCase == schemeInfo.schemeType.toLowerCase match {
-      case true => {
-        Logger.debug("****5.1.1  data contains data:  *****" + data)
-        data
-      }
-      case _ => {
-        auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
-        Logger.warn(s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
-        throw ERSFileProcessingException(
-          s"${ErrorResponseMessages.dataParserIncorrectSchemeType()}",
-          s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
-      }
+    if (res.schemeType.toLowerCase == schemeInfo.schemeType.toLowerCase) {
+      Logger.debug("****5.1.1  data contains data:  *****" + data)
+      data
+    } else {
+      auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
+      Logger.warn(s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
+      throw ERSFileProcessingException(
+        s"${ErrorResponseMessages.dataParserIncorrectSchemeType()}",
+        s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
     }
   }
 
-
-
-  def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]) = {
+  def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): SheetInfo = {
     Logger.info(s"Looking for sheetName: ${sheetName}")
     ersSheets.getOrElse(sheetName, {
       auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
@@ -290,20 +170,6 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
         s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
     })
-  }
-
-  def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
-    implicit  hc: HeaderCarrier, request: Request[_]): Either[Throwable, SheetInfo] = {
-    Logger.info(s"[DataGenerator][getSheetCsv] Looking for sheetName: $sheetName")
-    ersSheets.get(sheetName) match {
-      case Some(sheetInfo) => Right(sheetInfo)
-      case _ =>
-        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-        Logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
-        Left(ERSFileProcessingException(
-          s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-          s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}"))
-    }
   }
 
   def validateHeaderRow(rowData: Seq[String], sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]) = {

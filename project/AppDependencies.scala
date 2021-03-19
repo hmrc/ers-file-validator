@@ -11,7 +11,7 @@ object AppDependencies {
     "uk.gov.hmrc" %% "domain" % "5.10.0-play-26",
     "uk.gov.hmrc" %% "http-caching-client" % "9.2.0-play-26",
     "uk.gov.hmrc" % "bulk-entity-streaming_2.11" % "1.0.0",
-    "uk.gov.hmrc" %% "tabular-data-validator" % "0.1.0-SNAPSHOT",
+    "uk.gov.hmrc" %% "tabular-data-validator" % "0.2.0-SNAPSHOT",
     "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
     "com.typesafe.play" %% "play-json-joda" % "2.6.10",
@@ -39,7 +39,9 @@ object AppDependencies {
         "com.typesafe.play" %% "play-test" % PlayVersion.current % scope,
         "com.github.tomakehurst" % "wiremock-jre8" % "2.26.3" % scope,
         "uk.gov.hmrc" %% "crypto" % "5.6.0",
-        "org.mockito" % "mockito-core" % "3.3.3" % scope
+        "org.mockito" % "mockito-core" % "3.3.3" % scope,
+        "com.typesafe.akka" %% "akka-testkit" % "2.6.12" % scope
+
       )
     }.test
   }

@@ -24,20 +24,20 @@ import akka.stream.scaladsl.{Flow, Sink, Source}
 import akka.util.ByteString
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
-import models.upscan.{UpscanCsvFileData, UpscanCsvFilesList}
-import models.{ERSFileProcessingException, SchemeData, SchemeInfo, CsvFileContents}
-import org.apache.commons.io.FilenameUtils
+import models.upscan.UpscanCsvFileData
+import models.{CsvFileContents, ERSFileProcessingException, SchemeData, SchemeInfo}
 import play.api.Logger
-import play.api.mvc.{AnyContent, Request}
+import play.api.mvc.Request
+import services.ERSTemplatesInfo.ersSheets
 import services.FlowOps.eitherFromFunction
+import services.audit.AuditEvents
 import services.validation.ErsValidator.getCells
-import uk.gov.hmrc.services.validation.models._
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.services.validation.DataValidator
-import javax.inject.{Inject, Singleton}
-import services.audit.AuditEvents
-import utils.ErrorResponseMessages
+import uk.gov.hmrc.services.validation.models._
+import utils.{ErrorResponseMessages, ValidationUtils}
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -56,10 +56,13 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     response match {
       case HttpResponse(akka.http.scaladsl.model.StatusCodes.OK, _, entity, _) => entity.withSizeLimit(uploadCsvSizeLimit).dataBytes
       case notOkResponse =>
+        Logger.error(
+          s"[ProcessCsvService][extractEntityData] Illegal response from Upscan: ${notOkResponse.status.intValue}, " +
+            s"body: ${notOkResponse.entity.dataBytes}")
         Source.failed(
-          UpstreamErrorResponse(
-            s"[ProcessCsvService][extractEntityData] Illegal response from Upscan: ${notOkResponse.status.intValue}, body: ${notOkResponse.entity.dataBytes}",
-            notOkResponse.status.intValue))
+          ERSFileProcessingException(
+            s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
+            s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}"))
     }
 
   def extractBodyOfRequest: Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _] =
@@ -78,7 +81,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       val sheetName = successUpload.name.replace(".csv", "")
       val tryValidator: Either[Throwable, DataValidator] = dataGenerator.setValidatorCsv(sheetName, callback.schemeInfo)
 
-      tryValidator.fold (
+      tryValidator.fold(
         throwable => Future.successful(Left(throwable)),
         validator => {
           val futureListOfErrors: Future[Seq[Either[Throwable, Seq[String]]]] = extractBodyOfRequest(source(successUpload.downloadUrl))
@@ -86,7 +89,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
             .runWith(Sink.seq[Either[Throwable, Seq[String]]])
 
           futureListOfErrors.map { sequenceOfEithers =>
-            sequenceOfEithers.collectFirst{ case Left(x) => x } match {
+            sequenceOfEithers.collectFirst { case Left(x) => x } match {
               case Some(anError) => Left(anError)
               case None => Right(CsvFileContents(sheetName, sequenceOfEithers.map(_.right.get)))
             }
@@ -99,7 +102,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     implicit request: Request[_], hc: HeaderCarrier
   ): Future[Either[Throwable, (Int, Int)]] = {
 
-    result.fold (
+    result.fold(
       throwable => Future(Left(throwable)),
       noIssues => {
         val schemeData: SchemeData = SchemeData(schemeInfo, noIssues.sheetName, None, noIssues.contents.to[ListBuffer])
@@ -115,77 +118,90 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     )
   }
 
-  def formatDataToValidate(rowData: Seq[String], sheetName: String): Seq[String] = {
-    val sheetColSize = ERSTemplatesInfo.ersSheets(sheetName.replace(".csv", "")).headerRow.length
-    rowData.take(sheetColSize)
+  def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
+    implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, SheetInfo] = {
+    Logger.info(s"[DataGenerator][getSheetCsv] Looking for sheetName: $sheetName")
+    ersSheets.get(sheetName) match {
+      case Some(sheetInfo) => Right(sheetInfo)
+      case _ =>
+        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
+        Logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
+        Left(ERSFileProcessingException(
+          s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+          s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}"))
+    }
+  }
+
+  def formatDataToValidate(rowData: Seq[String], sheetName: String, schemeInfo: SchemeInfo)(
+    implicit hc: HeaderCarrier, request: Request[_]
+  ): Either[Throwable, Seq[String]] = {
+    getSheetCsv(sheetName.replace(".csv", ""), schemeInfo) match {
+      case Left(throwable) => Left(throwable)
+      case Right(sheetInfo) =>
+        val sheetColSize = sheetInfo.headerRow.length
+        Right(rowData.take(sheetColSize))
+    }
   }
 
   def processRow(rowBytes: List[ByteString], sheetName: String, schemeInfo: SchemeInfo, validator: DataValidator)(
     implicit request: Request[_], hc: HeaderCarrier
   ): Either[Throwable, Seq[String]] = {
-    val rowStrings = rowBytes.map(byteString => byteString.utf8String)
-    val parsedRow = formatDataToValidate(rowStrings, sheetName)
-    Try {
-      validator.validateRow(Row(0, getCells(parsedRow, 0)))
-    } match {
-      case Failure(e) =>
-        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
-        Logger.warn("Error while Validating File + Formatting errors present ")
-        Left(ERSFileProcessingException(
-          s"${ErrorResponseMessages.dataParserFileInvalid}",
-          s"${ErrorResponseMessages.dataParserValidationFailure}"))
-      case Success(list) if list.isEmpty => Right(parsedRow)
-      case Success(list) => Left(ERSFileProcessingException(
-          s"${ErrorResponseMessages.dataParserFileInvalid}",
-          s"${ErrorResponseMessages.dataParserValidationFailure}"))
+    val rowStrings: Seq[String] = rowBytes.map(byteString => byteString.utf8String)
+    formatDataToValidate(rowStrings, sheetName, schemeInfo) match {
+      case Left(throwable) => Left(throwable)
+      case Right(parsedRow) =>
+        Try {
+          validator.validateRow(Row(0, getCells(parsedRow, 0)))
+        } match {
+          case Failure(exception) =>
+            Logger.error(s"[ProcessCsvService][processRow] Exception returned when attempting to validate row: ${exception.getMessage}")
+            Left(exception)
+          case Success(list) if list.isEmpty => Right(parsedRow)
+          case Success(_) =>
+            auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
+            Logger.warn("[ProcessCsvService][processRow] Row validation found validation errors")
+            Left(ERSFileProcessingException(
+              s"${ErrorResponseMessages.dataParserFileInvalid}",
+              s"${ErrorResponseMessages.dataParserValidationFailure}"))
+        }
     }
   }
 
   def sendSchemeDataCsv(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Option[Throwable]] = {
-    Logger.debug("Sheedata sending to ers-submission " + ersSchemeData.sheetName)
+    Logger.debug("[ProcessCsvService][sendSchemeDataCsv] Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
     ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
-      case Right(_) => {
+      case Right(_) =>
         auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         None
-      }
-      case Left(ex) => {
+      case Left(ex) =>
         auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
-        Logger.error(ex.getMessage)
+        Logger.error(s"[ProcessCsvService][sendSchemeDataCsv] Exception found when sending to submissions: ${ex.getMessage}")
         Some(ERSFileProcessingException(ex.toString, ex.getStackTrace.toString))
-      }
     }
   }
 
   def sendSchemeCsv(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, Int]] = {
     val splitSchemes: Boolean = appConfig.splitLargeSchemes
     val maxNumberOfRows: Int = appConfig.maxNumberOfRowsPerSubmission
-    if(splitSchemes && (schemeData.data.size > maxNumberOfRows)) {
+    if (splitSchemes && (schemeData.data.size > maxNumberOfRows)) {
 
-      def numberOfSlices(sizeOfBuffer: Int): Int = {
-        if(sizeOfBuffer%maxNumberOfRows > 0)
-          sizeOfBuffer/maxNumberOfRows + 1
-        else
-          sizeOfBuffer/maxNumberOfRows
-      }
-
-      val slices: Int = numberOfSlices(schemeData.data.size)
+      val slices: Int = ValidationUtils.numberOfSlices(schemeData.data.size, maxNumberOfRows)
 
       val sendSchemeDataCsvResults: Seq[Future[Option[Throwable]]] = (0 until slices * maxNumberOfRows by maxNumberOfRows).map { number =>
         val scheme = new SchemeData(schemeData.schemeInfo, schemeData.sheetName, Option(slices),
-          schemeData.data.slice(number, (number + maxNumberOfRows)))
-        Logger.debug("The size of the scheme data is " + scheme.data.size + " and number is " + number)
+          schemeData.data.slice(number, number + maxNumberOfRows))
+        Logger.debug("[ProcessCsvService][sendSchemeCsv] The size of the scheme data is " + scheme.data.size + " and number is " + number)
         sendSchemeDataCsv(scheme, empRef)
       }
 
-      Future.sequence(sendSchemeDataCsvResults).map { failedSubmissions => if (failedSubmissions.forall(_.isEmpty)) {
-        Right(slices)
-      } else {
-        Left(failedSubmissions.collectFirst{
-          case throwable if throwable.isDefined => throwable.get
-        }.get)
+      Future.sequence(sendSchemeDataCsvResults).map { failedSubmissions =>
+        failedSubmissions.collectFirst {
+          case Some(throwable) => throwable
+        } match {
+          case Some(throwable) => Left(throwable)
+          case _ => Right(slices)
+        }
       }
-      }
-
     }
     else {
       sendSchemeDataCsv(schemeData, empRef).map {
