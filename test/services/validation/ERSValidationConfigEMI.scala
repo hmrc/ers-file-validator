@@ -133,9 +133,9 @@ class EMINonTaxableV3ValidationTest extends PlaySpec with ERSValidationEMINonTax
       val cellK = Cell("K", rowNumber, "no")
       val row = Row(1,Seq(cellL,cellK))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellL,"mandatoryL","L01","Enter 'yes' or 'no'.")
-      ))
+      )
     }
 
     "when Column L is answered yes, column M is a mandatory field" in {
@@ -143,9 +143,9 @@ class EMINonTaxableV3ValidationTest extends PlaySpec with ERSValidationEMINonTax
       val cellL = Cell("L", rowNumber, "yes")
       val row = Row(1,Seq(cellM,cellL))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellM,"mandatoryM","M01","Enter the HMRC reference (must be less than 11 characters).")
-      ))
+      )
     }
 
     "when a valid row of data is provided, no ValidationErrors should be raised" in {

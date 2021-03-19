@@ -98,9 +98,9 @@ class SIPOutV3ValidationTest extends PlaySpec with ERSValidationSIPOutTestData w
     val cellO= Cell("O", rowNumber, "NO")
     val row = Row(1, Seq(cellP, cellO))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt mustBe Some(List(
+    resOpt.get must contain (
       ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no'.")
-    ))
+    )
   }
 
   "when awards Column P is answered NO, column Q is a mandatory field" in {
@@ -108,9 +108,9 @@ class SIPOutV3ValidationTest extends PlaySpec with ERSValidationSIPOutTestData w
     val cellP= Cell("P", rowNumber, "NO")
     val row = Row(1, Seq(cellQ, cellP))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt mustBe Some(List(
+    resOpt.get must contain (
       ValidationError(cellQ, "mandatoryQ", "Q01", "Enter 'yes' or 'no'.")
-    ))
+    )
   }
 
   "when a valid row of data is provided, no ValidationErrors should be raised" in {

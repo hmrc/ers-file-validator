@@ -31,12 +31,14 @@ trait ValidationTestRunner extends PlaySpec{
     ValidationError(cell, expRes.id, expRes.errorId, expRes.errorMsg)
   }
 
-  def resultBuilder(cellData: Cell, expectedResultsMaybe: Option[List[ValidationErrorData]]): Option[List[ValidationError]] = {
+  def resultBuilder(cellData: Cell, expectedResultsMaybe: Option[List[ValidationErrorData]]): Option[ValidationError] = {
     if (expectedResultsMaybe.isDefined) {
       implicit val cell: Cell = cellData
       val validationErrors = expectedResultsMaybe.get.map(errorData => populateValidationError(errorData))
-      Some(validationErrors)
-    } else None
+      Some(validationErrors.head)
+    } else {
+      None
+    }
   }
 
   def runTests(validator:DataValidator, descriptions: List[String], testDatas:List[Cell], expectedResults:List[Option[List[ValidationErrorData]]]) = {

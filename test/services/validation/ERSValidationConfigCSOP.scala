@@ -17,8 +17,8 @@
 package services.validation
 
 import com.typesafe.config.ConfigFactory
+import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 import uk.gov.hmrc.services.validation.DataValidator
-import uk.gov.hmrc.services.validation.models._
 import org.scalatestplus.play.PlaySpec
 import services.validation.CSOPTestData.{ERSValidationCSOPExercisedTestData, ERSValidationCSOPRCLTestData, ERSValidationCSOPGrantedTestData}
 
@@ -33,8 +33,9 @@ class CSOPOptionsGrantedV3ValidationCSOPTest extends PlaySpec with ERSValidation
       val cellF = Cell("F", rowNumber, "no")
       val row = Row(1,Seq(cellG,cellF))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
-        ValidationError(cellG,"mandatoryG","G01","Enter 'yes' or 'no'.")))
+      resOpt.get must contain (
+        ValidationError(cellG,"mandatoryG","G01","Enter 'yes' or 'no'.")
+      )
     }
 
     "when sharesListedOnSE is answered yes, hmrcRef is a mandatory field" in {
@@ -42,9 +43,9 @@ class CSOPOptionsGrantedV3ValidationCSOPTest extends PlaySpec with ERSValidation
       val cellG = Cell("G", rowNumber, "yes")
       val row = Row(1,Seq(cellH,cellG))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellH,"mandatoryH","G02","Enter the HMRC reference (must be less than 11 characters).")
-      ))
+      )
     }
 
     "when a valid row of data is provided, no ValidationErrors should be raised" in {

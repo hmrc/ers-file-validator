@@ -18,7 +18,7 @@ package services
 
 import com.typesafe.config.ConfigFactory
 import config.ApplicationConfig
-import models.{ERSFileProcessingException, SchemeData, SchemeInfo}
+import models.{ERSFileProcessingException, SchemeInfo}
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
@@ -27,15 +27,13 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.i18n.Messages
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import services.headers.HeaderData
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.services.validation.models.{Cell, ValidationError}
 import uk.gov.hmrc.services.validation.DataValidator
-import uk.gov.hmrc.services.validation.models._
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 
@@ -177,15 +175,15 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
   }
 
   "generateRowData" should {
-    val validator = new DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
+    val validator = new DataValidator(ConfigFactory.load.getConfig("ers-other-grants-validation-config"))
 
     "return the data when parsed correctly and no errors are found" in {
-      val result = dataGenerator.generateRowData(XMLTestData.emiAdjustmentsExpData, 10, validator)(schemeInfo, "Other_Grants_V3", hc, request)
-      result must be(XMLTestData.emiAdjustmentsExpData)
+      val result = dataGenerator.generateRowData(XMLTestData.otherGrantsExpData, 10, validator)(schemeInfo, "Other_Grants_V3", hc, request)
+      result must be(XMLTestData.otherGrantsExpData)
     }
 
     "return an error when an issue is found" in {
-      val err = List(ValidationError(Cell("A",10,""),"MANDATORY","100","Enter 'yes' or 'no'."))
+      val err = List(ValidationError(Cell("A",10,""),"error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))
       val res1 = Try(dataGenerator.generateRowData(testAct, 10, validator)(schemeInfo, "Other_Grants_V3", hc, request))
       res1.isFailure mustBe true
       verify(mockAuditEvents, times(1)).validationErrorAudit(argEq(err), argEq(schemeInfo), argEq("Other_Grants_V3"))(any(), argEq(schemeInfo), any())

@@ -58,9 +58,9 @@ class OTHEROptionsV3ValidationTest extends PlaySpec with ERSValidationOTHEROptio
     val cellB = Cell("B", rowNumber, "yes")
     val row = Row(1,Seq(cellC,cellB))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt mustBe Some(List(
+    resOpt.get must contain (
       ValidationError(cellC,"mandatoryC","C01","Enter the scheme reference number (it should be an 8 digit number).")
-    ))
+    )
   }
 
 
@@ -70,9 +70,9 @@ class OTHEROptionsV3ValidationTest extends PlaySpec with ERSValidationOTHEROptio
     val cellAL = Cell("AL", rowNumber, "yes")
     val row = Row(1,Seq(cellAM,cellAL))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt mustBe Some(List(
+    resOpt.get must contain (
       ValidationError(cellAM,"mandatoryAM","AM01","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it).")
-    ))
+    )
   }
 
   "when a valid row of data is provided, no ValidationErrors should be raised" in {
@@ -91,9 +91,9 @@ class OTHEROptionsV3ValidationTest extends PlaySpec with ERSValidationOTHEROptio
 
 class OTHERAcquisitionV3ValidationTest extends PlaySpec with ERSValidationOTHERAcquisitionTestData with ValidationTestRunner {
 
-  val validator = new DataValidator(ConfigFactory.load.getConfig("ers-other-acquisition-validation-config"))
 
   "ERS Validation tests for OTHER Acquisition" should {
+    val validator = new DataValidator(ConfigFactory.load.getConfig("ers-other-acquisition-validation-config"))
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
 
     "when Column B is answered YES, column C is a mandatory field" in {
@@ -101,9 +101,9 @@ class OTHERAcquisitionV3ValidationTest extends PlaySpec with ERSValidationOTHERA
       val cellB = Cell("B", rowNumber, "yes")
       val row = Row(1,Seq(cellC,cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellC,"mandatoryB","MB","Enter the scheme reference number (it should be an 8 digit number).")
-      ))
+      )
     }
 
     "when Column T is answered YES, column U is a mandatory field" in {
@@ -111,9 +111,9 @@ class OTHERAcquisitionV3ValidationTest extends PlaySpec with ERSValidationOTHERA
       val cellT = Cell("T", rowNumber, "yes")
       val row = Row(1,Seq(cellU,cellT))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellU,"mandatoryT","MT","Enter 'yes' or 'no'.")
-      ))
+      )
     }
 
     "when Column U is answered NO, column V is a mandatory field" in {
@@ -121,9 +121,9 @@ class OTHERAcquisitionV3ValidationTest extends PlaySpec with ERSValidationOTHERA
       val cellU = Cell("U", rowNumber, "no")
       val row = Row(1,Seq(cellV,cellU))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellV,"mandatoryU","MU","Enter 'yes' or 'no'.")
-      ))
+      )
     }
 
     "when Column V is answered YES, column W is a mandatory field" in {
@@ -131,9 +131,9 @@ class OTHERAcquisitionV3ValidationTest extends PlaySpec with ERSValidationOTHERA
       val cellV = Cell("V", rowNumber, "yes")
       val row = Row(1,Seq(cellW,cellV))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellW,"mandatoryV","MV","Enter the HMRC reference (must be less than 11 characters).")
-      ))
+      )
     }
 
     "when Column Y is filled 1, column Z is a mandatory field" in {
@@ -141,9 +141,9 @@ class OTHERAcquisitionV3ValidationTest extends PlaySpec with ERSValidationOTHERA
       val cellY = Cell("Y", rowNumber, "1")
       val row = Row(1,Seq(cellZ,cellY))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellZ,"mandatoryY","MY","Enter '1', '2' or '3'.")
-      ))
+      )
     }
 
     "when Column Y is filled 1, column AD is a mandatory field" in {
@@ -151,9 +151,9 @@ class OTHERAcquisitionV3ValidationTest extends PlaySpec with ERSValidationOTHERA
       val cellY = Cell("Y", rowNumber, "1")
       val row = Row(1,Seq(cellAD,cellY))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellAD,"mandatoryY2","MY2","Enter 'yes' or 'no'.")
-      ))
+      )
     }
 
     "when Column AD is answered YES, column AE is a mandatory field" in {
@@ -161,9 +161,9 @@ class OTHERAcquisitionV3ValidationTest extends PlaySpec with ERSValidationOTHERA
       val cellAD = Cell("AD", rowNumber, "yes")
       val row = Row(1,Seq(cellAE,cellAD))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellAE,"mandatoryD1","MD1","Enter 'all' or 'some'.")
-      ))
+      )
     }
 
     "when Column AI is answered YES, column AJ is a mandatory field" in {
@@ -171,9 +171,9 @@ class OTHERAcquisitionV3ValidationTest extends PlaySpec with ERSValidationOTHERA
       val cellAI = Cell("AI", rowNumber, "yes")
       val row = Row(1,Seq(cellAJ,cellAI))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellAJ,"mandatoryI1","MI1","Enter '1', '2' or '3'.")
-      ))
+      )
     }
 
     "when Column AK is answered YES, column AL is a mandatory field" in {
@@ -181,9 +181,9 @@ class OTHERAcquisitionV3ValidationTest extends PlaySpec with ERSValidationOTHERA
       val cellAK = Cell("AK", rowNumber, "yes")
       val row = Row(1,Seq(cellAL,cellAK))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellAL,"mandatoryK1","MK1","Enter 'yes' or 'no'.")
-      ))
+      )
     }
 
   }
@@ -202,9 +202,9 @@ class OTHERRestrictedSecuritiesV3_ValidationTest extends PlaySpec with ERSValida
     val cellB = Cell("B", rowNumber, "yes")
     val row = Row(1,Seq(cellC,cellB))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt mustBe Some(List(
+    resOpt.get must contain (
       ValidationError(cellC,"mandatoryC","C01","Enter the scheme reference number (it should be an 8 digit number).")
-    ))
+    )
   }
 
   "when Column L is answered yes, column M is a mandatory field" in {
@@ -212,9 +212,9 @@ class OTHERRestrictedSecuritiesV3_ValidationTest extends PlaySpec with ERSValida
     val cellL = Cell("L", rowNumber, "no")
     val row = Row(1,Seq(cellM,cellL))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt mustBe Some(List(
+    resOpt.get must contain (
       ValidationError(cellM,"mandatoryM","M01","Enter 'yes' or 'no'.")
-    ))
+    )
   }
 
   "when Column L is answered yes, column N is a mandatory field" in {
@@ -222,9 +222,9 @@ class OTHERRestrictedSecuritiesV3_ValidationTest extends PlaySpec with ERSValida
     val cellM = Cell("M", rowNumber, "yes")
     val row = Row(1,Seq(cellN,cellM))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt mustBe Some(List(
+    resOpt.get must contain (
       ValidationError(cellN,"mandatoryN","N01","Enter the HMRC reference (must be less than 11 characters).")
-    ))
+    )
   }
 
   "when a valid row of data is provided, no ValidationErrors should be raised" in {
@@ -254,9 +254,9 @@ class OTHEROtherBenefitsV3ValidationTest extends PlaySpec with ERSValidationOTHE
     val cellB = Cell("B", rowNumber, "yes")
     val row = Row(1,Seq(cellC,cellB))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt mustBe Some(List(
+    resOpt.get must contain (
       ValidationError(cellC,"mandatoryB","MB","Enter the scheme reference number (it should be an 8 digit number).")
-    ))
+    )
   }
 }
 
@@ -273,9 +273,9 @@ class OTHERConvertibleV3ValidationTest extends PlaySpec with ERSValidationOTHERC
     val cellB = Cell("B", rowNumber, "yes")
     val row = Row(1, Seq(cellC, cellB))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt mustBe Some(List(
+    resOpt.get must contain (
       ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number).")
-    ))
+    )
   }
 
   "when a valid row of data is provided, no ValidationErrors should be raised" in {
@@ -303,9 +303,9 @@ class OTHERNotionalV3ValidationTest extends PlaySpec with ERSValidationOTHERNoti
       val cellB = Cell("B", rowNumber, "yes")
       val row = Row(1, Seq(cellC, cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number).")
-      ))
+      )
     }
   }
 
@@ -335,9 +335,9 @@ class OTHEREnhancementV3ValidationTest extends PlaySpec with ERSValidationOTHERE
       val cellB = Cell("B", rowNumber, "yes")
       val row = Row(1, Seq(cellC, cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number).")
-      ))
+      )
     }
   }
 
@@ -367,9 +367,9 @@ class OTHERSoldV3ValidationTest extends PlaySpec with ERSValidationOTHERSoldTest
       val cellB = Cell("B", rowNumber, "yes")
       val row = Row(1, Seq(cellC, cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt mustBe Some(List(
+      resOpt.get must contain (
         ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number).")
-      ))
+      )
     }
   }
 
