@@ -146,6 +146,32 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
     }
   }
 
+  "setValidator" should {
+    "return a DataValidator if the given sheet name is valid" in {
+      assert(dataGenerator.setValidator("EMI40_Adjustments_V3")(SchemeInfo("", DateTime.now(), "" ,"" ,"", ""), hc, request).isInstanceOf[DataValidator])
+    }
+
+    "throw an exception if the given sheet name is not valid" in {
+      an[ERSFileProcessingException] mustBe thrownBy (dataGenerator.setValidator("Invalid")(SchemeInfo("", DateTime.now(), "" ,"" ,"", ""), hc, request))
+    }
+  }
+
+  "setValidatorCsv" should {
+    "return a Right with a DataValidator if the given sheet name is valid" in {
+      dataGenerator.setValidatorCsv("EMI40_Adjustments_V3", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
+        case Left(_) => fail("Did not return validator")
+        case Right(_) => succeed
+      }
+    }
+
+    "return a left with an exception if the given sheet name is not valid" in {
+      dataGenerator.setValidatorCsv("Invalid", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
+        case Left(_) => succeed
+        case Right(_) => fail("Did not return expected exception")
+      }
+    }
+  }
+
   "identifyAndDefineSheet" should {
     "identify and define the sheet with correct scheme type" in {
       dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V3")(schemeInfo, hc, request) mustBe ("EMI40_Adjustments_V3")
@@ -155,6 +181,20 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
       val result = Try(dataGenerator.identifyAndDefineSheet("EMI40_Adjustments")(schemeInfo, hc, request))
       result.isFailure must be(true)
       verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo), argEq("EMI40_Adjustments"), argEq("Could not set the validator"))(any(), any())
+    }
+
+    "return an error when scheme types do not match" in {
+      val schemeInfo2: SchemeInfo = SchemeInfo(
+        schemeRef = "XA11999991234567",
+        timestamp = DateTime.now,
+        schemeId = "123PA12345678",
+        taxYear = "2014/F15",
+        schemeName = "MyScheme",
+        schemeType = "CSOP"
+      )
+      val result = Try(dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V3")(schemeInfo2, hc, request))
+      result.isFailure must be(true)
+      verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo2), argEq("EMI40_Adjustments_V3"), argEq("emi is not equal to csop"))(any(), any())
     }
   }
 

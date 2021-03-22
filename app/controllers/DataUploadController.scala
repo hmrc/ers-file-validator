@@ -29,9 +29,8 @@ import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
 import play.api.Logger
 import play.api.libs.json.JsValue
-import play.api.mvc.{Action, AnyContent, ControllerComponents, DefaultActionBuilder, PlayBodyParsers, Request}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, DefaultActionBuilder, Request}
 import services.{ProcessOdsService, ProcessCsvService, SessionService}
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
