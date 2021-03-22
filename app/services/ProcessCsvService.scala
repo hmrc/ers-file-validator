@@ -51,6 +51,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
                                    actorSystem: ActorSystem) {
 
   private val uploadCsvSizeLimit: Int = appConfig.uploadCsvSizeLimit
+  private[services] val ersSheetsClone: Map[String, SheetInfo] = ersSheets
 
   def extractEntityData(response: HttpResponse): Source[ByteString, _] =
     response match {
@@ -104,14 +105,14 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 
     result.fold(
       throwable => Future(Left(throwable)),
-      noIssues => {
-        val schemeData: SchemeData = SchemeData(schemeInfo, noIssues.sheetName, None, noIssues.contents.to[ListBuffer])
-        Logger.info("2.1 result contains: " + noIssues)
-        Logger.debug("No if SchemeData Objects " + noIssues.contents.size)
+      csvFileContents => {
+        val schemeData: SchemeData = SchemeData(schemeInfo, csvFileContents.sheetName, None, csvFileContents.contents.to[ListBuffer])
+        Logger.info("2.1 result contains: " + csvFileContents)
+        Logger.debug("No if SchemeData Objects " + csvFileContents.contents.size)
         sendSchemeCsv(schemeData, empRef).map { issues =>
           issues.fold(
             throwable => Left(throwable),
-            noIssues => Right(noIssues, schemeData.data.size)
+            noOfSlices => Right(noOfSlices, schemeData.data.size)
           )
         }
       }
@@ -121,7 +122,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
   def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
     implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, SheetInfo] = {
     Logger.info(s"[DataGenerator][getSheetCsv] Looking for sheetName: $sheetName")
-    ersSheets.get(sheetName) match {
+    ersSheetsClone.get(sheetName) match {
       case Some(sheetInfo) => Right(sheetInfo)
       case _ =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
