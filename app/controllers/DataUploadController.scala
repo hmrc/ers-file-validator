@@ -89,10 +89,10 @@ class DataUploadController @Inject()(sessionService: SessionService,
           Logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
 
-          val processedFiles: List[Future[Either[Throwable, CsvFileContents]]] = processCsvService.processFiles(res, readFileCsv)
+          val processedFiles: List[Future[Either[Throwable, CsvFileSubmissions]]] = processCsvService.processFilesNew(res, streamFile)
 
           val extractedSchemeData: Seq[Future[Either[Throwable, (Int, Int)]]] = processedFiles.map{ list =>
-            list.flatMap(processCsvService.extractSchemeData(res.schemeInfo, empRef, _))}
+            list.flatMap(processCsvService.extractSchemeDataNew(res.schemeInfo, empRef, _))}
 
           Future.sequence(extractedSchemeData).flatMap{ oneFileResults => oneFileResults.find(_.isLeft) match {
             case Some(Left(throwable: ERSFileProcessingException)) =>
@@ -109,6 +109,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
               sessionService.storeCallbackData(res.callbackData.head, totalRowCount).map {
                 case callback: Option[UpscanCallback] if callback.isDefined =>
                   val numberOfSlices = result.map(_._1).sum
+                  Logger.error("Completed processing innit")
                   Ok(numberOfSlices.toString)
                 case _ =>
                   Logger.error(
@@ -127,7 +128,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
       )
   }
 
-  private[controllers] def readFileCsv(downloadUrl: String): Source[HttpResponse, _] = {
+  private[controllers] def streamFile(downloadUrl: String): Source[HttpResponse, _] = {
     Source
       .single(HttpRequest(uri = downloadUrl))
       .mapAsync(parallelism = 1)(makeRequest)

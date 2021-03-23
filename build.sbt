@@ -54,3 +54,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(resolvers += Resolver.bintrayRepo("hmrc", "releases"), resolvers += Resolver.jcenterRepo)
   .settings(majorVersion := 1)
   .settings(PlayKeys.playDefaultPort := 9226)
+
+scalacOptions ++= Seq(
+  "-P:silencer:pathFilters=views;routes"
+)

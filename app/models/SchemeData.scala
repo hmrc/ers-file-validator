@@ -19,12 +19,20 @@ package models
 import org.joda.time.DateTime
 import play.api.libs.json.{Format, JodaReads, JsResult, JsValue, Json, OFormat}
 import play.api.libs.json.JodaWrites._
+import models.upscan.UpscanCallback
 
 import scala.collection.mutable.ListBuffer
 
 case class SchemeData (schemeInfo: SchemeInfo, sheetName: String, numberOfParts: Option[Int], data: ListBuffer[Seq[String]])
+
 object SchemeData {
   implicit val formatSchemeData: OFormat[SchemeData] = Json.format[SchemeData]
+}
+
+case class SubmissionsSchemeData(schemeInfo: SchemeInfo, sheetName: String, upscanCallback: UpscanCallback)
+
+object SubmissionsSchemeData {
+  implicit val formatSubmissionsSchemeData: OFormat[SubmissionsSchemeData] = Json.format[SubmissionsSchemeData]
 }
 
 case class SchemeInfo (

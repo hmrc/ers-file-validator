@@ -162,7 +162,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   }
 
   def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): SheetInfo = {
-    Logger.info(s"Looking for sheetName: ${sheetName}")
+    Logger.debug(s"Looking for sheetName: ${sheetName}")
     ersSheets.getOrElse(sheetName, {
       auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
       Logger.warn(s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
