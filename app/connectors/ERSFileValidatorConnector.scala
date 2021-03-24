@@ -69,7 +69,8 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
       deliverSendToSubmissionsMetrics(startTime)
       Right(response)
     }.recover {
-      case exception => handleException(exception, startTime, submissionsSchemeData.schemeInfo, submissionsSchemeData.sheetName)
+      case exception =>
+        handleException(exception, startTime, submissionsSchemeData.schemeInfo, submissionsSchemeData.sheetName)
     }
   }
 

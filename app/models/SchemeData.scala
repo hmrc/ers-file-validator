@@ -29,7 +29,7 @@ object SchemeData {
   implicit val formatSchemeData: OFormat[SchemeData] = Json.format[SchemeData]
 }
 
-case class SubmissionsSchemeData(schemeInfo: SchemeInfo, sheetName: String, upscanCallback: UpscanCallback)
+case class SubmissionsSchemeData(schemeInfo: SchemeInfo, sheetName: String, data: UpscanCallback)
 
 object SubmissionsSchemeData {
   implicit val formatSubmissionsSchemeData: OFormat[SubmissionsSchemeData] = Json.format[SubmissionsSchemeData]

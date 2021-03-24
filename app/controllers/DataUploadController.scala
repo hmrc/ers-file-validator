@@ -91,8 +91,8 @@ class DataUploadController @Inject()(sessionService: SessionService,
 
           val processedFiles: List[Future[Either[Throwable, CsvFileSubmissions]]] = processCsvService.processFilesNew(res, streamFile)
 
-          val extractedSchemeData: Seq[Future[Either[Throwable, (Int, Int)]]] = processedFiles.map{ list =>
-            list.flatMap(processCsvService.extractSchemeDataNew(res.schemeInfo, empRef, _))}
+          val extractedSchemeData: Seq[Future[Either[Throwable, (Int, Int)]]] = processedFiles.map{ submission =>
+            submission.flatMap(processCsvService.extractSchemeDataNew(res.schemeInfo, empRef, _))}
 
           Future.sequence(extractedSchemeData).flatMap{ oneFileResults => oneFileResults.find(_.isLeft) match {
             case Some(Left(throwable: ERSFileProcessingException)) =>

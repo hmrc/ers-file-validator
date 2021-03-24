@@ -130,6 +130,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
             sequenceOfEithers.collectFirst { case Left(x) => x } match {
               case Some(anError) => Left(anError)
               case None =>
+                Logger.error("so successUpload is " + successUpload)
                 Right(CsvFileSubmissions(sheetName, sequenceOfEithers.length, successUpload))
             }
           }
@@ -163,7 +164,10 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       csvFileContents => {
         sendSchemeCsv(SubmissionsSchemeData(schemeInfo, csvFileContents.sheetName, csvFileContents.upscanCallback), empRef).map { issues =>
           issues.fold(
-            throwable => Left(throwable),
+            throwable => {
+              Logger.error("so upscanCallback is " + csvFileContents.upscanCallback)
+              Left(throwable)
+            },
             noOfSlices => Right(noOfSlices, csvFileContents.fileLength)
           )
         }

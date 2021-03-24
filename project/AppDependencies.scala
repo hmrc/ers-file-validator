@@ -13,7 +13,7 @@ object AppDependencies {
     "uk.gov.hmrc" %% "domain" % "5.10.0-play-26",
     "uk.gov.hmrc" %% "http-caching-client" % "9.2.0-play-26",
     "uk.gov.hmrc" % "bulk-entity-streaming_2.11" % "1.0.0",
-    "uk.gov.hmrc" %% "tabular-data-validator" % "0.1.0-SNAPSHOT",
+    "uk.gov.hmrc" %% "tabular-data-validator" % "0.2.0-SNAPSHOT",
     "org.scala-lang.modules" %% "scala-xml" % "1.0.6",
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
     "com.typesafe.play" %% "play-json-joda" % "2.6.10",
