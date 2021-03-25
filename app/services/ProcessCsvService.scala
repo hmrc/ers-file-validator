@@ -133,6 +133,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       )
     }
 
+  //TODO Old version - remove after successful release of large file changes
   def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[Throwable, CsvFileContents])(
     implicit request: Request[_], hc: HeaderCarrier
   ): Future[Either[Throwable, (Int, Int)]] = {
@@ -157,7 +158,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     result.fold(
       throwable => Future(Left(throwable)),
       csvFileSubmissions => {
-        sendSchemeCsv(SubmissionsSchemeData(schemeInfo, csvFileSubmissions.sheetName, csvFileSubmissions.upscanCallback), empRef, csvFileSubmissions.fileLength)
+        sendSchemeCsv(SubmissionsSchemeData(schemeInfo, csvFileSubmissions.sheetName, csvFileSubmissions.upscanCallback, csvFileSubmissions.fileLength), empRef)
           .map { issues =>
             issues.fold(
               throwable => Left(throwable),
@@ -194,6 +195,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     }
   }
 
+  //TODO Old version - remove after successful release of large file changes
   def sendSchemeDataCsv(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Option[Throwable]] = {
     Logger.debug("[ProcessCsvService][sendSchemeDataCsv] Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
     ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
@@ -220,10 +222,10 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     }
   }
 
-  def sendSchemeCsv(schemeData: SubmissionsSchemeData, empRef: String, numberOfRows: Int)(
+  def sendSchemeCsv(schemeData: SubmissionsSchemeData, empRef: String)(
     implicit hc: HeaderCarrier, request: Request[_]) = {
     val maxNumberOfRows: Int = appConfig.maxNumberOfRowsPerSubmission
-    val slices: Int = ValidationUtils.numberOfSlices(numberOfRows, maxNumberOfRows)
+    val slices: Int = ValidationUtils.numberOfSlices(schemeData.numberOfRows, maxNumberOfRows)
 
     Logger.error("number of slices is " + slices)
 
@@ -233,6 +235,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     }
   }
 
+  //TODO Old version - remove after successful release of large file changes
   def sendSchemeCsv(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, Int]] = {
     val splitSchemes: Boolean = appConfig.splitLargeSchemes
     val maxNumberOfRows: Int = appConfig.maxNumberOfRowsPerSubmission
