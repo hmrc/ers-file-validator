@@ -33,6 +33,7 @@ import services.headers.HeaderData
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.models.{Cell, ValidationError}
 import uk.gov.hmrc.services.validation.DataValidator
+import utils.ErrorResponseMessages
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
@@ -156,16 +157,16 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
     }
   }
 
-  "setValidatorCsv" should {
+  "getValidatorAndSheetInfo" should {
     "return a Right with a DataValidator if the given sheet name is valid" in {
-      dataGenerator.setValidatorCsv("EMI40_Adjustments_V3", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
+      dataGenerator.getValidatorAndSheetInfo("EMI40_Adjustments_V3", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
         case Left(_) => fail("Did not return validator")
         case Right(_) => succeed
       }
     }
 
     "return a left with an exception if the given sheet name is not valid" in {
-      dataGenerator.setValidatorCsv("Invalid", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
+      dataGenerator.getValidatorAndSheetInfo("Invalid", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
         case Left(_) => succeed
         case Right(_) => fail("Did not return expected exception")
       }
@@ -325,4 +326,37 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
     }
 
   }
+
+  "getSheetCsv" should {
+    def testServiceCreator(sheets: Map[String, SheetInfo]) = new DataGenerator(
+      mockAuditEvents, mockAppConfig
+    ) {
+      override val ersSheetsClone: Map[String, SheetInfo] = sheets
+    }
+
+    when(mockAuditEvents.fileProcessingErrorAudit(any(), any(), any())(any(), any())).thenReturn(true)
+
+    "return a sheet info if sheetname is found in the sheets" in {
+      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
+      val testService: DataGenerator = testServiceCreator(Map("aName" -> sheetTest))
+
+      val result = testService.getSheetCsv("aName", schemeInfo)
+      assert(result.isRight)
+      result.right.get mustBe sheetTest
+    }
+
+    "return a right if sheetname is not found in sheets" in {
+
+      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
+      val testService: DataGenerator = testServiceCreator(Map("anotherName" -> sheetTest))
+
+      val result = testService.getSheetCsv("aWrongName", schemeInfo)
+      assert(result.isLeft)
+      result.left.get mustBe ERSFileProcessingException(
+        s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+        s"${ErrorResponseMessages.dataParserUnidentifiableSheetName("aWrongName")}")
+
+    }
+  }
+
 }

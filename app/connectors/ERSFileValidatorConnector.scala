@@ -49,7 +49,7 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
     val startTime = System.currentTimeMillis()
-    http.POST(s"${appConfig.submissionsUrl}/ers/${encodedEmpRef}/submit-presubmission", schemeData).map { response =>
+    http.POST(s"${appConfig.submissionsUrl}/ers/$encodedEmpRef/submit-presubmission", schemeData).map { response =>
       deliverSendToSubmissionsMetrics(startTime)
       Right(response)
     }.recover {

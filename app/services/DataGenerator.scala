@@ -43,6 +43,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   implicit val ec: ExecutionContext) extends DataParser with Metrics {
 
   val defaultChunkSize: Int = 10000
+  private[services] val ersSheetsClone: Map[String, SheetInfo] = ersSheets
 
   def getErrors(iterator: Iterator[String])(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): ListBuffer[SchemeData] = {
     var rowNum = 0
@@ -132,17 +133,31 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     }
   }
 
-  def setValidatorCsv(sheetName: String, schemeInfo: SchemeInfo)(implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, DataValidator] = {
-    Try {
-      ERSValidationConfigs.getValidator(ersSheets(sheetName).configFileName)
-    } match {
-      case Success(validator) => Right(validator)
-      case Failure(e) =>
+  def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
+    implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, SheetInfo] = {
+    Logger.debug(s"[DataGenerator][getSheetCsv] Looking for sheetName: $sheetName")
+    ersSheetsClone.get(sheetName) match {
+      case Some(sheetInfo) => Right(sheetInfo)
+      case _ =>
+        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
+        Logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
+        Left(ERSFileProcessingException(
+          s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+          s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}"))
+    }
+  }
+
+  def getValidatorAndSheetInfo(sheetName: String, schemeInfo: SchemeInfo)(
+    implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, (DataValidator, SheetInfo)] = {
+    (Try(ERSValidationConfigs.getValidator(ersSheets(sheetName).configFileName)), getSheetCsv(sheetName, schemeInfo)) match {
+      case (Success(validator), Right(value)) => Right((validator, value))
+      case (Failure(e), _) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
         Logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
         Left(ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserConfigFailure}",
           "Could not set the validator "))
+      case (_, Left(e)) => Left(e)
     }
   }
 

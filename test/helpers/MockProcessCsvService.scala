@@ -22,7 +22,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
-import models.{SchemeData, SchemeInfo}
+import models.{SchemeData, SchemeInfo, SubmissionsSchemeData}
 import play.api.mvc.Request
 import services.{DataGenerator, ProcessCsvService, SheetInfo}
 import services.audit.AuditEvents
@@ -35,20 +35,21 @@ class MockProcessCsvService(auditEvents: AuditEvents,
                             dataGenerator: DataGenerator,
                             appConfig: ApplicationConfig,
                             ersConnector: ERSFileValidatorConnector)(
-                             formatDataToValidate: Option[Either[Throwable, Seq[String]]] = None,
+                             formatDataToValidate: Option[Seq[String]] = None,
                              extractEntityData: Option[Source[ByteString, _]] = None,
                              mockExtractBodyOfRequest: Option[Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _]] = None,
-                             getSheetCsv: Option[Either[Throwable, SheetInfo]] = None,
                              processRow: Option[Either[Throwable, Seq[String]]] = None,
                              sendSchemeDataCsv: Option[Future[Option[Throwable]]] = None,
-                             sendSchemeCsv: Option[Future[Either[Throwable, Int]]] = None
+                             sendSchemeDataCsvNew: Option[Future[Option[Throwable]]] = None,
+                             sendSchemeCsv: Option[Future[Either[Throwable, Int]]] = None,
+                             sendSchemeCsvNew: Option[Future[Either[Throwable, Int]]] = None
                            )(
                              implicit ec: ExecutionContext, ac: ActorSystem
                            ) extends ProcessCsvService(auditEvents, dataGenerator, appConfig, ersConnector) {
 
-  override def formatDataToValidate(rowData: Seq[String], sheetName: String, schemeInfo: SchemeInfo)(
-    implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, Seq[String]] = formatDataToValidate match {
-    case None => super.formatDataToValidate(rowData, sheetName, schemeInfo)
+  override def formatDataToValidate(rowData: Seq[String], sheetInfo: SheetInfo)(
+    implicit hc: HeaderCarrier, request: Request[_]): Seq[String] = formatDataToValidate match {
+    case None => super.formatDataToValidate(rowData, sheetInfo)
     case Some(returner) => returner
   }
 
@@ -62,15 +63,9 @@ class MockProcessCsvService(auditEvents: AuditEvents,
     case Some(returner) => returner
   }
 
-  override def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
-    implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, SheetInfo] = getSheetCsv match {
-    case None => super.getSheetCsv(sheetName, schemeInfo)
-    case Some(returner) => returner
-  }
-
-  override def processRow(rowBytes: List[ByteString], sheetName: String, schemeInfo: SchemeInfo, validator: DataValidator)(
+  override def processRow(rowBytes: List[ByteString], sheetName: String, schemeInfo: SchemeInfo, validator: DataValidator, sheetInfo: SheetInfo)(
     implicit request: Request[_], hc: HeaderCarrier): Either[Throwable, Seq[String]] = processRow match {
-    case None => super.processRow(rowBytes, sheetName, schemeInfo, validator)
+    case None => super.processRow(rowBytes, sheetName, schemeInfo, validator, sheetInfo)
     case Some(returner) => returner
   }
 
@@ -80,9 +75,21 @@ class MockProcessCsvService(auditEvents: AuditEvents,
     case Some(returner) => returner
   }
 
+  override def sendSchemeDataCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(
+    implicit hc: HeaderCarrier, request: Request[_]): Future[Option[Throwable]] =  sendSchemeDataCsvNew match {
+    case None => super.sendSchemeDataCsv(ersSchemeData, empRef)
+    case Some(returner) => returner
+  }
+
   override def sendSchemeCsv(schemeData: SchemeData, empRef: String)(
     implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, Int]] = sendSchemeCsv match {
     case None => super.sendSchemeCsv(schemeData, empRef)
+    case Some(returner) => returner
+  }
+
+  override def sendSchemeCsv(schemeData: SubmissionsSchemeData, empRef: String, numberOfRows: Int)(
+    implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, Int]] = sendSchemeCsvNew match {
+    case None => super.sendSchemeCsv(schemeData, empRef, numberOfRows)
     case Some(returner) => returner
   }
 }

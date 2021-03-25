@@ -142,8 +142,6 @@ class DataUploadController @Inject()(sessionService: SessionService,
           val extractedSchemeData: Seq[Future[Either[Throwable, (Int, Int)]]] = processedFiles.map{ submission =>
             submission.flatMap(processCsvService.extractSchemeDataNew(res.schemeInfo, empRef, _))}
 
-
-
           Future.sequence(extractedSchemeData).flatMap{ oneFileResults => oneFileResults.find(_.isLeft) match {
             case Some(Left(throwable: ERSFileProcessingException)) =>
               Logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] ERS file processing exception: ${throwable.message}")

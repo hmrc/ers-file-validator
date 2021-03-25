@@ -84,7 +84,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
 
     val mockSource: Source[HttpResponse, NotUsed] = Source.fromIterator(() => List(HttpResponse(StatusCodes.OK)).toIterator)
 
-    override private[controllers] def readFileCsv(downloadUrl: String): Source[HttpResponse, _] = mockSource
+    override private[controllers] def streamFile(downloadUrl: String): Source[HttpResponse, _] = mockSource
   }
 
   val schemeInfo: SchemeInfo = SchemeInfo (
@@ -152,12 +152,70 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     "Successfully receive data" in {
       when(mockSessionService.storeCallbackData(any(), any())(any(), any()))
         .thenReturn(Future.successful(Some(callbackData)))
+      when(mockProcessCsvService.processFilesNew(any[UpscanCsvFileData](), any())(any(), any()))
+        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
+      when(mockProcessCsvService.extractSchemeDataNew(any(), any(), any())(any(), any()))
+        .thenReturn(Future(Right((1,1))))
+
+      val resultFuture = dataUploadController.processCsvFileDataFromFrontend(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result = Await.result(resultFuture, Duration.Inf)
+      status(result) shouldBe OK
+    }
+
+    "return an ERSFileProcessingException if one occurs" in {
+      when(mockProcessCsvService.processFilesNew(any[UpscanCsvFileData](), any())(any(), any()))
+        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
+      when(mockProcessCsvService.extractSchemeDataNew(any(), any(), any())(any(), any()))
+        .thenReturn(Future(Left(ERSFileProcessingException("Error processing file",""))))
+
+      val resultFuture = dataUploadController.processCsvFileDataFromFrontend(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result = Await.result(resultFuture, Duration.Inf)
+      status(result) shouldBe ACCEPTED
+      bodyOf(result) shouldBe "Error processing file"
+    }
+
+    "return a 500 if any other kind of exception occurs" in {
+      when(mockProcessCsvService.processFilesNew(any[UpscanCsvFileData](), any())(any(), any()))
+        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
+      when(mockProcessCsvService.extractSchemeDataNew(any(), any(), any())(any(), any()))
+        .thenReturn(Future(Left(new RuntimeException("Oh boy"))))
+
+      val resultFuture = dataUploadController.processCsvFileDataFromFrontend(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result = Await.result(resultFuture, Duration.Inf)
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return an error when failing to store callback data" in {
+      when(mockSessionService.storeCallbackData(any(), any())(any(), any()))
+        .thenReturn(Future.successful(None))
+      when(mockProcessCsvService.processFilesNew(any[UpscanCsvFileData](), any())(any(), any()))
+        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
+      when(mockProcessCsvService.extractSchemeDataNew(any(), any(), any())(any(), any()))
+        .thenReturn(Future(Right((1,1))))
+
+      val resultFuture = dataUploadController.processCsvFileDataFromFrontend(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result = Await.result(resultFuture, Duration.Inf)
+      status(result) shouldBe ACCEPTED
+      bodyOf(result) shouldBe "csv callback data storage in sessioncache failed "
+    }
+
+    "return a 400 if the body cannot be parsed into an UpscanCsvFileData object" in {
+      val resultFuture: Future[Result] = dataUploadController.processCsvFileDataFromFrontend(empRef).apply(request.withBody(Json.toJson("bad json")))
+      val result: Result = Await.result(resultFuture, Duration.Inf)
+      status(result) shouldBe BAD_REQUEST
+    }
+  }
+
+  "calling processCsvFileDataFromFrontendOld" must {
+    "Successfully receive data" in {
+      when(mockSessionService.storeCallbackData(any(), any())(any(), any()))
+        .thenReturn(Future.successful(Some(callbackData)))
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
         .thenReturn(List(Future(Right(CsvFileContents("sheetName", Seq(Seq("data")))))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Right((1,1))))
 
-      val resultFuture = dataUploadController.processCsvFileDataFromFrontend(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val resultFuture = dataUploadController.processCsvFileDataFromFrontendOld(empRef).apply(request.withBody(Json.toJson(csvData)))
       val result = Await.result(resultFuture, Duration.Inf)
       status(result) shouldBe OK
     }
@@ -168,7 +226,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Left(ERSFileProcessingException("Error processing file",""))))
 
-      val resultFuture = dataUploadController.processCsvFileDataFromFrontend(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val resultFuture = dataUploadController.processCsvFileDataFromFrontendOld(empRef).apply(request.withBody(Json.toJson(csvData)))
       val result = Await.result(resultFuture, Duration.Inf)
       status(result) shouldBe ACCEPTED
       bodyOf(result) shouldBe "Error processing file"
@@ -180,7 +238,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Left(new RuntimeException("Oh boy"))))
 
-      val resultFuture = dataUploadController.processCsvFileDataFromFrontend(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val resultFuture = dataUploadController.processCsvFileDataFromFrontendOld(empRef).apply(request.withBody(Json.toJson(csvData)))
       val result = Await.result(resultFuture, Duration.Inf)
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -193,14 +251,14 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Right((1,1))))
 
-      val resultFuture = dataUploadController.processCsvFileDataFromFrontend(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val resultFuture = dataUploadController.processCsvFileDataFromFrontendOld(empRef).apply(request.withBody(Json.toJson(csvData)))
       val result = Await.result(resultFuture, Duration.Inf)
       status(result) shouldBe ACCEPTED
       bodyOf(result) shouldBe "csv callback data storage in sessioncache failed "
     }
 
     "return a 400 if the body cannot be parsed into an UpscanCsvFileData object" in {
-      val resultFuture: Future[Result] = dataUploadController.processCsvFileDataFromFrontend(empRef).apply(request.withBody(Json.toJson("bad json")))
+      val resultFuture: Future[Result] = dataUploadController.processCsvFileDataFromFrontendOld(empRef).apply(request.withBody(Json.toJson("bad json")))
       val result: Result = Await.result(resultFuture, Duration.Inf)
       status(result) shouldBe BAD_REQUEST
     }
@@ -218,9 +276,9 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     override private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] = Future.successful(HttpResponse(StatusCodes.OK))
   }
 
-  "Calling readFileCsv" should {
+  "Calling streamFile" should {
     "process the response" in {
-      val result: Future[Seq[HttpResponse]] = secondDataUploadController.readFileCsv("http://www.test.com").runWith(Sink.seq)
+      val result: Future[Seq[HttpResponse]] = secondDataUploadController.streamFile("http://www.test.com").runWith(Sink.seq)
 
       val responses = Await.result(result, Duration.Inf)
       responses.length shouldBe 1
