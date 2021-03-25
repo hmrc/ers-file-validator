@@ -90,7 +90,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
           Logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
 
-          val processedFiles: List[Future[Either[Throwable, CsvFileContents]]] = processCsvService.processFiles(res, readFileCsv)
+          val processedFiles: List[Future[Either[Throwable, CsvFileContents]]] = processCsvService.processFiles(res, streamFile)
 
           val extractedSchemeData: Seq[Future[Either[Throwable, (Int, Int)]]] = processedFiles.map{ list =>
             list.flatMap(processCsvService.extractSchemeData(res.schemeInfo, empRef, _))}
