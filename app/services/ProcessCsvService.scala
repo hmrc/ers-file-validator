@@ -178,7 +178,6 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     implicit request: Request[_], hc: HeaderCarrier): Either[Throwable, Seq[String]] = {
     val rowStrings: Seq[String] = rowBytes.map(byteString => byteString.utf8String)
     val parsedRow = formatDataToValidate(rowStrings, sheetInfo)
-    Logger.error("we got here and we're testing " + sheetName)
     Try {
       validator.validateRow(Row(0, getCells(parsedRow, 0)))
     } match {

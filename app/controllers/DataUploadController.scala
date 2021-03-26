@@ -80,9 +80,9 @@ class DataUploadController @Inject()(sessionService: SessionService,
   def deliverFileProcessingMetrics(startTime:Long): Unit =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
-  //TODO remove 'old'
-  def processCsvFileDataFromFrontendOld(empRef:String): Action[JsValue] = authorisedActionWithBody(empRef) {
+  def processCsvFileDataFromFrontend(empRef:String): Action[JsValue] = authorisedActionWithBody(empRef) {
     implicit request: Request[JsValue] =>
+      Logger.warn("receiving request on V1 processCsvFileDataFromFrontend")
       val startTime =  System.currentTimeMillis()
       request.body.validate[UpscanCsvFileData].fold(
         valid = res => {
@@ -128,8 +128,9 @@ class DataUploadController @Inject()(sessionService: SessionService,
       )
   }
 
-  def processCsvFileDataFromFrontend(empRef:String): Action[JsValue] = authorisedActionWithBody(empRef) {
+  def processCsvFileDataFromFrontendV2(empRef:String): Action[JsValue] = authorisedActionWithBody(empRef) {
     implicit request: Request[JsValue] =>
+      Logger.warn("receiving request on V2 processCsvFileDataFromFrontend")
       val startTime =  System.currentTimeMillis()
       request.body.validate[UpscanCsvFileData].fold(
         valid = res => {
