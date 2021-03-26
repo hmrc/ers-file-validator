@@ -74,7 +74,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with UnitSpec w
   )
 
   val submissionsSchemeData: SubmissionsSchemeData = SubmissionsSchemeData(schemeInfo, "sheetName",
-    UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(1)))
+    UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(11)), numberOfRows = 11)
 
   def testProcessCsvService: ProcessCsvService = new ProcessCsvService(mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)
 
@@ -506,7 +506,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with UnitSpec w
         )
         when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(10)
 
-        val result = Await.result(testService.sendSchemeCsv(submissionsSchemeData, "empRef", 11),
+        val result = Await.result(testService.sendSchemeCsv(submissionsSchemeData, "empRef"),
           Duration.Inf
         )
 
@@ -521,7 +521,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with UnitSpec w
         )
         when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(10)
 
-        val result = Await.result(testService.sendSchemeCsv(submissionsSchemeData, "empRef", 11),
+        val result = Await.result(testService.sendSchemeCsv(submissionsSchemeData, "empRef"),
           Duration.Inf
         )
 

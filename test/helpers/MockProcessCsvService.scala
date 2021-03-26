@@ -87,9 +87,9 @@ class MockProcessCsvService(auditEvents: AuditEvents,
     case Some(returner) => returner
   }
 
-  override def sendSchemeCsv(schemeData: SubmissionsSchemeData, empRef: String, numberOfRows: Int)(
+  override def sendSchemeCsv(schemeData: SubmissionsSchemeData, empRef: String)(
     implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, Int]] = sendSchemeCsvNew match {
-    case None => super.sendSchemeCsv(schemeData, empRef, numberOfRows)
+    case None => super.sendSchemeCsv(schemeData, empRef)
     case Some(returner) => returner
   }
 }
