@@ -37,7 +37,7 @@ class SessionService @Inject()(sessionCache: ERSFileValidatorSessionCache,
     val cacheMap = sessionCache.cache[UpscanCallback](CALLBACK_DATA_KEY, callbackData)
     cacheMap.map(_ =>
       Some(callbackData)
-    ).recover { case e:Throwable =>
+    ).recover { case e: Throwable =>
       Logger.error("Failed to store callback data with no of rows: " + e)
       None
     }

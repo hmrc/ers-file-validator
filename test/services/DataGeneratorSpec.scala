@@ -18,7 +18,7 @@ package services
 
 import com.typesafe.config.ConfigFactory
 import config.ApplicationConfig
-import models.{ERSFileProcessingException, SchemeData, SchemeInfo}
+import models.{ERSFileProcessingException, SchemeInfo}
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
@@ -27,14 +27,14 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.i18n.Messages
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import services.headers.HeaderData
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.services.validation.{Cell, DataValidator, ValidationError}
+import uk.gov.hmrc.services.validation.models.{Cell, ValidationError}
+import uk.gov.hmrc.services.validation.DataValidator
+import utils.ErrorResponseMessages
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 
@@ -43,7 +43,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  val dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig, ec)
+  val dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig)
 
   val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
@@ -147,6 +147,32 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
     }
   }
 
+  "setValidator" should {
+    "return a DataValidator if the given sheet name is valid" in {
+      assert(dataGenerator.setValidator("EMI40_Adjustments_V3")(SchemeInfo("", DateTime.now(), "" ,"" ,"", ""), hc, request).isInstanceOf[DataValidator])
+    }
+
+    "throw an exception if the given sheet name is not valid" in {
+      an[ERSFileProcessingException] mustBe thrownBy (dataGenerator.setValidator("Invalid")(SchemeInfo("", DateTime.now(), "" ,"" ,"", ""), hc, request))
+    }
+  }
+
+  "getValidatorAndSheetInfo" should {
+    "return a Right with a DataValidator if the given sheet name is valid" in {
+      dataGenerator.getValidatorAndSheetInfo("EMI40_Adjustments_V3", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
+        case Left(_) => fail("Did not return validator")
+        case Right(_) => succeed
+      }
+    }
+
+    "return a left with an exception if the given sheet name is not valid" in {
+      dataGenerator.getValidatorAndSheetInfo("Invalid", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
+        case Left(_) => succeed
+        case Right(_) => fail("Did not return expected exception")
+      }
+    }
+  }
+
   "identifyAndDefineSheet" should {
     "identify and define the sheet with correct scheme type" in {
       dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V3")(schemeInfo, hc, request) mustBe ("EMI40_Adjustments_V3")
@@ -156,6 +182,20 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
       val result = Try(dataGenerator.identifyAndDefineSheet("EMI40_Adjustments")(schemeInfo, hc, request))
       result.isFailure must be(true)
       verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo), argEq("EMI40_Adjustments"), argEq("Could not set the validator"))(any(), any())
+    }
+
+    "return an error when scheme types do not match" in {
+      val schemeInfo2: SchemeInfo = SchemeInfo(
+        schemeRef = "XA11999991234567",
+        timestamp = DateTime.now,
+        schemeId = "123PA12345678",
+        taxYear = "2014/F15",
+        schemeName = "MyScheme",
+        schemeType = "CSOP"
+      )
+      val result = Try(dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V3")(schemeInfo2, hc, request))
+      result.isFailure must be(true)
+      verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo2), argEq("EMI40_Adjustments_V3"), argEq("emi is not equal to csop"))(any(), any())
     }
   }
 
@@ -176,15 +216,15 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
   }
 
   "generateRowData" should {
-    val validator = DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
+    val validator = new DataValidator(ConfigFactory.load.getConfig("ers-other-grants-validation-config"))
 
     "return the data when parsed correctly and no errors are found" in {
-      val result = dataGenerator.generateRowData(XMLTestData.emiAdjustmentsExpData, 10, validator)(schemeInfo, "Other_Grants_V3", hc, request)
-      result must be(XMLTestData.emiAdjustmentsExpData)
+      val result = dataGenerator.generateRowData(XMLTestData.otherGrantsExpData, 10, validator)(schemeInfo, "Other_Grants_V3", hc, request)
+      result must be(XMLTestData.otherGrantsExpData)
     }
 
     "return an error when an issue is found" in {
-      val err = List(ValidationError(Cell("A",10,""),"MANDATORY","100","Enter 'yes' or 'no'."))
+      val err = List(ValidationError(Cell("A",10,""),"error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))
       val res1 = Try(dataGenerator.generateRowData(testAct, 10, validator)(schemeInfo, "Other_Grants_V3", hc, request))
       res1.isFailure mustBe true
       verify(mockAuditEvents, times(1)).validationErrorAudit(argEq(err), argEq(schemeInfo), argEq("Other_Grants_V3"))(any(), argEq(schemeInfo), any())
@@ -202,7 +242,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
         schemeType = "CSOP"
       )
       val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getData(XMLTestData.getInvalidCSOPWithoutHeaders)(schemeInfo, hc, request)
+        dataGenerator.getErrors(XMLTestData.getInvalidCSOPWithoutHeaders)(schemeInfo, hc, request)
       }
       result.message mustBe "Incorrect ERS Template - Header doesn't match"
     }
@@ -217,7 +257,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
         schemeType = "CSOP"
       )
       val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getData(XMLTestData.getInvalidCSOPWith2Sheets1WithoutHeaders)(schemeInfo, hc, request)
+        dataGenerator.getErrors(XMLTestData.getInvalidCSOPWith2Sheets1WithoutHeaders)(schemeInfo, hc, request)
       }
       result.message mustBe "Incorrect ERS Template - Header doesn't match"
     }
@@ -232,17 +272,17 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
         schemeType = "CSOP"
       )
       val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getData(XMLTestData.getCSOPWithoutData)(schemeInfo, hc, request)
+        dataGenerator.getErrors(XMLTestData.getCSOPWithoutData)(schemeInfo, hc, request)
       }
       result.message mustBe "The file that you chose doesn’t have any data after row 9. The reportable events data must start in cell A10.<br/><a href=\"https://www.gov.uk/government/collections/employment-related-securities\">Use the ERS guidance documents</a> to help you create error-free files."
     }
 
     "get Data for Iterator of Strings" in {
-      val result = dataGenerator.getData(XMLTestData.getEMIAdjustmentsTemplate)(schemeInfo,hc,request)
+      val result = dataGenerator.getErrors(XMLTestData.getEMIAdjustmentsTemplate)(schemeInfo,hc,request)
       result.size must be (1)
       result.foreach(_.data.foreach(_ mustBe (XMLTestData.emiAdjustmentsExpData)))
       try {
-        dataGenerator.getData(XMLTestData.getIncorrectsheetNameTemplate)(schemeInfo,hc,request)
+        dataGenerator.getErrors(XMLTestData.getIncorrectsheetNameTemplate)(schemeInfo,hc,request)
       } catch {
         case e:Throwable => e.getMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
       }
@@ -250,44 +290,15 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
     }
 
     "get mandatory Data for Iterator of Strings" in {
-      val result = dataGenerator.getData(XMLTestData.getEMIReplacedTemplate)(schemeInfo,hc,request)
+      val result = dataGenerator.getErrors(XMLTestData.getEMIReplacedTemplate)(schemeInfo,hc,request)
       result.size must be (1)
       result.foreach(_.data.foreach(_ must be (XMLTestData.emiReplacedExpMandatoryData)))
     }
 
     "expand repeated rows" in {
-      val result = dataGenerator.getData(XMLTestData.getEMIAdjustmentsRepeatedTemplate)(schemeInfo,hc,request)
+      val result = dataGenerator.getErrors(XMLTestData.getEMIAdjustmentsRepeatedTemplate)(schemeInfo,hc,request)
       result.size mustEqual(1)
       result(0).data.size mustEqual(4)
-    }
-  }
-
-  "addSheetData" should {
-    "should return an empty list buffer if it's size is >= 10 " in {
-      val dataList: ListBuffer[SchemeData] = ListBuffer()
-      val result = dataGenerator.addSheetData(schemeInfo, "EMI40_Adjustments_V3", 12, ListBuffer(XMLTestData.emiAdjustmentsExpData), dataList)
-      result.size mustEqual (0)
-    }
-  }
-
-  "getCsvData" should {
-    "validate csv from the ninth row" in {
-      when(mockAppConfig.validationChunkSize).thenReturn(10000)
-      val x = Iterator(
-        "no,no,yes,3,2015-12-09,John,Barry,Doe,AA123456A,123/XZ55555555,10.1234,100.12,10.1234,10.1234",
-        "no,no,yes,3,2015-12-09,John,Barry,Doe,AA123456A,123/XZ55555555,10.1234,100.12,10.1234,10.1234",
-        "no,no,yes,3,2015-12-09,John,Barry,Doe,AA123456A,123/XZ55555555,10.1234,100.12,10.1234,10.1234"
-      )
-
-      val result = dataGenerator.getCsvData(x)(schemeInfo, "EMI40_Adjustments_V3",hc,request)
-      result.size must be (3)
-    }
-
-    "throw an exception if csv file is empty" in {
-      val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getCsvData(Iterator())(schemeInfo, "EMI40_Adjustments_V3",hc,request)
-      }
-      result.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload EMI40_Adjustments_V3.csv as part of your annual return."
     }
   }
 
@@ -315,4 +326,37 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
     }
 
   }
+
+  "getSheetCsv" should {
+    def testServiceCreator(sheets: Map[String, SheetInfo]) = new DataGenerator(
+      mockAuditEvents, mockAppConfig
+    ) {
+      override val ersSheetsClone: Map[String, SheetInfo] = sheets
+    }
+
+    when(mockAuditEvents.fileProcessingErrorAudit(any(), any(), any())(any(), any())).thenReturn(true)
+
+    "return a sheet info if sheetname is found in the sheets" in {
+      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
+      val testService: DataGenerator = testServiceCreator(Map("aName" -> sheetTest))
+
+      val result = testService.getSheetCsv("aName", schemeInfo)
+      assert(result.isRight)
+      result.right.get mustBe sheetTest
+    }
+
+    "return a right if sheetname is not found in sheets" in {
+
+      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
+      val testService: DataGenerator = testServiceCreator(Map("anotherName" -> sheetTest))
+
+      val result = testService.getSheetCsv("aWrongName", schemeInfo)
+      assert(result.isLeft)
+      result.left.get mustBe ERSFileProcessingException(
+        s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+        s"${ErrorResponseMessages.dataParserUnidentifiableSheetName("aWrongName")}")
+
+    }
+  }
+
 }

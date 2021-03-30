@@ -17,7 +17,6 @@
 package models.upscan
 
 import models.SchemeInfo
-import play.api.Logger
 import play.api.libs.json.{JsObject, JsString, JsValue, Json, OFormat, Reads, Writes}
 
 case class UpscanCallback(name: String,

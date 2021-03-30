@@ -16,7 +16,8 @@
 
 package services.validation.CSOPTestData
 
-import uk.gov.hmrc.services.validation.Cell
+
+import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
 
 trait ERSValidationCSOPGrantedTestData {
@@ -100,7 +101,7 @@ trait ERSValidationCSOPGrantedTestData {
  def getExpectedResults: List[Option[List[ValidationErrorData]]] = {
    val expectedResults = List(
      None,
-     Some(List(ValidationErrorData("MANDATORY","018","Enter a date that matches the yyyy-mm-dd pattern."))),
+     Some(List(ValidationErrorData("error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))),
      Some(List(ValidationErrorData("error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))),
      None,
      Some(List(ValidationErrorData("error.2","002","Must be a whole number and be less than 1,000,000."))),
@@ -117,7 +118,7 @@ trait ERSValidationCSOPGrantedTestData {
      None,
      Some(List(ValidationErrorData("error.5","005","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
      None,
-     Some(List(ValidationErrorData("MANDATORY","018","Enter 'yes' or 'no'."))),
+     Some(List(ValidationErrorData("error.6","006","Enter 'yes' or 'no'."))),
      Some(List(ValidationErrorData("error.6","006","Enter 'yes' or 'no'."))),
      None,
      Some(List(ValidationErrorData("error.7","007","Enter 'yes' or 'no'."))),

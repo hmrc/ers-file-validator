@@ -16,7 +16,7 @@
 
 package services.validation.OTHERTestData
 
-import uk.gov.hmrc.services.validation.Cell
+import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
 
 trait ERSValidationOTHERGrantsTestData {
@@ -68,7 +68,7 @@ trait ERSValidationOTHERGrantsTestData {
     val expectedResults = List(
       None,
       Some(List(ValidationErrorData("error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a date that matches the yyyy-mm-dd pattern."))),
+      Some(List(ValidationErrorData("error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))),
       None,
       Some(List(ValidationErrorData("error.2","002","Must be a whole number and be less than 1,000,000."))),
       Some(List(ValidationErrorData("error.2","002","Must be a whole number and be less than 1,000,000."))),
