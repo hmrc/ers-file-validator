@@ -36,4 +36,5 @@ class ApplicationConfig @Inject()(config: ServicesConfig) {
   lazy val splitLargeSchemes: Boolean = config.getBoolean("largefiles.enabled")
   lazy val submissionsUrl: String = config.baseUrl("ers-submissions")
   lazy val validationChunkSize: Int = config.getInt("validationChunkSize")
+  lazy val uploadCsvSizeLimit: Int = config.getInt("csv.uploadSizeLimit")
 }

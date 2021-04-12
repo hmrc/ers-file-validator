@@ -16,7 +16,8 @@
 
 package services.validation.OTHERTestData
 
-import uk.gov.hmrc.services.validation.Cell
+
+import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
 import org.apache.commons.lang3.StringUtils
 
@@ -290,25 +291,25 @@ trait ERSValidationOTHEROptionsTestData {
      //Column A
       None,
       Some(List(ValidationErrorData("error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a date that matches the yyyy-mm-dd pattern."))),
+      Some(List(ValidationErrorData("error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))),
       //Column B
       None,
       Some(List(ValidationErrorData("error.2","002","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.2","002","Enter 'yes' or 'no'."))),
       //Column C
       None,
       Some(List(ValidationErrorData("error.3","003","Enter the scheme reference number (it should be an 8 digit number)."))),
       //Column D
       None,
       Some(List(ValidationErrorData("error.4","004","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(List(ValidationErrorData("error.4","004","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //Column E
       None,
       Some(List(ValidationErrorData("error.5","005","Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."))),
       //Column F
       None,
       Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //Column G
       None,
       Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
@@ -318,15 +319,15 @@ trait ERSValidationOTHEROptionsTestData {
       //Column I
       None,
       Some(List(ValidationErrorData("error.9","009","Enter a date that matches the yyyy-mm-dd pattern."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a date that matches the yyyy-mm-dd pattern."))),
+      Some(List(ValidationErrorData("error.9","009","Enter a date that matches the yyyy-mm-dd pattern."))),
       //Column J
       None,
       Some(List(ValidationErrorData("error.10","010","Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(List(ValidationErrorData("error.10","010","Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //Column K
       None,
       Some(List(ValidationErrorData("error.11","011","Enter the first line of the address (must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands)."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter the first line of the address (must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands)."))),
+      Some(List(ValidationErrorData("error.11","011","Enter the first line of the address (must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands)."))),
       //Column L
       None,
       Some(List(ValidationErrorData("error.12","012","Must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands." ))),
@@ -355,7 +356,7 @@ trait ERSValidationOTHEROptionsTestData {
       //Column T
       None,
       Some(List(ValidationErrorData("error.20","020","Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(List(ValidationErrorData("error.20","020","Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //Column U
       None,
       Some(List(ValidationErrorData("error.21","021","Enter the first line of the address (must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands)."))),

@@ -16,7 +16,8 @@
 
 package services.validation.EMITestData
 
-import uk.gov.hmrc.services.validation.Cell
+
+import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
 import org.apache.commons.lang3.StringUtils
 
@@ -118,7 +119,7 @@ trait ERSValidationEMIAdjustmentsTestData {
   def getExpectedResults: List[Option[List[ValidationErrorData]]] = {
     val expectedResults = List(
       None,
-      Some(List(ValidationErrorData("MANDATORY","100","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.1","001","Enter 'yes' or 'no'."))),
       Some(List(ValidationErrorData("error.1","001","Enter 'yes' or 'no'."))),
       None,
       Some(List(ValidationErrorData("error.2","002","Enter 'yes' or 'no'."))),
@@ -129,17 +130,17 @@ trait ERSValidationEMIAdjustmentsTestData {
       Some(List(ValidationErrorData("error.4","004","Enter '1', '2', '3', '4', '5', '6', '7' or '8'."))),
       Some(List(ValidationErrorData("error.4","004","Enter '1', '2', '3', '4', '5', '6', '7' or '8'."))),
       None,
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a date that matches the yyyy-mm-dd pattern."))),
+      Some(List(ValidationErrorData("error.5","005","Enter a date that matches the yyyy-mm-dd pattern."))),
       Some(List(ValidationErrorData("error.5","005","Enter a date that matches the yyyy-mm-dd pattern."))),
       None,
       None,
       Some(List(ValidationErrorData("error.6","006","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(List(ValidationErrorData("error.6","006","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       None,
       Some(List(ValidationErrorData("error.7","007","Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."))),
       None,
       Some(List(ValidationErrorData("error.8","008","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("MANDATORY","100","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(List(ValidationErrorData("error.8","008","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       None,
       Some(List(ValidationErrorData("error.9","009","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
       None,

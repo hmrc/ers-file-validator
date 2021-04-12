@@ -16,13 +16,11 @@
 
 package services.validation
 
-import uk.gov.hmrc.services.validation.{ValidationError, Cell, DataValidator}
+import uk.gov.hmrc.services.validation.DataValidator
+import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
 import org.scalatestplus.play.PlaySpec
 
-/**
- * Created by matt on 25/01/16.
- */
 trait ValidationTestRunner extends PlaySpec{
 
 
@@ -30,18 +28,20 @@ trait ValidationTestRunner extends PlaySpec{
     ValidationError(cell, expRes.id, expRes.errorId, expRes.errorMsg)
   }
 
-  def resultBuilder(cellData: Cell, expectedResultsMaybe: Option[List[ValidationErrorData]]): Option[List[ValidationError]] = {
+  def resultBuilder(cellData: Cell, expectedResultsMaybe: Option[List[ValidationErrorData]]): Option[ValidationError] = {
     if (expectedResultsMaybe.isDefined) {
       implicit val cell: Cell = cellData
       val validationErrors = expectedResultsMaybe.get.map(errorData => populateValidationError(errorData))
-      Some(validationErrors)
-    } else None
+      Some(validationErrors.head)
+    } else {
+      None
+    }
   }
 
   def runTests(validator:DataValidator, descriptions: List[String], testDatas:List[Cell], expectedResults:List[Option[List[ValidationErrorData]]]) = {
       for (x <- 0 until descriptions.length) {
         descriptions(x) in {
-          validator.validateCell(testDatas(x), Some(ValidationContext)) mustBe resultBuilder(testDatas(x), expectedResults(x))
+          validator.validateCell(testDatas(x)) mustBe resultBuilder(testDatas(x), expectedResults(x))
         }
       }
   }
