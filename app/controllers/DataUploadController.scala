@@ -158,7 +158,6 @@ class DataUploadController @Inject()(sessionService: SessionService,
               sessionService.storeCallbackData(res.callbackData.head, totalRowCount).map {
                 case callback: Option[UpscanCallback] if callback.isDefined =>
                   val numberOfSlices = result.map(_.noOfSlices).sum
-                  Logger.error("Completed processing file")
                   Ok(numberOfSlices.toString)
                 case _ =>
                   Logger.error(

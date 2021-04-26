@@ -15,7 +15,7 @@ import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 val appName: String = "ers-file-validator"
 
 lazy val appDependencies: Seq[ModuleID] = AppDependencies.apply()
-lazy val plugins: Seq[Plugins] = Seq(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+lazy val plugins: Seq[Plugins] = Seq(play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin)
 lazy val testPhases = TestPhases
 
 lazy val scoverageSettings = {
@@ -51,7 +51,7 @@ lazy val microservice = Project(appName, file("."))
     unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "it")).value,
     addTestReportOption(IntegrationTest, "int-test-reports"),
     parallelExecution in IntegrationTest := false)
-  .settings(resolvers += Resolver.bintrayRepo("hmrc", "releases"), resolvers += Resolver.jcenterRepo)
+  .settings(resolvers += Resolver.jcenterRepo)
   .settings(majorVersion := 1)
   .settings(PlayKeys.playDefaultPort := 9226)
 
