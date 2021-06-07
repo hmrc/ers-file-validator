@@ -16,22 +16,21 @@
 
 package services
 
-import java.io.InputStream
-import java.util.concurrent.TimeUnit
-import java.util.zip.ZipInputStream
 import _root_.services.audit.AuditEvents
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
-
-import javax.inject.{Inject, Singleton}
 import metrics.Metrics
 import models._
 import models.upscan.UpscanCallback
-import play.api.Logger
+import play.api.Logging
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.{ErrorResponseMessages, ValidationUtils}
 
+import java.io.InputStream
+import java.util.concurrent.TimeUnit
+import java.util.zip.ZipInputStream
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
@@ -40,7 +39,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
                                   ersConnector: ERSFileValidatorConnector,
                                   sessionService: SessionService,
                                   appConfig: ApplicationConfig,
-                                  implicit val ec: ExecutionContext) extends Metrics {
+                                  implicit val ec: ExecutionContext) extends Metrics with Logging {
 
   val splitSchemes: Boolean = appConfig.splitLargeSchemes
   val maxNumberOfRows: Int = appConfig.maxNumberOfRowsPerSubmission
@@ -48,11 +47,11 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
   @throws(classOf[ERSFileProcessingException])
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]): Int = {
     val startTime = System.currentTimeMillis()
-    Logger.info("2.0 start: ")
+    logger.info("2.0 start: ")
     val result = dataGenerator.getErrors(readFile(callbackData.downloadUrl))
-    Logger.info("2.1 result contains: " + result)
+    logger.info("2.1 result contains: " + result)
     deliverBESMetrics(startTime)
-    Logger.debug("No if SchemeData Objects " + result.size)
+    logger.debug("No if SchemeData Objects " + result.size)
     val filesWithData = result.filter(_.data.nonEmpty)
     var totalRows = 0
     val res1 = filesWithData.foldLeft(0) {
@@ -63,14 +62,14 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
     }
     sessionService.storeCallbackData(callbackData, totalRows).map {
       case callback: Option[UpscanCallback] if callback.isDefined => res1
-      case _ => Logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
+      case _ => logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
         throw ERSFileProcessingException(("callback data storage in sessioncache failed "), "Exception storing callback data")
     }.recover {
-      case e: Throwable => Logger.error(s"storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
+      case e: Throwable => logger.error(s"storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
         throw e
     }
 
-    Logger.warn(s"Total rows for schemeRef ${schemeInfo.schemeRef}: $totalRows")
+    logger.warn(s"Total rows for schemeRef ${schemeInfo.schemeRef}: $totalRows")
     auditEvents.totalRows(totalRows, schemeInfo)
     res1
   }
@@ -98,13 +97,13 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
   }
 
   def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Unit = {
-    Logger.debug("Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
+    logger.debug("Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
     ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
       case Right(_) =>
         auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
       case Left(ex) =>
         auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
-        Logger.error(ex.getMessage)
+        logger.error(ex.getMessage)
         throw ERSFileProcessingException(ex.toString, ex.getStackTrace.toString)
     }
   }
@@ -115,7 +114,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
       val slices: Int = ValidationUtils.numberOfSlices(schemeData.data.size, maxNumberOfRows)
       for(i <- 0 until slices * maxNumberOfRows by maxNumberOfRows) {
         val scheme = new SchemeData(schemeData.schemeInfo, schemeData.sheetName, Option(slices), schemeData.data.slice(i, (i + maxNumberOfRows)))
-        Logger.debug("The size of the scheme data is " + scheme.data.size + " and i is " + i)
+        logger.debug("The size of the scheme data is " + scheme.data.size + " and i is " + i)
         sendSchemeData(scheme, empRef)
       }
       slices

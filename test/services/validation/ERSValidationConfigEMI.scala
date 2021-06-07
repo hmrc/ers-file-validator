@@ -17,11 +17,10 @@
 package services.validation
 
 import com.typesafe.config.ConfigFactory
+import org.scalatestplus.play.PlaySpec
+import services.validation.EMITestData._
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
-import org.scalatestplus.play.PlaySpec
-
-import services.validation.EMITestData.{ERSValidationEMIRLCTestData, ERSValidationEMINonTaxableTestData, ERSValidationEMIReplacedTestData, ERSValidationEMITaxableTestData, ERSValidationEMIAdjustmentsTestData}
 
 
 class EMIAdjustmentsV3ValidationTest extends PlaySpec with ERSValidationEMIAdjustmentsTestData with ValidationTestRunner {

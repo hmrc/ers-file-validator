@@ -26,19 +26,19 @@ import com.typesafe.config.{Config, ConfigFactory}
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
 import helpers.MockProcessCsvService
+import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
-import models.{CsvFileContents, CsvFileLengthInfo, CsvFileSubmissions, ERSFileProcessingException, SchemeData, SchemeInfo, SubmissionsSchemeData}
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.MustMatchers.convertToAnyMustWrapper
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
+import org.scalatest.{Matchers, OptionValues, WordSpecLike}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 import utils.ErrorResponseMessages
@@ -48,7 +48,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
-class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with UnitSpec with MockitoSugar with GuiceOneAppPerSuite with TimeLimits with ScalaFutures {
+class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with WordSpecLike with Matchers with OptionValues with MockitoSugar with GuiceOneAppPerSuite with TimeLimits with ScalaFutures {
 
   val mockDataGenerator: DataGenerator = mock[DataGenerator]
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
@@ -368,8 +368,8 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with UnitSpec w
       val result: Future[Either[Throwable, CsvFileLengthInfo]] = testProcessCsvService
         .extractSchemeData(schemeInfo, "anEmpRef", Left(new Exception("hello there")))
 
-      assert(result.isLeft)
-      result.left.get.getMessage mustBe "hello there"
+      assert(result.futureValue.isLeft)
+      result.futureValue.left.get.getMessage mustBe "hello there"
     }
 
     "return a Left if sendSchemeCsv finds errors" in {
@@ -407,8 +407,8 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with UnitSpec w
       val result: Future[Either[Throwable, CsvFileLengthInfo]] = testProcessCsvService
         .extractSchemeDataNew(schemeInfo, "anEmpRef", Left(new Exception("hello there")))
 
-      assert(result.isLeft)
-      result.left.get.getMessage mustBe "hello there"
+      assert(result.futureValue.isLeft)
+      result.futureValue.left.get.getMessage mustBe "hello there"
     }
 
     "return a Left if sendSchemeCsv finds errors" in {

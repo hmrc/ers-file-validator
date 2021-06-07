@@ -35,9 +35,6 @@ package fixtures
 import play.api.libs.json.JsValue
 import play.api.mvc._
 import play.api.test.Helpers.stubControllerComponents
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.HeaderCarrierConverter
-
 import scala.concurrent.Future
 
 trait WithMockedAuthActions {
@@ -47,12 +44,10 @@ trait WithMockedAuthActions {
   val cc: ControllerComponents = stubControllerComponents()
 
   def mockAuthorisedAction(empRef: String)(body: AsyncRequest): Action[AnyContent] = Action.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSessionAndRequest(request.headers, request = Some(request))
     body(request)
   }
 
   def mockAuthorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] = Action.async(cc.parsers.json) { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSessionAndRequest(request.headers, request = Some(request))
     body(request)
   }
 }

@@ -16,15 +16,15 @@
 
 package services
 
-import javax.xml.parsers.SAXParserFactory
 import models._
-import play.api.Logger
+import play.api.Logging
 import utils.ErrorResponseMessages
 
+import javax.xml.parsers.SAXParserFactory
 import scala.util.Try
 import scala.xml._
 
-trait DataParser {
+trait DataParser extends Logging {
 
   val repeatColumnsAttr = "table:number-columns-repeated"
   val repeatTableAttr = "table:number-rows-repeated"
@@ -38,13 +38,13 @@ trait DataParser {
   }
 
   def parse(row: String): Either[String, (Seq[String], Int)] = {
-    Logger.debug("DataParser: Parse: About to parse row: " + row)
+    logger.debug("DataParser: Parse: About to parse row: " + row)
     val xmlRow = Try(Option(XML.withSAXParser(secureSAXParser)loadString(row))).getOrElse(None)
     xmlRow match {
-      case None => Logger.debug("3.1 Parse row left "); Left(row)
-      case elem: Option[Elem] => Logger.debug("3.2 Parse row right ")
+      case None => logger.debug("3.1 Parse row left "); Left(row)
+      case elem: Option[Elem] => logger.debug("3.2 Parse row right ")
         val cols = Try(Right(xmlRow.get.child.flatMap(parseColumn(_)))).getOrElse {
-          Logger.warn(s"${ErrorResponseMessages.dataParserFileRetrievalFailed}");
+          logger.warn(s"${ErrorResponseMessages.dataParserFileRetrievalFailed}");
           throw ERSFileProcessingException(
             s"${ErrorResponseMessages.dataParserFileRetrievalFailed}",
             s"${ErrorResponseMessages.dataParserParserFailure}")
@@ -55,7 +55,7 @@ trait DataParser {
           case Right(s: Seq[String]) => Right((s, 1))
         }
       case _ => {
-        Logger.warn(s"${ErrorResponseMessages.dataParserFileParsingError}")
+        logger.warn(s"${ErrorResponseMessages.dataParserFileParsingError}")
         throw ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserFileParsingError}",
           s"${ErrorResponseMessages.dataParserParsingOfFileData}")

@@ -19,10 +19,7 @@ package services
 import java.io.InputStream
 import javax.xml.stream.events.XMLEvent
 import javax.xml.stream.{XMLEventReader, XMLInputFactory}
-
-import play.api.Logger
-
-import util.control.Breaks._
+import scala.util.control.Breaks._
 
 class StaxProcessor(inputStream: InputStream) extends Iterator[String] {
 
@@ -78,7 +75,6 @@ class StaxProcessor(inputStream: InputStream) extends Iterator[String] {
   def getStringToEndElement(endelement: String): String =
   {
     val buffer: StringBuilder = new StringBuilder
-    var foundit: Boolean = false
 
     def foundelement(  event: XMLEvent,elementName: String): Boolean = {
       if(event.isEndElement) {

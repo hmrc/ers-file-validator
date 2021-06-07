@@ -16,24 +16,23 @@
 
 package controllers
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.stream.scaladsl.Source
 import controllers.auth.Authorisation
-import javax.inject.{Inject, Singleton}
 import metrics.Metrics
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
-import play.api.Logger
+import play.api.Logging
 import play.api.libs.json.JsValue
-import play.api.mvc.{Action, AnyContent, ControllerComponents, DefaultActionBuilder, Request}
-import services.{ProcessOdsService, ProcessCsvService, SessionService}
+import play.api.mvc._
+import services.{ProcessCsvService, ProcessOdsService, SessionService}
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.util.concurrent.TimeUnit
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -44,12 +43,12 @@ class DataUploadController @Inject()(sessionService: SessionService,
                                      val cc: ControllerComponents,
                                      val defaultActionBuilder: DefaultActionBuilder
                                      )(implicit val ec: ExecutionContext, actorSystem: ActorSystem)
-  extends BackendController(cc) with Metrics with Authorisation {
+  extends BackendController(cc) with Metrics with Authorisation with Logging {
 
   def processFileDataFromFrontend(empRef: String): Action[AnyContent] = authorisedAction(empRef) {
     implicit request: Request[AnyContent] =>
       val startTime =  System.currentTimeMillis()
-      Logger.debug("File Processing Request Received At: " + startTime)
+      logger.debug("File Processing Request Received At: " + startTime)
       val json = request.body.asJson.get
       json.validate[UpscanFileData].fold(
         valid = res => {
@@ -61,16 +60,16 @@ class DataUploadController @Inject()(sessionService: SessionService,
           } catch {
             case e:ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
-							Logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException - ${e.getMessage}")
+							logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException - ${e.getMessage}")
               Future.successful(Accepted(e.message))
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)
-              Logger.error(er.getMessage)
+              logger.error(er.getMessage)
               Future.successful(InternalServerError)
           }
         },
         invalid = e => {
-          Logger.error(e.toString())
+          logger.error(e.toString())
           deliverFileProcessingMetrics(startTime)
           Future.successful(BadRequest(e.toString))
         }
@@ -82,12 +81,12 @@ class DataUploadController @Inject()(sessionService: SessionService,
 
   def processCsvFileDataFromFrontend(empRef:String): Action[JsValue] = authorisedActionWithBody(empRef) {
     implicit request: Request[JsValue] =>
-      Logger.debug("[DataUploadController][processCsvFileDataFromFrontend] receiving request on V1 processCsvFileDataFromFrontend")
+      logger.debug("[DataUploadController][processCsvFileDataFromFrontend] receiving request on V1 processCsvFileDataFromFrontend")
       val startTime =  System.currentTimeMillis()
       request.body.validate[UpscanCsvFileData].fold(
         valid = res => {
           val schemeInfo: SchemeInfo = res.schemeInfo
-          Logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
+          logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
 
           val processedFiles: List[Future[Either[Throwable, CsvFileContents]]] = processCsvService.processFiles(res, streamFile)
@@ -97,11 +96,11 @@ class DataUploadController @Inject()(sessionService: SessionService,
 
           Future.sequence(extractedSchemeData).flatMap{ oneFileResults => oneFileResults.find(_.isLeft) match {
             case Some(Left(throwable: ERSFileProcessingException)) =>
-              Logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] ERS file processing exception: ${throwable.message}")
+              logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] ERS file processing exception: ${throwable.message}")
               deliverFileProcessingMetrics(startTime)
               Future(Accepted(throwable.message))
             case Some(Left(throwable)) =>
-              Logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] Unknown exception: ${throwable.getMessage}, full exception: $throwable")
+              logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] Unknown exception: ${throwable.getMessage}, full exception: $throwable")
               deliverFileProcessingMetrics(startTime)
               Future(InternalServerError)
             case None =>
@@ -112,7 +111,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
                   val numberOfSlices = result.map(_.noOfSlices).sum
                   Ok(numberOfSlices.toString)
                 case _ =>
-                  Logger.error(
+                  logger.error(
                     s"[DataUploadController][processCsvFileDataFromFrontend] csv storeCallbackData failed" +
                       s" while storing data, timestamp: ${java.time.LocalTime.now()}.")
                   val exception = ERSFileProcessingException("csv callback data storage in sessioncache failed ", "Exception storing csv callback data")
@@ -135,7 +134,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
       request.body.validate[UpscanCsvFileData].fold(
         valid = res => {
           val schemeInfo: SchemeInfo = res.schemeInfo
-          Logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
+          logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
 
           val processedFiles: List[Future[Either[Throwable, CsvFileSubmissions]]] = processCsvService.processFilesNew(res, streamFile)
@@ -145,11 +144,11 @@ class DataUploadController @Inject()(sessionService: SessionService,
 
           Future.sequence(extractedSchemeData).flatMap{ allFilesResults => allFilesResults.find(_.isLeft) match {
             case Some(Left(throwable: ERSFileProcessingException)) =>
-              Logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] ERS file processing exception: ${throwable.message}")
+              logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] ERS file processing exception: ${throwable.message}")
               deliverFileProcessingMetrics(startTime)
               Future(Accepted(throwable.message))
             case Some(Left(throwable)) =>
-              Logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] Unknown exception: ${throwable.getMessage}, full exception: $throwable")
+              logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] Unknown exception: ${throwable.getMessage}, full exception: $throwable")
               deliverFileProcessingMetrics(startTime)
               Future(InternalServerError)
             case None =>
@@ -160,7 +159,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
                   val numberOfSlices = result.map(_.noOfSlices).sum
                   Ok(numberOfSlices.toString)
                 case _ =>
-                  Logger.error(
+                  logger.error(
                     s"[DataUploadController][processCsvFileDataFromFrontend] csv storeCallbackData failed" +
                       s" while storing data, timestamp: ${java.time.LocalTime.now()}.")
                   deliverFileProcessingMetrics(startTime)

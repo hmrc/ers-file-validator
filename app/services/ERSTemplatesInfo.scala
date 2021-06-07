@@ -17,8 +17,8 @@
 package services
 
 import com.typesafe.config.ConfigFactory
-import uk.gov.hmrc.services.validation.DataValidator
 import services.ersTemplatesInfo._
+import uk.gov.hmrc.services.validation.DataValidator
 
 /**
  * Created by raghu on 26/01/16.

@@ -32,7 +32,6 @@
 
 package services
 
-import uk.gov.hmrc.services.validation.models._
 import models.{SchemeData, SchemeInfo}
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.joda.time.DateTime
@@ -45,6 +44,7 @@ import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import services.audit.{AuditEvents, AuditService}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.services.validation.models._
 
 import scala.collection.mutable.ListBuffer
 
@@ -102,7 +102,7 @@ class AuditEventsSpec extends WordSpec with Matchers with MockitoSugar with Guic
       ValidationError(cell2,"error.3","003","This entry is larger than the maximum number value allowed.")
     )
 
-    auditEvents.validationErrorAudit(validationErrors, schemeInfo, "sheetName")(hc, schemeInfo, request)
+    auditEvents.validationErrorAudit(validationErrors, schemeInfo, "sheetName")(hc, request)
     verify(mockAuditService, times(1)).sendEvent(argEq("ERSValidationError"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
 
   }

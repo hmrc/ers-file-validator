@@ -32,9 +32,10 @@
 
 package services
 
-import java.io._
 import org.scalatestplus.play.PlaySpec
 import services.staxintegrationTestData.CSOPStaxIntegrationTestData
+
+import java.io._
 import scala.xml.Elem
 
 class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {

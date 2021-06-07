@@ -16,13 +16,10 @@
 
 package services
 
-import java.util.concurrent.TimeUnit
-
 import config.ApplicationConfig
-import javax.inject.{Inject, Singleton}
 import metrics.Metrics
 import models.{ERSFileProcessingException, SchemeData, SchemeInfo}
-import play.api.Logger
+import play.api.Logging
 import play.api.mvc.Request
 import services.ERSTemplatesInfo.ersSheets
 import services.audit.AuditEvents
@@ -32,6 +29,8 @@ import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.ValidationError
 import utils.ErrorResponseMessages
 
+import java.util.concurrent.TimeUnit
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
@@ -39,7 +38,7 @@ import scala.util.{Failure, Success, Try}
 @Singleton
 class DataGenerator @Inject()(auditEvents: AuditEvents,
                               config: ApplicationConfig)(
-  implicit val ec: ExecutionContext) extends DataParser with Metrics {
+  implicit val ec: ExecutionContext) extends DataParser with Metrics with Logging {
 
   val defaultChunkSize: Int = 10000
   private[services] val ersSheetsClone: Map[String, SheetInfo] = ersSheets
@@ -67,15 +66,15 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
       val row = iterator.next()
       val rowData = parse(row)
-      Logger.debug(" parsed data ---> " + rowData + " -- cursor --> " + rowNum)
+      logger.debug(" parsed data ---> " + rowData + " -- cursor --> " + rowNum)
       rowData.isLeft match {
         case true => {
           checkForMissingHeaders(rowNum)
           sheetName = identifyAndDefineSheet(rowData.left.get)
-          Logger.debug("Sheetname = " + sheetName + "******")
-          Logger.debug("SCHEME TYPE = " + schemeInfo.schemeType + "******")
+          logger.debug("Sheetname = " + sheetName + "******")
+          logger.debug("SCHEME TYPE = " + schemeInfo.schemeType + "******")
           schemeData += SchemeData(schemeInfo, sheetName, None, ListBuffer())
-          Logger.debug("SchemeData = " + schemeData.size + "******")
+          logger.debug("SchemeData = " + schemeData.size + "******")
           rowNum = 1
           validator = setValidator(sheetName)
         }
@@ -83,11 +82,11 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
           for (i <- 1 to rowData.right.get._2) {
             rowNum match {
               case count if count < 9 => {
-                Logger.debug("GetData: incRowNum if count < 9: " + count + " RowNum: " + rowNum)
+                logger.debug("GetData: incRowNum if count < 9: " + count + " RowNum: " + rowNum)
                 incRowNum()
               }
               case 9 => {
-                Logger.debug("GetData: incRowNum if  9: " + rowNum + "sheetColSize: " + sheetColSize)
+                logger.debug("GetData: incRowNum if  9: " + rowNum + "sheetColSize: " + sheetColSize)
                 sheetColSize = validateHeaderRow(rowData.right.get._1, sheetName)
                 incRowNum()
               }
@@ -113,7 +112,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         s"${ErrorResponseMessages.dataParserNoData}")
     }
     deliverDataIteratorMetrics(startTime)
-    Logger.debug("The SchemeData that GetData finally returns: " + schemeData)
+    logger.debug("The SchemeData that GetData finally returns: " + schemeData)
     schemeData
   }
 
@@ -123,7 +122,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     } catch {
       case e: Exception => {
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-        Logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
+        logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
         throw ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserConfigFailure}",
           "Could not set the validator ")
@@ -133,12 +132,12 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
   def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
     implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, SheetInfo] = {
-    Logger.debug(s"[DataGenerator][getSheetCsv] Looking for sheetName: $sheetName")
+    logger.debug(s"[DataGenerator][getSheetCsv] Looking for sheetName: $sheetName")
     ersSheetsClone.get(sheetName) match {
       case Some(sheetInfo) => Right(sheetInfo)
       case _ =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-        Logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
+        logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
         Left(ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
           s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}"))
@@ -151,7 +150,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       case (Success(validator), Right(value)) => Right((validator, value))
       case (Failure(e), _) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-        Logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
+        logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
         Left(ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserConfigFailure}",
           "Could not set the validator "))
@@ -160,14 +159,14 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   }
 
   def identifyAndDefineSheet(data: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): String = {
-    Logger.debug("5.1  case 0 identifyAndDefineSheet  ")
+    logger.debug("5.1  case 0 identifyAndDefineSheet  ")
     val res = getSheet(data)
     if (res.schemeType.toLowerCase == schemeInfo.schemeType.toLowerCase) {
-      Logger.debug("****5.1.1  data contains data:  *****" + data)
+      logger.debug("****5.1.1  data contains data:  *****" + data)
       data
     } else {
       auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
-      Logger.warn(s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
+      logger.warn(s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
       throw ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSchemeType()}",
         s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
@@ -175,10 +174,10 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   }
 
   def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): SheetInfo = {
-    Logger.debug(s"Looking for sheetName: ${sheetName}")
+    logger.debug(s"Looking for sheetName: ${sheetName}")
     ersSheets.getOrElse(sheetName, {
       auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-      Logger.warn(s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
+      logger.warn(s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
       throw ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
         s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
@@ -192,12 +191,12 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     val data = rowData.take(header.size)
     val dataTrim = data.map(_.replaceAll(headerFormat, ""))
 
-    Logger.debug("5.3  case 9 sheetName =" + sheetName + "data = " + dataTrim + "header == -> " + header)
+    logger.debug("5.3  case 9 sheetName =" + sheetName + "data = " + dataTrim + "header == -> " + header)
     if(dataTrim == header) {
       header.size
     } else {
       auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Header row invalid")
-      Logger.warn("Error while reading File + Incorrect ERS Template")
+      logger.warn("Error while reading File + Incorrect ERS Template")
       throw ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectHeader}",
         s"${ErrorResponseMessages.dataParserHeadersDontMatch}")
@@ -207,13 +206,13 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   def generateRowData(rowData: Seq[String], rowCount: Int, validator: DataValidator)(
     implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): Seq[String] = {
 
-    Logger.debug("5.4  case _ rowData is " + rowData)
+    logger.debug("5.4  case _ rowData is " + rowData)
     ErsValidator.validateRow(rowData, rowCount, validator) match {
       case None => rowData
       case err: Option[List[ValidationError]] => {
-        Logger.debug(s"Error while Validating Row num--> ${rowCount} ")
-        Logger.debug(s"Rowdata is --> ${rowData.map(res => res)}")
-        Logger.debug(s"Error column data is  ${err.get.map(_.cell.value)}")
+        logger.debug(s"Error while Validating Row num--> ${rowCount} ")
+        logger.debug(s"Rowdata is --> ${rowData.map(res => res)}")
+        logger.debug(s"Error column data is  ${err.get.map(_.cell.value)}")
         err.map {
           auditEvents.validationErrorAudit(_, schemeInfo, sheetName)
         }
@@ -226,7 +225,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
   def constructColumnData(foundData: Seq[String], sheetColSize: Int): Seq[String] = {
     if (foundData.size < sheetColSize) {
-      Logger.warn(s"Difference between amount of columns ${foundData.size} and amount of headers $sheetColSize")
+      logger.warn(s"Difference between amount of columns ${foundData.size} and amount of headers $sheetColSize")
       val additionalEmptyCells: Seq[String] = List.fill(sheetColSize - foundData.size)("")
       (foundData ++ additionalEmptyCells).take(sheetColSize)
     }

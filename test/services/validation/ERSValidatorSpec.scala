@@ -34,12 +34,12 @@ package services.validation
 
 
 import com.typesafe.config.ConfigFactory
-import uk.gov.hmrc.services.validation.DataValidator
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import services.validation.EMITestData.ERSValidationEMIAdjustmentsTestData
+import uk.gov.hmrc.services.validation.DataValidator
 
 class ERSValidatorSpec extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures with MockitoSugar with ERSValidationEMIAdjustmentsTestData {
 

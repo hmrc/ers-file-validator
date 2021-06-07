@@ -16,9 +16,9 @@
 
 package utils
 
-import uk.gov.hmrc.play.test.UnitSpec
+import org.scalatest.{Matchers, OptionValues, WordSpecLike}
 
-class ValidationUtilsSpec extends UnitSpec{
+class ValidationUtilsSpec extends WordSpecLike with Matchers with OptionValues{
 
   "numberOfSlices" should {
     "return the number of slices required to fit all rows based on the size of the buffer" in {
