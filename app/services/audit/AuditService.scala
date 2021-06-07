@@ -16,15 +16,14 @@
 
 package services.audit
 
-import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.mvc.{Request, Session}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
 
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class AuditService @Inject()(auditConnector: DefaultAuditConnector,
@@ -43,8 +42,8 @@ class AuditService @Inject()(auditConnector: DefaultAuditConnector,
     )
 
   private def generateTags(session: Session, hc: HeaderCarrier): Map[String, String] =
-    hc.headers.toMap ++
-      hc.headers.toMap ++
+    hc.otherHeaders.toMap ++
+      hc.otherHeaders.toMap ++
       Map("dateTime" ->  getDateTime.toString)
 
   protected def getDateTime = new DateTime

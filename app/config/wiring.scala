@@ -17,24 +17,16 @@
 package config
 
 import akka.actor.ActorSystem
-import javax.inject.{Inject, Singleton}
 import play.api.Configuration
-import play.api.libs.ws.{WSClient, WSRequest}
-import uk.gov.hmrc.http._
+import play.api.libs.ws.WSClient
 import uk.gov.hmrc.http.cache.client.SessionCache
 import uk.gov.hmrc.play.audit.http.HttpAuditing
 import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
-
-
+import javax.inject.{Inject, Singleton}
 
 @Singleton
 class WSHttp @Inject()(httpAuditing: HttpAuditing, wsClient: WSClient, configuration: Configuration, appConfig: ApplicationConfig, actorSystem: ActorSystem)
   extends DefaultHttpClient(configuration, httpAuditing, wsClient, actorSystem) {
-
-
-  def buildRequestWithTimeout(uri: String)(implicit hc: HeaderCarrier): WSRequest = {
-    buildRequest(uri).withRequestTimeout(appConfig.ersTimeOut)
-  }
 }
 
 @Singleton

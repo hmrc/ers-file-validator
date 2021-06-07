@@ -17,11 +17,12 @@
 package services
 
 import org.joda.time.DateTime
-import org.scalatest.{Matchers, WordSpec}
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
-import org.scalatestplus.mockito.MockitoSugar
 import org.mockito.Mockito._
+import org.scalatest.{Matchers, WordSpec}
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import services.audit.AuditService
 import uk.gov.hmrc.http.HeaderCarrier
@@ -35,9 +36,9 @@ class AuditServiceSpec extends WordSpec with MockitoSugar with Matchers with Gui
 
   "auditService sendEvent should send the event" in {
 
-    implicit val request = FakeRequest()
+    implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
-    implicit val hc = new HeaderCarrier
+    implicit val hc: HeaderCarrier = new HeaderCarrier
 
     implicit val ec: ExecutionContextExecutor = ExecutionContext.global
     val dateTime = new DateTime
@@ -50,7 +51,7 @@ class AuditServiceSpec extends WordSpec with MockitoSugar with Matchers with Gui
     val dataEvent = DataEvent(
       auditSource = "ers-file-validator",
       auditType = "source",
-      tags = hc.headers.toMap ++ hc.headers.toMap ++ Map("dateTime" -> dateTime.toString),
+      tags = hc.otherHeaders.toMap ++ hc.otherHeaders.toMap ++ Map("dateTime" -> dateTime.toString),
       detail = details
     )
 

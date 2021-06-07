@@ -21,18 +21,17 @@ import models.{ERSFileProcessingException, SchemeInfo}
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
-import org.scalatestplus.mockito.MockitoSugar
 import org.scalatest.time.{Millis, Span}
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.Request
 import services.XMLTestData._
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import java.io.FileNotFoundException
-
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.xml._
 
 

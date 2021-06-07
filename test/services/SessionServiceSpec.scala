@@ -50,7 +50,7 @@ class SessionServiceSpec extends PlaySpec with GuiceOneAppPerSuite with ScalaFut
         (any[Writes[UpscanCallback]], any[HeaderCarrier], any()))
         .thenReturn(Future.successful(CacheMap("sessionValue", Map(sessionService.CALLBACK_DATA_KEY -> json))))
 
-      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(request, hc), 10 seconds)
+      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(hc), 10 seconds)
 
       result.get.length must be(Some(1000L))
       result.get.noOfRows must be (Some(1000))
@@ -65,7 +65,7 @@ class SessionServiceSpec extends PlaySpec with GuiceOneAppPerSuite with ScalaFut
         (any[Writes[UpscanCallback]], any[HeaderCarrier], any()))
         .thenReturn(Future.failed(new Exception("")))
 
-      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(request, hc), 10 seconds)
+      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(hc), 10 seconds)
       result mustBe None
     }
   }

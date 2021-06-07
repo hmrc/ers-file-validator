@@ -25,8 +25,8 @@ import akka.util.ByteString
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
 import models.upscan.UpscanCsvFileData
-import models.{CsvFileContents, CsvFileLengthInfo, CsvFileSubmissions, ERSFileProcessingException, SchemeData, SchemeInfo, SubmissionsSchemeData}
-import play.api.Logger
+import models._
+import play.api.Logging
 import play.api.mvc.Request
 import services.ERSTemplatesInfo.ersSheets
 import services.FlowOps.eitherFromFunction
@@ -37,10 +37,10 @@ import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 import utils.{ErrorResponseMessages, ValidationUtils}
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import javax.inject.{Inject, Singleton}
 
 @Singleton
 class ProcessCsvService @Inject()(auditEvents: AuditEvents,
@@ -48,7 +48,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
                                   appConfig: ApplicationConfig,
                                   ersConnector: ERSFileValidatorConnector
                                  )(implicit executionContext: ExecutionContext,
-                                   actorSystem: ActorSystem) {
+                                   actorSystem: ActorSystem) extends Logging {
 
   private val uploadCsvSizeLimit: Int = appConfig.uploadCsvSizeLimit
   private[services] val ersSheetsClone: Map[String, SheetInfo] = ersSheets
@@ -57,7 +57,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     response match {
       case HttpResponse(akka.http.scaladsl.model.StatusCodes.OK, _, entity, _) => entity.withSizeLimit(uploadCsvSizeLimit).dataBytes
       case notOkResponse =>
-        Logger.error(
+        logger.error(
           s"[ProcessCsvService][extractEntityData] Illegal response from Upscan: ${notOkResponse.status.intValue}, " +
             s"body: ${notOkResponse.entity.dataBytes}")
         Source.failed(
@@ -156,8 +156,8 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     result.fold(
       throwable => Future(Left(throwable)),
       csvFileContents => {
-        Logger.debug("2.1 result contains: " + csvFileContents)
-        Logger.debug("No if SchemeData Objects " + csvFileContents.contents.size)
+        logger.debug("2.1 result contains: " + csvFileContents)
+        logger.debug("No if SchemeData Objects " + csvFileContents.contents.size)
         sendSchemeCsv(SchemeData(schemeInfo, csvFileContents.sheetName, None, csvFileContents.contents.to[ListBuffer]), empRef).map { issues =>
           issues.fold(
             throwable => Left(throwable),
@@ -197,12 +197,12 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       validator.validateRow(Row(0, getCells(parsedRow, 0)))
     } match {
       case Failure(exception) =>
-        Logger.error(s"[ProcessCsvService][processRow] Exception returned when attempting to validate row: ${exception.getMessage}")
+        logger.error(s"[ProcessCsvService][processRow] Exception returned when attempting to validate row: ${exception.getMessage}")
         Left(exception)
       case Success(list) if list.isEmpty => Right(parsedRow)
       case Success(_) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
-        Logger.warn("[ProcessCsvService][processRow] Row validation found validation errors")
+        logger.warn("[ProcessCsvService][processRow] Row validation found validation errors")
         Left(ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserFileInvalid}",
           s"${ErrorResponseMessages.dataParserValidationFailure}"))
@@ -211,27 +211,27 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 
   //TODO Old version - remove after successful release of large file changes
   def sendSchemeDataCsv(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Option[Throwable]] = {
-    Logger.debug("[ProcessCsvService][sendSchemeDataCsv] Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
+    logger.debug("[ProcessCsvService][sendSchemeDataCsv] Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
     ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
       case Right(_) =>
         auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         None
       case Left(ex) =>
         auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
-        Logger.error(s"[ProcessCsvService][sendSchemeDataCsv] Exception found when sending to submissions: ${ex.getMessage}")
+        logger.error(s"[ProcessCsvService][sendSchemeDataCsv] Exception found when sending to submissions: ${ex.getMessage}")
         Some(ERSFileProcessingException(ex.toString, ex.getStackTrace.toString))
     }
   }
 
   def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Option[Throwable]] = {
-    Logger.debug("[ProcessCsvService][sendSchemeDataCsv] Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
+    logger.debug("[ProcessCsvService][sendSchemeDataCsv] Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
     ersConnector.sendToSubmissionsNew(ersSchemeData, empRef).map {
       case Right(_) =>
         auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         None
       case Left(ex) =>
         auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
-        Logger.error(s"[ProcessCsvService][sendSchemeDataCsv] Exception found when sending to submissions: ${ex.getMessage}")
+        logger.error(s"[ProcessCsvService][sendSchemeDataCsv] Exception found when sending to submissions: ${ex.getMessage}")
         Some(ERSFileProcessingException(ex.toString, ex.getStackTrace.toString))
     }
   }
@@ -244,7 +244,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 
       val slices: Int = ValidationUtils.numberOfSlices(schemeData.data.size, maxNumberOfRows)
       val sendSchemeDataCsvResults: Seq[Future[Option[Throwable]]] = (1 to slices).map { number =>
-        //Logger.debug("[ProcessCsvService][sendSchemeCsv] The size of the scheme data is " + scheme.data.size + " and number is " + number)
+        //logger.debug("[ProcessCsvService][sendSchemeCsv] The size of the scheme data is " + scheme.data.size + " and number is " + number)
         sendSchemeDataCsv(schemeData.copy(numberOfParts = Option(slices), data = schemeData.data.slice(number, number + maxNumberOfRows)), empRef)
       }
 

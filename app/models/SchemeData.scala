@@ -16,10 +16,10 @@
 
 package models
 
-import org.joda.time.DateTime
-import play.api.libs.json.{Format, JodaReads, JsResult, JsValue, Json, OFormat}
-import play.api.libs.json.JodaWrites._
 import models.upscan.UpscanCallback
+import org.joda.time.DateTime
+import play.api.libs.json.JodaWrites._
+import play.api.libs.json._
 
 import scala.collection.mutable.ListBuffer
 

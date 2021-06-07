@@ -17,8 +17,8 @@
 package services.validation.CSOPTestData
 
 
-import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
+import uk.gov.hmrc.services.validation.models._
 
 trait ERSValidationCSOPGrantedTestData {
   

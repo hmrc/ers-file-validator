@@ -21,25 +21,22 @@ import controllers.Assets.Ok
 import controllers.auth.Authorisation
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.{BeforeAndAfterEach, Matchers, OptionValues, WordSpecLike}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Play
 import play.api.http.Status
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{Action, AnyContent, ControllerComponents, DefaultActionBuilder, Result}
+import play.api.mvc._
 import play.api.test.FakeRequest
-import play.api.test.Helpers.stubControllerComponents
+import play.api.test.Helpers.{contentAsString, defaultAwaitTimeout, status, stubControllerComponents}
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
-import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.play.test.UnitSpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class AuthorisationSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
+class AuthorisationSpec extends WordSpecLike with Matchers with OptionValues with MockitoSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
 
   val mockAuthConnector: AuthConnector = mock[AuthConnector]
   implicit def materializer: Materializer = app.materializer
@@ -88,7 +85,7 @@ class AuthorisationSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
 
       val result: Future[Result] = authorisationTestController.testAuthorisedAction("123/2343234")(FakeRequest())
       status(result) shouldBe Status.OK
-      await(bodyOf(result).map(_ shouldBe "Successful"))
+      contentAsString(result) shouldBe "Successful"
     }
   }
 
@@ -144,7 +141,7 @@ class AuthorisationSpec extends UnitSpec with MockitoSugar with BeforeAndAfterEa
 
       val result: Future[Result] = authorisationTestController.testAuthorisedActionWithBody("123/2343234")(FakeRequest().withBody(testBody))
       status(result) shouldBe Status.OK
-      await(bodyOf(result).map(_ shouldBe "Successful"))
+      contentAsString(result) shouldBe "Successful"
     }
 
     "return a 401 if an Authorisation Exception is experienced" in {

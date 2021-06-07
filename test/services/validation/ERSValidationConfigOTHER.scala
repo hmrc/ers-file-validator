@@ -17,11 +17,10 @@
 package services.validation
 
 import com.typesafe.config.ConfigFactory
+import org.scalatestplus.play.PlaySpec
+import services.validation.OTHERTestData._
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
-import org.scalatestplus.play.PlaySpec
-
-import services.validation.OTHERTestData._
 
 class OTHERGrantsV3ValidationTest extends PlaySpec with ERSValidationOTHERGrantsTestData with ValidationTestRunner {
 

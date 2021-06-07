@@ -17,8 +17,8 @@
 package services.validation.EMITestData
 
 
-import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
+import uk.gov.hmrc.services.validation.models._
 
 /**
  * Created by matt on 19/02/16.

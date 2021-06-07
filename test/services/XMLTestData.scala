@@ -16,12 +16,11 @@
 
 package services
 
-import java.io.ByteArrayInputStream
-
 import services.besIntegrationTestData.BESIntegrationTestData
-import headers.HeaderData
+import services.headers.HeaderData
+
+import java.io.ByteArrayInputStream
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
 import scala.xml.Elem
 
 /**

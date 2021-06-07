@@ -16,12 +16,13 @@
 
 package services.audit
 
-import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.services.validation.models.ValidationError
 import models.SchemeInfo
 import org.apache.commons.lang3.exception.ExceptionUtils
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.services.validation.models.ValidationError
+
+import javax.inject.{Inject, Singleton}
 
 @Singleton
 class AuditEvents @Inject()(auditService: AuditService) {
@@ -56,7 +57,7 @@ class AuditEvents @Inject()(auditService: AuditService) {
     true
   }
 
-  def validationErrorAudit(validationErrors:List[ValidationError],schemeInfo: SchemeInfo, sheetName : String)(implicit hc: HeaderCarrier,sc:SchemeInfo, request: Request[_]) = {
+  def validationErrorAudit(validationErrors:List[ValidationError],schemeInfo: SchemeInfo, sheetName : String)(implicit hc: HeaderCarrier, request: Request[_]) = {
     auditService.sendEvent("ERSValidationError",Map(
         "Column" -> validationErrors.head.cell.column,
         "Row" -> validationErrors.head.cell.row.toString,

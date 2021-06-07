@@ -31,8 +31,8 @@ import play.api.mvc.Request
 import services.audit.AuditEvents
 import services.headers.HeaderData
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 import uk.gov.hmrc.services.validation.DataValidator
+import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 import utils.ErrorResponseMessages
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
@@ -227,7 +227,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSui
       val err = List(ValidationError(Cell("A",10,""),"error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))
       val res1 = Try(dataGenerator.generateRowData(testAct, 10, validator)(schemeInfo, "Other_Grants_V3", hc, request))
       res1.isFailure mustBe true
-      verify(mockAuditEvents, times(1)).validationErrorAudit(argEq(err), argEq(schemeInfo), argEq("Other_Grants_V3"))(any(), argEq(schemeInfo), any())
+      verify(mockAuditEvents, times(1)).validationErrorAudit(argEq(err), argEq(schemeInfo), argEq("Other_Grants_V3"))(any(), any())
     }
 
     "throw exception if ErsValidator.validateRow throws exception" in {

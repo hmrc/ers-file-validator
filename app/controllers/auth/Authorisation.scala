@@ -16,19 +16,19 @@
 
 package controllers.auth
 
-import play.api.Logger
+import play.api.Logging
 import play.api.libs.json.JsValue
 import play.api.mvc.Results.Unauthorized
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.{AuthorisationException, AuthorisedFunctions, ConfidenceLevel, Enrolment}
 import uk.gov.hmrc.domain.EmpRef
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.HeaderCarrierConverter
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-trait Authorisation extends AuthorisedFunctions {
+trait Authorisation extends AuthorisedFunctions with Logging {
   implicit val ec: ExecutionContext
   val cc: ControllerComponents
   val defaultActionBuilder: DefaultActionBuilder
@@ -36,7 +36,7 @@ trait Authorisation extends AuthorisedFunctions {
   private type AsyncJsonRequest = Request[JsValue] => Future[Result]
 
   def authorisedAction(slashSeparatedEmpRef: String)(body: AsyncRequest): Action[AnyContent] = defaultActionBuilder.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSessionAndRequest(request.headers, request = Some(request))
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
     Try(EmpRef.fromIdentifiers(slashSeparatedEmpRef)).toOption.map(empRef =>
       authorised(
         ConfidenceLevel.L50 and Enrolment("IR-PAYE")
@@ -47,19 +47,19 @@ trait Authorisation extends AuthorisedFunctions {
         body(request)
       } recover {
         case exception: AuthorisationException =>
-          Logger.warn(s"[AuthAction][invokeBlock] user is unauthorised for ${request.uri} with " +
+          logger.warn(s"[AuthAction][invokeBlock] user is unauthorised for ${request.uri} with " +
             s"exception ${exception.getMessage}", exception)
           Unauthorized
       }
     ).getOrElse {
-      Logger.warn(s"[AuthAction][invokeBlock] an invalid empRef was supplied when trying to hit ${request.uri}")
+      logger.warn(s"[AuthAction][invokeBlock] an invalid empRef was supplied when trying to hit ${request.uri}")
       Future.successful(Unauthorized)
     }
   }
 
   def authorisedActionWithBody(slashSeparatedEmpRef: String)(body: AsyncJsonRequest): Action[JsValue] = defaultActionBuilder.async(cc.parsers.json) {
     implicit request: Request[JsValue] =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSessionAndRequest(request.headers, request = Some(request))
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       Try(EmpRef.fromIdentifiers(slashSeparatedEmpRef)).toOption.map(empRef =>
         authorised(
           ConfidenceLevel.L50 and Enrolment("IR-PAYE")
@@ -70,11 +70,11 @@ trait Authorisation extends AuthorisedFunctions {
           body(request)
         } recover {
           case exception: AuthorisationException =>
-            Logger.warn(s"[AuthAction][invokeBlock] user is unauthorised for ${request.uri} with exception  ${exception.getMessage}", exception)
+            logger.warn(s"[AuthAction][invokeBlock] user is unauthorised for ${request.uri} with exception  ${exception.getMessage}", exception)
             Unauthorized
         }
       ).getOrElse {
-        Logger.warn(s"[AuthAction][invokeBlock] an invalid empRef was supplied when trying to hit ${request.uri}")
+        logger.warn(s"[AuthAction][invokeBlock] an invalid empRef was supplied when trying to hit ${request.uri}")
         Future.successful(Unauthorized)
       }
   }

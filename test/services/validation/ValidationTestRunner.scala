@@ -16,10 +16,10 @@
 
 package services.validation
 
-import uk.gov.hmrc.services.validation.DataValidator
-import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
 import org.scalatestplus.play.PlaySpec
+import uk.gov.hmrc.services.validation.DataValidator
+import uk.gov.hmrc.services.validation.models._
 
 trait ValidationTestRunner extends PlaySpec{
 

@@ -17,9 +17,9 @@
 package services.validation.SAYETestData
 
 
-import uk.gov.hmrc.services.validation.models._
 import models.ValidationErrorData
 import org.apache.commons.lang3.StringUtils
+import uk.gov.hmrc.services.validation.models._
 
 trait ERSValidationSAYEExercisedTestData {
   val rowNumber : Int = 1

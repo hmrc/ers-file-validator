@@ -17,28 +17,27 @@
 package services
 
 import config.ERSFileValidatorSessionCache
-import javax.inject.{Inject, Singleton}
 import models.upscan.UpscanCallback
-import play.api.Logger
-import play.api.mvc.Request
+import play.api.Logging
 import uk.gov.hmrc.http.HeaderCarrier
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class SessionService @Inject()(sessionCache: ERSFileValidatorSessionCache,
-                               implicit val ec: ExecutionContext) {
+                               implicit val ec: ExecutionContext) extends Logging {
 
   val CALLBACK_DATA_KEY = "callback_data_key"
 
-  def storeCallbackData(data: UpscanCallback, totalRows: Int)(implicit request: Request[_], hc: HeaderCarrier): Future[Option[UpscanCallback]] = {
+  def storeCallbackData(data: UpscanCallback, totalRows: Int)(implicit hc: HeaderCarrier): Future[Option[UpscanCallback]] = {
     val callbackData = data.copy(noOfRows = Some(totalRows))
 
     val cacheMap = sessionCache.cache[UpscanCallback](CALLBACK_DATA_KEY, callbackData)
     cacheMap.map(_ =>
       Some(callbackData)
     ).recover { case e: Throwable =>
-      Logger.error("Failed to store callback data with no of rows: " + e)
+      logger.error("Failed to store callback data with no of rows: " + e)
       None
     }
   }
