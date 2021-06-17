@@ -74,6 +74,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
         case e => Left(e)
       }
 
+  // TODO Old version from before csv processing re-write, to be removed
   def processFiles(callback: UpscanCsvFileData, source: String => Source[HttpResponse, _])(
     implicit request: Request[_], hc: HeaderCarrier
   ): List[Future[Either[Throwable, CsvFileContents]]] =

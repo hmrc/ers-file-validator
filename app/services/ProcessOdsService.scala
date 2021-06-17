@@ -49,7 +49,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
     val startTime = System.currentTimeMillis()
     logger.info("2.0 start: ")
     val result = dataGenerator.getErrors(readFile(callbackData.downloadUrl))
-    logger.info("2.1 result contains: " + result)
+    logger.debug("2.1 result contains: " + result)
     deliverBESMetrics(startTime)
     logger.debug("No if SchemeData Objects " + result.size)
     val filesWithData = result.filter(_.data.nonEmpty)

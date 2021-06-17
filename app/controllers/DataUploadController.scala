@@ -79,6 +79,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
   def deliverFileProcessingMetrics(startTime:Long): Unit =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
+  // TODO Old version from before csv processing re-write, to be removed
   def processCsvFileDataFromFrontend(empRef:String): Action[JsValue] = authorisedActionWithBody(empRef) {
     implicit request: Request[JsValue] =>
       logger.debug("[DataUploadController][processCsvFileDataFromFrontend] receiving request on V1 processCsvFileDataFromFrontend")
@@ -109,6 +110,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
               sessionService.storeCallbackData(res.callbackData.head, totalRowCount).map {
                 case callback: Option[UpscanCallback] if callback.isDefined =>
                   val numberOfSlices = result.map(_.noOfSlices).sum
+                  logger.info("[DataUploadController][processCsvFileDataFromFrontend] File validated successfully")
                   Ok(numberOfSlices.toString)
                 case _ =>
                   logger.error(
@@ -121,6 +123,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
           }}
         },
         invalid = e => {
+          logger.warn("[DataUploadController][processCsvFileDataFromFrontend] Invalid request body")
           deliverFileProcessingMetrics(startTime)
           Future(BadRequest(e.toString))
         }
@@ -157,6 +160,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
               sessionService.storeCallbackData(res.callbackData.head, totalRowCount).map {
                 case callback: Option[UpscanCallback] if callback.isDefined =>
                   val numberOfSlices = result.map(_.noOfSlices).sum
+                  logger.info("[DataUploadController][processCsvFileDataFromFrontendV2] File validated successfully")
                   Ok(numberOfSlices.toString)
                 case _ =>
                   logger.error(
@@ -168,6 +172,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
           }}
         },
         invalid = e => {
+          logger.warn("[DataUploadController][processCsvFileDataFromFrontendV2] Invalid request body")
           deliverFileProcessingMetrics(startTime)
           Future(BadRequest(e.toString))
         }
