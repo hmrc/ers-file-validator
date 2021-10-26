@@ -17,16 +17,17 @@
 package controllers
 
 import akka.stream.Materializer
-import controllers.Assets.Ok
 import controllers.auth.Authorisation
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
-import org.scalatest.{BeforeAndAfterEach, Matchers, OptionValues, WordSpecLike}
+import org.scalatest.{BeforeAndAfterEach, OptionValues}
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
+import play.api.mvc.Results.Ok
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{contentAsString, defaultAwaitTimeout, status, stubControllerComponents}
 import uk.gov.hmrc.auth.core._
@@ -34,11 +35,14 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 
 import scala.concurrent.{ExecutionContext, Future}
+import play.api.inject.guice.GuiceApplicationBuilder
+import org.scalatest.wordspec.AnyWordSpecLike
 
 
-class AuthorisationSpec extends WordSpecLike with Matchers with OptionValues with MockitoSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
+class AuthorisationSpec extends AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {
 
   val mockAuthConnector: AuthConnector = mock[AuthConnector]
+  override lazy val app = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
   implicit def materializer: Materializer = app.materializer
 
 

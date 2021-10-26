@@ -19,9 +19,8 @@ package services
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import services.audit.AuditService
@@ -31,8 +30,9 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class AuditServiceSpec extends WordSpec with MockitoSugar with Matchers with GuiceOneAppPerSuite {
+class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
 
   "auditService sendEvent should send the event" in {
 

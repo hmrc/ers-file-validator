@@ -27,7 +27,6 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
@@ -39,7 +38,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 
-class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSuite with ScalaFutures with MockitoSugar with BeforeAndAfter {
+class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter {
 
   val mockSessionService: SessionService = mock[SessionService]
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
@@ -129,7 +128,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with GuiceOneAppPe
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
     when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any[HeaderCarrier])).thenReturn(Future.successful(Some(callbackData)))
-    val result = fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
+    fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
     verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier],any[Request[_]])
   }
 //

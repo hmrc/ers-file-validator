@@ -37,9 +37,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito.{times, verify}
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import services.audit.{AuditEvents, AuditService}
@@ -47,8 +46,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.models._
 
 import scala.collection.mutable.ListBuffer
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class AuditEventsSpec extends WordSpec with Matchers with MockitoSugar with GuiceOneAppPerSuite {
+class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
 
   implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   implicit var hc: HeaderCarrier = new HeaderCarrier()

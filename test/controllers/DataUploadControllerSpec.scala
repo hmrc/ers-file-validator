@@ -46,7 +46,8 @@ import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{Matchers, OptionValues, WordSpecLike}
+import org.scalatest.OptionValues
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Play
@@ -60,9 +61,12 @@ import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.Application
+import org.scalatest.wordspec.AnyWordSpecLike
 
 class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadControllerSpec"))
-  with WordSpecLike with Matchers with OptionValues with MockitoSugar with GuiceOneAppPerSuite with WithMockedAuthActions with ScalaFutures {
+  with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with GuiceOneAppPerSuite with WithMockedAuthActions with ScalaFutures {
 
   val empRef: String = "1234/ABCD"
   val mockSessionService: SessionService = mock[SessionService]
@@ -71,6 +75,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
   val mockAuthConnector: DefaultAuthConnector = mock[DefaultAuthConnector]
   val metrics: Metrics = mock[Metrics]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
+  override implicit lazy val app: Application = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
   implicit def materializer: Materializer = Play.materializer
   val defaultActionBuilder: DefaultActionBuilder = app.injector.instanceOf(classOf[DefaultActionBuilder])
 
