@@ -26,7 +26,6 @@ import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import services.headers.HeaderData
@@ -38,7 +37,7 @@ import utils.ErrorResponseMessages
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 
-class DataGeneratorSpec extends PlaySpec with CSVTestData with GuiceOneAppPerSuite with ScalaFutures with MockitoSugar with BeforeAndAfter with HeaderData {
+class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter with HeaderData {
 
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]

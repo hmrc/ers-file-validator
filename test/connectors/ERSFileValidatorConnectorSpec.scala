@@ -24,7 +24,6 @@ import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
-import org.scalatest.Matchers.convertToAnyShouldWrapper
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -39,9 +38,12 @@ import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.Application
 
 class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with BeforeAndAfter with GuiceOneAppPerSuite {
 
+  override lazy implicit val app: Application = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
   implicit def materializer: Materializer = Play.materializer
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   implicit val hc: HeaderCarrier = new HeaderCarrier
@@ -90,7 +92,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
       when(mockHttpClient.POST[SchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrl), argEq[SchemeData](submissionData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
         .thenReturn(Future.failed(badRequestException))
       val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
-      result shouldBe Left(ERSFileProcessingException("Submissions Service Bad Request", badRequestException.getMessage))
+      result mustBe Left(ERSFileProcessingException("Submissions Service Bad Request", badRequestException.getMessage))
     }
 
     "return a ERSFileProcessingException when receiving a NotFoundException" in {
@@ -100,7 +102,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
       when(mockHttpClient.POST[SchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrl), argEq[SchemeData](submissionData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
         .thenReturn(Future.failed(notFoundException))
       val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
-      result shouldBe Left(ERSFileProcessingException("Submissions Service Not Found", notFoundException.getMessage))
+      result mustBe Left(ERSFileProcessingException("Submissions Service Not Found", notFoundException.getMessage))
     }
 
     "return a ERSFileProcessingException when receiving a ServiceUnavailableException" in {
@@ -110,7 +112,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
       when(mockHttpClient.POST[SchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrl), argEq[SchemeData](submissionData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
         .thenReturn(Future.failed(serviceUnavailableException))
       val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
-      result shouldBe Left(ERSFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage))
+      result mustBe Left(ERSFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage))
     }
 
     "return a ERSFileProcessingException when receiving an Exception" in {
@@ -120,7 +122,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
       when(mockHttpClient.POST[SchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrl), argEq[SchemeData](submissionData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
         .thenReturn(Future.failed(genericException))
       val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
-      result shouldBe Left(ERSFileProcessingException("Failed sending data", genericException.getMessage))
+      result mustBe Left(ERSFileProcessingException("Failed sending data", genericException.getMessage))
     }
   }
 
@@ -143,7 +145,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
       when(mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrlV2), argEq[SubmissionsSchemeData](submissionSchemeData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
         .thenReturn(Future.failed(badRequestException))
       val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
-      result shouldBe Left(ERSFileProcessingException("Submissions Service Bad Request", badRequestException.getMessage))
+      result mustBe Left(ERSFileProcessingException("Submissions Service Bad Request", badRequestException.getMessage))
     }
 
     "return a ERSFileProcessingException when receiving a NotFoundException" in {
@@ -153,7 +155,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
       when(mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrlV2), argEq[SubmissionsSchemeData](submissionSchemeData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
         .thenReturn(Future.failed(notFoundException))
       val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
-      result shouldBe Left(ERSFileProcessingException("Submissions Service Not Found", notFoundException.getMessage))
+      result mustBe Left(ERSFileProcessingException("Submissions Service Not Found", notFoundException.getMessage))
     }
 
     "return a ERSFileProcessingException when receiving a ServiceUnavailableException" in {
@@ -163,7 +165,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
       when(mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrlV2), argEq[SubmissionsSchemeData](submissionSchemeData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
         .thenReturn(Future.failed(serviceUnavailableException))
       val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
-      result shouldBe Left(ERSFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage))
+      result mustBe Left(ERSFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage))
     }
 
     "return a ERSFileProcessingException when receiving an Exception" in {
@@ -173,7 +175,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
       when(mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrlV2), argEq[SubmissionsSchemeData](submissionSchemeData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
         .thenReturn(Future.failed(genericException))
       val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
-      result shouldBe Left(ERSFileProcessingException("Failed sending data", genericException.getMessage))
+      result mustBe Left(ERSFileProcessingException("Failed sending data", genericException.getMessage))
     }
   }
 }

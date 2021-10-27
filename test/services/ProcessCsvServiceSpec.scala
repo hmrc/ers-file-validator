@@ -31,11 +31,10 @@ import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.MustMatchers.convertToAnyMustWrapper
+import org.scalatest.matchers.must.Matchers
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
-import org.scalatest.{Matchers, OptionValues, WordSpecLike}
+import org.scalatest.OptionValues
 import org.scalatestplus.mockito.MockitoSugar
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
@@ -47,8 +46,9 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
+import org.scalatest.wordspec.AnyWordSpecLike
 
-class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with WordSpecLike with Matchers with OptionValues with MockitoSugar with GuiceOneAppPerSuite with TimeLimits with ScalaFutures {
+class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with TimeLimits with ScalaFutures {
 
   val mockDataGenerator: DataGenerator = mock[DataGenerator]
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
@@ -585,7 +585,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with WordSpecLi
         )
 
         assert(result.isRight)
-        result.right.get shouldBe 5
+        result.right.get mustBe 5
       }
 
       "follow an unhappy path" in {
@@ -603,7 +603,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with WordSpecLi
         )
 
         assert(result.isLeft)
-        result.left.get.getMessage shouldBe "this is bad"
+        result.left.get.getMessage mustBe "this is bad"
       }
     }
   }

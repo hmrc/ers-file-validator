@@ -23,7 +23,6 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json._
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
@@ -32,7 +31,7 @@ import uk.gov.hmrc.http.cache.client.CacheMap
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
-class SessionServiceSpec extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures with MockitoSugar {
+class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
   val mockSessionCache: ERSFileValidatorSessionCache = mock[ERSFileValidatorSessionCache]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
@@ -59,7 +58,6 @@ class SessionServiceSpec extends PlaySpec with GuiceOneAppPerSuite with ScalaFut
     "return a None when cache can't be returned" in {
       val postData: UpscanCallback = UpscanCallback("thefilename", "downloadUrl", Some(1000L))
 
-      val json = Json.toJson[UpscanCallback](postData)
       when(mockSessionCache.cache[UpscanCallback]
         (any[String], any[UpscanCallback])
         (any[Writes[UpscanCallback]], any[HeaderCarrier], any()))

@@ -21,21 +21,17 @@ import models.{ERSFileProcessingException, SchemeInfo}
 import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
-import org.scalatest.time.{Millis, Span}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.Request
 import services.XMLTestData._
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
-
-import java.io.FileNotFoundException
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.xml._
 
 
-class ParserTest extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures with MockitoSugar with BeforeAndAfter with TimeLimits {
+class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfter with TimeLimits {
 
   object TestDataParser extends DataParser
 
@@ -43,10 +39,6 @@ class ParserTest extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures wit
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   val dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig)
-
-  private val nl: String = System.lineSeparator()
-  private val timeout = 200
-  private val awaitTimeout = Span(timeout, Millis)
 
   implicit val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
@@ -142,7 +134,7 @@ class ParserTest extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures wit
     }
 
     "Show that scala.xml.XML tries to access file system with malicious payload " in {
-      intercept[FileNotFoundException] {
+      intercept[SAXParseException] {
         XML.loadString(FileSystemReadXxePayload)
       }
     }

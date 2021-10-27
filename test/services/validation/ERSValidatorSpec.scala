@@ -37,11 +37,10 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import services.validation.EMITestData.ERSValidationEMIAdjustmentsTestData
 import uk.gov.hmrc.services.validation.DataValidator
 
-class ERSValidatorSpec extends PlaySpec with GuiceOneAppPerSuite with ScalaFutures with MockitoSugar with ERSValidationEMIAdjustmentsTestData {
+class ERSValidatorSpec extends PlaySpec with ScalaFutures with MockitoSugar with ERSValidationEMIAdjustmentsTestData {
 
   val validator: DataValidator = new DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
   val testData =  Seq("yes", "yes", "yes", "4", "2011-10-13", "Mia", "Iam", "Aim", "AB123456C", "123/XZ55555555", "10.1234", "10.14", "10.1324", "10.1244")
