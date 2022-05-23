@@ -17,7 +17,7 @@ object AppDependencies {
     "uk.gov.hmrc" %% "http-caching-client" % "9.6.0-play-28",
     "uk.gov.hmrc" %% "tabular-data-validator" % "1.4.0",
     "org.scala-lang.modules" %% "scala-xml" % "1.3.0",
-    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.1.2",
+    "org.scala-lang.modules" %% "scala-parser-combinators" % "2.1.0",
     "com.typesafe.play" %% "play-json-joda" % "2.9.2",
     "com.lightbend.akka" %% "akka-stream-alpakka-csv" % "3.0.3",
     "com.typesafe.akka" %% "akka-stream" % akkaVersion,
@@ -37,4 +37,9 @@ object AppDependencies {
   )
 
   val all: Seq[ModuleID] = compile ++ test
+
+  val overrides = Seq(
+    "org.scala-lang.modules"      %%    "scala-parser-combinators"      %   "2.1.0"
+  )
+  
 }
