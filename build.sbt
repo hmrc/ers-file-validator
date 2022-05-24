@@ -21,7 +21,7 @@ lazy val scoverageSettings = {
     ScoverageKeys.coverageMinimum := 92,
     ScoverageKeys.coverageFailOnMinimum := false,
     ScoverageKeys.coverageHighlighting := true,
-    parallelExecution in Test := false
+    Test / parallelExecution := false
   )
 }
 
@@ -35,7 +35,8 @@ lazy val microservice = Project(appName, file("."))
     targetJvm := "jvm-1.8",
     scalaVersion := "2.12.12",
     libraryDependencies ++= appDependencies,
-    parallelExecution in Test := false,
+    dependencyOverrides ++= AppDependencies.overrides,
+    Test / parallelExecution := false,
     Test / fork := true,
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator

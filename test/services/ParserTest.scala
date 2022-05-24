@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2022 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package services
 
+import java.io.FileNotFoundException
+
 import config.ApplicationConfig
 import models.{ERSFileProcessingException, SchemeInfo}
 import org.joda.time.DateTime
@@ -27,6 +29,7 @@ import play.api.mvc.Request
 import services.XMLTestData._
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
+
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.xml._
 
@@ -134,7 +137,7 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     }
 
     "Show that scala.xml.XML tries to access file system with malicious payload " in {
-      intercept[SAXParseException] {
+      intercept[FileNotFoundException] {
         XML.loadString(FileSystemReadXxePayload)
       }
     }
