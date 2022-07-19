@@ -177,7 +177,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     logger.debug(s"Looking for sheetName: ${sheetName}")
     ersSheets.getOrElse(sheetName, {
       auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-      logger.warn(s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
+      logger.warn("[DataGenerator][getSheet] Couldn't identify SheetName")
       throw ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
         s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
