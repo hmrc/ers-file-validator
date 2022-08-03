@@ -20,9 +20,9 @@ import org.joda.time.DateTime
 import play.api.mvc.{Request, Session}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.DataEvent
-import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
-
 import javax.inject.{Inject, Singleton}
+import uk.gov.hmrc.play.audit.DefaultAuditConnector
+
 import scala.concurrent.ExecutionContext
 
 @Singleton

@@ -128,27 +128,27 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
 
   "processFileDataFromFrontend" must {
     "Successfully receive data" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(l.size)
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(Future.successful(l.size))
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
       status(result) shouldBe OK
     }
 
     "return errors when an incorrect json object is sent to process-file" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(l.size)
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(Future.successful(l.size))
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(metaData)))
       status(result) shouldBe BAD_REQUEST
       }
 
     "Throw exception when invalid data is sent" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenThrow(new RuntimeException)
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any()))
+        .thenReturn(Future.failed(new RuntimeException))
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
       status(result) shouldBe INTERNAL_SERVER_ERROR
       }
 
     "Return ACCEPTED when ERSFileProcessingException is thrown" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any())).thenThrow(
-        ERSFileProcessingException("Error", "Tests", None)
-      )
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
+        .thenReturn(Future.failed(ERSFileProcessingException("Error", "Tests", None)))
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
       status(result) shouldBe ACCEPTED
     }

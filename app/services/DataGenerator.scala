@@ -43,6 +43,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   val defaultChunkSize: Int = 10000
   private[services] val ersSheetsClone: Map[String, SheetInfo] = ersSheets
 
+  @throws(classOf[ERSFileProcessingException])
   def getErrors(iterator: Iterator[String])(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): ListBuffer[SchemeData] = {
     var rowNum = 0
     implicit var sheetName: String = ""
@@ -122,7 +123,9 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     } catch {
       case e: Exception => {
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-        logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
+        // Adjusting this log until this investigation is complete https://jira.tools.tax.service.gov.uk/browse/DDCE-3208
+        //logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
+        logger.error("setValidator has thrown an exception. Exception message: " + e.getMessage)
         throw ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserConfigFailure}",
           "Could not set the validator ")
@@ -166,7 +169,9 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       data
     } else {
       auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
-      logger.warn(s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
+      // Adjusting this log until this investigation is complete https://jira.tools.tax.service.gov.uk/browse/DDCE-3208
+      //logger.warn(s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
+      logger.warn(ErrorResponseMessages.dataParserIncorrectSchemeType())
       throw ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSchemeType()}",
         s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
@@ -210,9 +215,11 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     ErsValidator.validateRow(rowData, rowCount, validator) match {
       case None => rowData
       case err: Option[List[ValidationError]] => {
+        // $COVERAGE-OFF$
         logger.debug(s"Error while Validating Row num--> ${rowCount} ")
         logger.debug(s"Rowdata is --> ${rowData.map(res => res)}")
         logger.debug(s"Error column data is  ${err.get.map(_.cell.value)}")
+        // $COVERAGE-ON$
         err.map {
           auditEvents.validationErrorAudit(_, schemeInfo, sheetName)
         }

@@ -8,9 +8,9 @@ addSbtPlugin("uk.gov.hmrc" % "sbt-git-versioning" % "2.2.0")
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.10")
 
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.14")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.8.16")
 
-addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.9.2")
+addSbtPlugin("org.scoverage" % "sbt-scoverage" % "2.0.0")
 
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
 

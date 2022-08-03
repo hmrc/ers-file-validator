@@ -27,10 +27,10 @@ import services.audit.AuditService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 import uk.gov.hmrc.play.audit.model.DataEvent
-import uk.gov.hmrc.play.bootstrap.audit.DefaultAuditConnector
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import org.scalatest.wordspec.AnyWordSpecLike
+import uk.gov.hmrc.play.audit.DefaultAuditConnector
 
 class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
 
