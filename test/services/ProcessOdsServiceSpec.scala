@@ -30,12 +30,15 @@ import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-
 import java.io.{FileInputStream, FileOutputStream}
 import java.nio.file.Files
 import java.util.zip.{ZipEntry, ZipOutputStream}
+
+import org.scalatest.exceptions.TestFailedException
+
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.duration.{Duration, SECONDS}
+import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
 
 class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter {
@@ -92,7 +95,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
       when(mockSessionService.storeCallbackData(any(),any())(any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
       val result = fileProcessingService.processFile(callbackData, "")(hc,schemeInfo, request)
-      result mustBe 1
+      Await.result(result, Duration(5, SECONDS)) mustBe 1
     }
 
     XMLTestData.staxIntegrationTests.foreach( rec => {
@@ -131,27 +134,70 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
     verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier],any[Request[_]])
   }
-//
-//  "Csv files should be read successfully" in {
-//    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-//      override val splitSchemes = false
-//      override val maxNumberOfRows = 1
-//      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
-//    }
-//
-//    when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(
-//      Future.successful(HttpResponse(200)))
-//
-//    for((csv,i) <- csvList.zipWithIndex){
-//      when(mockErsFileValidatorConnector.upscanFileStream(argEq(callbackData.downloadUrl)))
-//        .thenReturn(new ByteArrayInputStream(csv.getBytes))
-//
-//      val result = await(fileProcessingService.readCSVFile(callbackData.downloadUrl))
-//      result.foreach{ seq =>
-//        for((value,count) <- seq.zipWithIndex){
-//          value mustBe expectedDataList(i)(count)
-//        }
-//      }
-//    }
-//  }
+
+  "throw and exception when the callback data isn't stored correctly" in {
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+      override val splitSchemes = true
+      override val maxNumberOfRows = 1
+      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+    }
+    val listBuffer = ListBuffer(
+      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
+    )
+    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V3", listBuffer))
+    when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
+    when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any[HeaderCarrier])).thenReturn(Future.successful(None))
+
+    try {
+      Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo , request), Duration(5, SECONDS))
+      throw new TestFailedException("Expected ERSFileProcessingException to be returned", 1)
+    } catch {
+      case ex: ERSFileProcessingException =>
+        ex.message mustBe "callback data storage in sessioncache failed "
+        ex.context mustBe "Exception storing callback data"
+    }
+  }
+
+  "throw an exception when sending data to ers-submissions fails" in {
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+      override val splitSchemes = true
+      override val maxNumberOfRows = 1
+      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+    }
+    val listBuffer = ListBuffer(
+      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
+    )
+    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V3", listBuffer))
+    when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
+    when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]]))
+      .thenReturn(Future.successful(Left(new RuntimeException("Runtime error"))))
+    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any[HeaderCarrier])).thenReturn(Future.successful(Some(callbackData)))
+
+    try {
+      Await.result(fileProcessingService.sendSchemeData(SchemeData(schemeInfo, "", None, listBuffer), ""), Duration(5, SECONDS))
+      throw new TestFailedException("Expected ERSFileProcessingException to be returned", 1)
+    } catch {
+      case ex: ERSFileProcessingException =>
+        ex.message mustBe "java.lang.RuntimeException: Runtime error"
+    }
+  }
+
+  "convert an exception during file processing into a future for handling" in {
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+      override val splitSchemes = true
+      override val maxNumberOfRows = 1
+      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+    }
+    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenThrow(ERSFileProcessingException("Test", "Test"))
+
+    try {
+      Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo , request), Duration(5, SECONDS))
+      throw new TestFailedException("Expected ERSFileProcessingException to be returned", 1)
+    } catch {
+      case ex: ERSFileProcessingException =>
+        ex.message mustBe "Test"
+        ex.context mustBe "Test"
+    }
+  }
 }

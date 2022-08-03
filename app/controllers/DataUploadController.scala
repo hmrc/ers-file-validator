@@ -53,19 +53,18 @@ class DataUploadController @Inject()(sessionService: SessionService,
       json.validate[UpscanFileData].fold(
         valid = res => {
           implicit val schemeInfo: SchemeInfo = res.schemeInfo
-          try {
-            val result = processOdsService.processFile(res.callbackData, empRef)
+          processOdsService.processFile(res.callbackData, empRef).map { result =>
             deliverFileProcessingMetrics(startTime)
-            Future.successful(Ok(result.toString))
-          } catch {
-            case e:ERSFileProcessingException =>
+            Ok(result.toString)
+          }.recover {
+            case e: ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
-							logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException - ${e.getMessage}")
-              Future.successful(Accepted(e.message))
+              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException: ${e.getMessage}")
+              Accepted(e.message)
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)
-              logger.error(er.getMessage)
-              Future.successful(InternalServerError)
+              logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred: ${er.getMessage}")
+              InternalServerError
           }
         },
         invalid = e => {
@@ -147,7 +146,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
 
           Future.sequence(extractedSchemeData).flatMap{ allFilesResults => allFilesResults.find(_.isLeft) match {
             case Some(Left(throwable: ERSFileProcessingException)) =>
-              logger.error(s"[DataUploadController][processCsvFileDataFromFrontend] ERS file processing exception: ${throwable.message}")
+              logger.warn(s"[DataUploadController][processCsvFileDataFromFrontend] ERS file processing exception: ${throwable.message}")
               deliverFileProcessingMetrics(startTime)
               Future(Accepted(throwable.message))
             case Some(Left(throwable)) =>
@@ -184,6 +183,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
       .single(HttpRequest(uri = downloadUrl))
       .mapAsync(parallelism = 1)(makeRequest)
   }
-
+  // $COVERAGE-OFF$
   private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] = Http()(actorSystem).singleRequest(request)
+  // $COVERAGE-ON$
 }

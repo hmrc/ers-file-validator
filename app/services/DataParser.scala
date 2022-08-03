@@ -43,7 +43,7 @@ trait DataParser extends Logging {
     xmlRow match {
       case None => logger.debug("3.1 Parse row left "); Left(row)
       case elem: Option[Elem] => logger.debug("3.2 Parse row right ")
-        val cols = Try(Right(xmlRow.get.child.flatMap(parseColumn(_)))).getOrElse {
+        val cols = Try(Right(xmlRow.get.child.flatMap(parseColumn))).getOrElse {
           logger.warn(s"${ErrorResponseMessages.dataParserFileRetrievalFailed}");
           throw ERSFileProcessingException(
             s"${ErrorResponseMessages.dataParserFileRetrievalFailed}",
@@ -54,12 +54,6 @@ trait DataParser extends Logging {
           case Right(r: Seq[String]) if !isBlankRow(r) => Right((r, repeated(xmlRow)))
           case Right(s: Seq[String]) => Right((s, 1))
         }
-      case _ => {
-        logger.warn(s"${ErrorResponseMessages.dataParserFileParsingError}")
-        throw ERSFileProcessingException(
-          s"${ErrorResponseMessages.dataParserFileParsingError}",
-          s"${ErrorResponseMessages.dataParserParsingOfFileData}")
-      }
     }
   }
 
@@ -78,12 +72,14 @@ trait DataParser extends Logging {
 
     if (colsRepeated.nonEmpty && colsRepeated.get.toInt < 50) {
       val cols: scala.collection.mutable.MutableList[String] = scala.collection.mutable.MutableList()
-      for (i <- 1 to colsRepeated.get.toInt) cols += col.text
+      for (_ <- 1 to colsRepeated.get.toInt) cols += col.text
       cols.toSeq
     }
-    else Seq(col.text)
+    else {
+      Seq(col.text)
+    }
   }
 
-  def isBlankRow(data: Seq[String]) = data.mkString("").trim.length == 0
+  def isBlankRow(data: Seq[String]): Boolean = data.mkString("").trim.length == 0
 
 }

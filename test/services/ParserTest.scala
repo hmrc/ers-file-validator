@@ -147,4 +147,13 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
         XML.withSAXParser(TestDataParser.secureSAXParser).loadString(FileSystemReadXxePayload)
       }
     }
+
+  "Throw ERSFileProcessingException if an exception occurs while parsing a column" in {
+    object TestDataParser2 extends DataParser {
+      override def parseColumn(col: Node): Seq[String] = throw new RuntimeException("Error")
+    }
+    intercept[ERSFileProcessingException] {
+      TestDataParser2.parse(emiAdjustmentsRepeatXMLRow1.toString)
+    }
+  }
 }

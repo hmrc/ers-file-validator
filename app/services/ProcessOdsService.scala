@@ -26,12 +26,13 @@ import play.api.Logging
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
 import utils.{ErrorResponseMessages, ValidationUtils}
-
 import java.io.InputStream
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
+
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
+
+import scala.concurrent.{Future, ExecutionContext}
 
 @Singleton
 class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
@@ -44,36 +45,38 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
   val splitSchemes: Boolean = appConfig.splitLargeSchemes
   val maxNumberOfRows: Int = appConfig.maxNumberOfRowsPerSubmission
 
-  @throws(classOf[ERSFileProcessingException])
-  def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]): Int = {
-    val startTime = System.currentTimeMillis()
-    logger.info("2.0 start: ")
-    val result = dataGenerator.getErrors(readFile(callbackData.downloadUrl))
-    logger.debug("2.1 result contains: " + result)
-    deliverBESMetrics(startTime)
-    logger.debug("No if SchemeData Objects " + result.size)
-    val filesWithData = result.filter(_.data.nonEmpty)
-    var totalRows = 0
-    val res1 = filesWithData.foldLeft(0) {
-      (res, el) => {
-        totalRows += el.data.size
-        res + sendScheme(el, empRef)
+  def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]): Future[Int] = {
+    try {
+      val startTime = System.currentTimeMillis()
+      logger.info("2.0 start: ")
+      val result = dataGenerator.getErrors(readFile(callbackData.downloadUrl))
+      logger.debug("2.1 result contains: " + result)
+      deliverBESMetrics(startTime)
+      logger.debug("No. of SchemeData Objects " + result.size)
+      val filesWithData = result.filter(_.data.nonEmpty)
+      var totalRows = 0
+      val res1 = filesWithData.foldLeft(0) {
+        (res, el) => {
+          totalRows += el.data.size
+          res + sendScheme(el, empRef)
+        }
       }
+      sessionService.storeCallbackData(callbackData, totalRows).map {
+        case Some(_) => {
+          logger.warn(s"Total rows for schemeRef ${schemeInfo.schemeRef}: $totalRows")
+          auditEvents.totalRows(totalRows, schemeInfo)
+          res1
+        }
+        case None => logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
+          throw ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data")
+      }
+    } catch {
+      case ex: Exception =>
+        Future.failed(ex)
     }
-    sessionService.storeCallbackData(callbackData, totalRows).map {
-      case callback: Option[UpscanCallback] if callback.isDefined => res1
-      case _ => logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
-        throw ERSFileProcessingException(("callback data storage in sessioncache failed "), "Exception storing callback data")
-    }.recover {
-      case e: Throwable => logger.error(s"storeCallbackData failed with Exception ${e.getMessage}, timestamp: ${System.currentTimeMillis()}.")
-        throw e
-    }
-
-    logger.warn(s"Total rows for schemeRef ${schemeInfo.schemeRef}: $totalRows")
-    auditEvents.totalRows(totalRows, schemeInfo)
-    res1
   }
 
+  // $COVERAGE-OFF$
   private[services] def readFile(downloadUrl: String): Iterator[String] = {
     val stream = ersConnector.upscanFileStream(downloadUrl)
     val targetFileName = "content.xml"
@@ -95,16 +98,21 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
     val contentInputStream = findFileInZip(zipInputStream)
     new StaxProcessor(contentInputStream)
   }
+  // $COVERAGE-ON$
 
-  def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Unit = {
+  def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Boolean] = {
     logger.debug("Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
-    ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
-      case Right(_) =>
-        auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
-      case Left(ex) =>
-        auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
-        logger.error(ex.getMessage)
-        throw ERSFileProcessingException(ex.toString, ex.getStackTrace.toString)
+    for (
+      result <- ersConnector.sendToSubmissions(ersSchemeData, empRef)
+    ) yield {
+      result match {
+        case Right(_) =>
+          auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
+        case Left(ex) =>
+          auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
+          logger.error(s"[ProcessOdsService][sendSchemeData] An exception occurred: ${ex.getMessage}")
+          throw ERSFileProcessingException(ex.toString, ex.getStackTrace.toString)
+      }
     }
   }
 
