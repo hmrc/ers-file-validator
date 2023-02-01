@@ -54,7 +54,7 @@ trait SipTemplateInfo {
     "2.Employee first name",
     "3.Employee second name (if applicable)",
     "4.Employee last name",
-    "5.National Insurance number (if applicable)",
+    "5.National Insurance number",
     "6.PAYE reference of the employing company",
     "7.Number of free shares ceasing to be part of the plan e.g. 100.00",
     "8.Number of partnership shares ceasing to be part of the plan e.g. 100.00",

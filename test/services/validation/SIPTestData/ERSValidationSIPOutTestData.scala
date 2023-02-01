@@ -44,6 +44,8 @@ trait ERSValidationSIPOutTestData {
         //column E
         "When the national insurance number conforms to the expected format, no validation error should be raised",
         "Return an error message when the national insurance number is invalid",
+        "Return an error message when the national insurance number is missing a letter",
+        "Return an error message when the national insurance number is empty",
         //column F
         "When the PAYE reference is valid, no validation error should be raised",
         "Return an error message when an invalid PAYE reference is provided",
@@ -111,6 +113,8 @@ trait ERSValidationSIPOutTestData {
       Cell("D", rowNumber, ""),
       Cell("E", rowNumber, "AB123456A"),
       Cell("E", rowNumber, "AB123456A.12"),
+      Cell("E", rowNumber, "AB123456"),
+      Cell("E", rowNumber, ""),
       Cell("F", rowNumber, "123/XZ55555555"),
       Cell("F", rowNumber, "123/XZ55555555.12"),
       Cell("G", rowNumber, "12.12"),
@@ -170,7 +174,9 @@ trait ERSValidationSIPOutTestData {
       Some(List(ValidationErrorData("error.4", "004", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //column E
       None,
-      Some(List(ValidationErrorData("error.5", "005", "National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
       //column F
       None,
       Some(List(ValidationErrorData("error.6", "006", "PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),

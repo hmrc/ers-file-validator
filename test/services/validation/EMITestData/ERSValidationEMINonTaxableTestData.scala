@@ -46,6 +46,8 @@ trait ERSValidationEMINonTaxableTestData {
         //Column E
         "validate individualNTExercise\\nino without ValidationErrors for valid data",
         "validate individualNTExercise\\nino with ValidationErrors for an invalid nino",
+        "validate individualNTExercise\\nino with ValidationErrors for missing a letter",
+        "validate individualNTExercise\\nino with ValidationErrors for no nino",
         //Column F
         "validate individualNTExercise\\payeReference without ValidationErrors for a valid payeReference",
         "validate individualNTExercise\\payeReference with ValidationErrors for an invalid payeReference",
@@ -107,6 +109,8 @@ trait ERSValidationEMINonTaxableTestData {
       Cell("D", rowNumber, ""),
       Cell("E", rowNumber, "AB123456C"),
       Cell("E", rowNumber, "abc"),
+      Cell("E", rowNumber, "AB123456"),
+      Cell("E", rowNumber, ""),
       Cell("F", rowNumber, "123/XZ55555555"),
       Cell("F", rowNumber, "abc???"),
       Cell("G", rowNumber, "10.12"),
@@ -157,7 +161,9 @@ trait ERSValidationEMINonTaxableTestData {
       Some(List(ValidationErrorData("error.4","004","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       Some(List(ValidationErrorData("error.4","004","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       None,
-      Some(List(ValidationErrorData("error.5","005","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+      Some(List(ValidationErrorData("error.5","005","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5","005","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5","005","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
       None,
       Some(List(ValidationErrorData("error.6","006","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
       None,
@@ -189,7 +195,7 @@ trait ERSValidationEMINonTaxableTestData {
       Some(List(ValidationErrorData("error.14","014","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
       None,
       Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

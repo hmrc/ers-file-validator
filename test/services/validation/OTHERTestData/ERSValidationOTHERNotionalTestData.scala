@@ -53,6 +53,8 @@ trait ERSValidationOTHERNotionalTestData {
       //column G
         "When individualPAD\\nino is a correctly formatted NINO, no validation error should be raised",
         "Return an error message when individualPAD\\nino does not conform to the expected NINO format",
+        "Return an error message when individualPAD\\nino is missing a letter",
+        "Return an error message when individualPAD\\nino does not contain any data",
       //column H
         "When individualPAD\\payeReference is a correctly formatted PAYE reference, no validation error should be raised",
         "Return an error message when nindividualPAD\\payeReference does not conform to the expected PAYE format",
@@ -102,6 +104,8 @@ trait ERSValidationOTHERNotionalTestData {
       Cell("F",rowNumber,""),
       Cell("G",rowNumber,"AB123456A"),
       Cell("G",rowNumber,"AAB123456A"),
+      Cell("G",rowNumber,"AB123456"),
+      Cell("G",rowNumber,""),
       Cell("H",rowNumber,"123/XZ55555555"),
       Cell("H",rowNumber,"AABaaa/123456A///"),
       Cell("I",rowNumber,"2014-08-30"),
@@ -154,7 +158,9 @@ trait ERSValidationOTHERNotionalTestData {
       Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //column G
       None,
-      Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
       //column H
       None,
       Some(List(ValidationErrorData("error.8","008","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
@@ -179,7 +185,7 @@ trait ERSValidationOTHERNotionalTestData {
       //column M
       None,
       Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

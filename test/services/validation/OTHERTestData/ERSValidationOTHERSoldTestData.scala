@@ -52,6 +52,8 @@ trait ERSValidationOTHERSoldTestData {
       //column G
         "When individualOptionsPAS\\nino is a correctly formatted NINO, no validation error should be raised",
         "Return an error message when individualOptionsPAS\\nino does not conform to the expected NINO format",
+        "Return an error message when individualOptionsPAS\\nino is missing a letter",
+        "Return an error message when individualOptionsPAS\\nino does not contain any data",
       //column H
         "When individualOptionsPAS\\payeReference is a correctly formatted PAYE reference, no validation error should be raised",
         "Return an error message when individualOptionsPAS\\payeReference does not conform to the expected PAYE format",
@@ -107,6 +109,8 @@ trait ERSValidationOTHERSoldTestData {
       Cell("F", rowNumber, ""),
       Cell("G", rowNumber, "AB123456A"),
       Cell("G", rowNumber, "AB123456AA"),
+      Cell("G", rowNumber, "AB123456"),
+      Cell("G", rowNumber, ""),
       Cell("H", rowNumber, "123/XZ55555555"),
       Cell("H", rowNumber, "123/XZ555555556"),
       Cell("I", rowNumber, "120.33"),
@@ -155,7 +159,9 @@ trait ERSValidationOTHERSoldTestData {
       Some(List(ValidationErrorData("error.6", "006", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       Some(List(ValidationErrorData("error.6", "006", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       None,
-      Some(List(ValidationErrorData("error.7", "007", "National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+      Some(List(ValidationErrorData("error.7", "007", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7", "007", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7", "007", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
       None,
       Some(List(ValidationErrorData("error.8", "008", "PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
       None,
@@ -179,7 +185,7 @@ trait ERSValidationOTHERSoldTestData {
       Some(List(ValidationErrorData("error.13", "013", "Enter 'yes' or 'no'."))),
       None,
       Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

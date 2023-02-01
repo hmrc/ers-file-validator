@@ -50,7 +50,7 @@ trait CsopTemplateInfo {
     "4.Employee first name",
     "5.Employee second name(if applicable)",
     "6.Employee last name",
-    "7.National Insurance number(if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference of employing company",
     "9.Was PAYE operated?(yes/no)")//.map(_.replaceAll(csopHeaderFormat,""))
 
@@ -59,7 +59,7 @@ trait CsopTemplateInfo {
       "2.Employee first name",
       "3.Employee second name(if applicable)",
       "4.Employee last name",
-      "5.National Insurance number(if applicable)",
+      "5.National Insurance number",
       "6.PAYE reference of employing company",
       "7.Date of grant(yyyy-mm-dd)",
       "8.Total number of shares employee entitled to on exercise of the option before any cashless exercise or other adjustmente.g. 100.00",

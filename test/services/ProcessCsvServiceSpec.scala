@@ -31,9 +31,10 @@ import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.matchers.must.Matchers
-import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
 import org.scalatest.OptionValues
+import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Request
 import services.audit.AuditEvents
@@ -46,7 +47,6 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-import org.scalatest.wordspec.AnyWordSpecLike
 
 class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with TimeLimits with ScalaFutures {
 
@@ -181,7 +181,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
       when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any())).thenReturn(Left(ERSFileProcessingException(
         "ers.exceptions.dataParser.configFailure",
-        "ers.exceptions.dataParser.validatorError",
+        "ers.exceptions.dataParser.validatorError"
       )))
 
       val resultFuture = testProcessCsvService.processFiles(callback, returnStubSource(_, data))
@@ -289,7 +289,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
       when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any())).thenReturn(Left(ERSFileProcessingException(
         "ers.exceptions.dataParser.configFailure",
-        "ers.exceptions.dataParser.validatorError",
+        "ers.exceptions.dataParser.validatorError"
       )))
 
       val resultFuture = testProcessCsvService.processFilesNew(callback, returnStubSource(_, data))

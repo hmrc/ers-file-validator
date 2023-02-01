@@ -41,7 +41,9 @@ trait ERSValidationCSOPExercisedTestData {
         "Return This entry must contain 35 characters or less. When the data is larger than 35 characters for individualLastName.",
         //E
         "When individualNino contains a correctly formatted Nino, no validation error should be raised.",
-        "Return The National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter. For individualNino when an incorrect Nino is provided.",
+        "Return Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y). For individualNino when an incorrect Nino is provided.",
+        "Return Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y). For individualNino when a Nino is missing a letter.",
+        "Return Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y). For individualNino when no nino is provided.",
         //F
         "When individualPayeReference is correctly formatted, no validation error should be raised.",
         "Return The PAYE reference must be less than 15 characters. For individualPayeReference",
@@ -119,6 +121,8 @@ trait ERSValidationCSOPExercisedTestData {
       Cell("D", rowNumber, "AbcdefghijklmnopqrstuvwxyzAbcdefghijklmnopqrstuvwxyz"),
       Cell("E", rowNumber, "AA123456A"),
       Cell("E", rowNumber, "AAAA12341.135a"),
+      Cell("E", rowNumber, "AA123456"),
+      Cell("E", rowNumber, ""),
       Cell("F", rowNumber, "123/XZ55555555"),
       Cell("F", rowNumber, "1234/12345/12341234"),
       Cell("G", rowNumber, "2014-12-10"),
@@ -186,7 +190,9 @@ trait ERSValidationCSOPExercisedTestData {
       Some(List(ValidationErrorData("error.4", "004", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //E
       None,
-      Some(List(ValidationErrorData("error.5", "005", "National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
       //F
       None,
       Some(List(ValidationErrorData("error.6", "006", "PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
@@ -247,7 +253,7 @@ trait ERSValidationCSOPExercisedTestData {
       //T
       None,
       Some(List(ValidationErrorData("error.20", "020", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.20", "020", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.20", "020", "Enter 'yes' or 'no'.")))
       )
     expectedResults
   }

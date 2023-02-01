@@ -53,6 +53,8 @@ trait ERSValidationOTHEROtherBenefitsTestData {
         //G
         "validate individualPAO\\nino without ValidationErrors for valid data",
         "validate individualPAO\\nino with ValidationErrors for invalid data",
+        "validate individualPAO\\nino with ValidationErrors for missing a letter",
+        "validate individualPAO\\nino with ValidationErrors for no data",
         //H
         "validate individualPAO\\payeReference without ValidationErrors for valid data",
         "validate individualPAO\\payeReference with ValidationErrors for invalid data",
@@ -98,6 +100,8 @@ trait ERSValidationOTHEROtherBenefitsTestData {
       Cell("F",rowNumber,""),
       Cell("G",rowNumber,"AB123456A"),
       Cell("G",rowNumber,"AB1234A"),
+      Cell("G",rowNumber,"AB123456"),
+      Cell("G",rowNumber,""),
       Cell("H",rowNumber,"123/XZ55555555"),
       Cell("H",rowNumber,"123XZ55555555///"),
       Cell("I",rowNumber,"2014-08-30"),
@@ -143,7 +147,9 @@ trait ERSValidationOTHEROtherBenefitsTestData {
       Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //G
       None,
-      Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
       //H
       None,
       Some(List(ValidationErrorData("error.8","008","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
@@ -164,7 +170,7 @@ trait ERSValidationOTHEROtherBenefitsTestData {
       //M|
       None,
       Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

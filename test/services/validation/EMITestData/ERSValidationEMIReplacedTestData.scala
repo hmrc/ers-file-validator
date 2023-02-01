@@ -29,47 +29,66 @@ trait ERSValidationEMIReplacedTestData {
   def getDescriptions: List[String] ={
     val descriptions =
       List(
+        //A
         "When grantDateOfOldOption conforms to the expected date format, no validation error should be raised",
         "Return an error message when grantDateOfOldOption does not conform to the expect date format",
         "Return an error message when grantDateOfOldOption has been left empty",
+        //B
         "When grantDateOfNewOption conforms to the expected date format, no validation error should be raised",
         "Return an error message when grantDateOfNewOption does not conform to the expect date format",
         "Return an error message when grantDateOfNewOption has been left empty",
+        //C
         "When individualReleased\\firstName conforms to the expected name format, no validation error should be raised",
         "Return an error message individualReleased\\firstName exceeds 35 characters",
         "Return an error message when individualReleased\\firstName is left empty",
+        //D
         "When individualReleased\\secondName conforms to the expected name format, no validation error should be raised",
         "Return an error message when individualReleased\\secondName exceeds 35 characters",
+        //E
         "When individualReleased\\surname conforms to the expected name format, no validation error should be raised",
         "Return an error message individualReleased\\surname exceeds 35 characters",
         "Return an error message when individualReleased\\surname is left empty",
+        //F
         "When individualReleased\\nino is a correctly formatted NINO, no validation error should be raised",
-        "Reurn an error message if individualReleased\\nino is no a correctly formatted NINO",
+        "Return an error message if individualReleased\\nino is not a correctly formatted NINO",
+        "Return an error message if individualReleased\\nino is missing a letter",
+        "Return an error message if individualReleased\\nino is empty",
+        //G
         "When individualReleased\\payeReference conforms to the expected PAYE ref format, no validation error should be raised",
         "Return an error message if individualReleased\\payeReference does not conform to the expected PAYE Ref format.",
+        //H
         "When actualMarketValuePerShareReplacementAtDate conforms to the expected money format, no validation error should be raised",
         "Return an error message when actualMarketValuePerShareReplacementAtDate does not have 4 digits after the decimal point",
         "Return an error message when actualMarketValuePerShareReplacementAtDate is not a number",
         "Return an error message when actualMarketValuePerShareReplacementAtDate is larger than the maximum allowed value",
+        //I
         "When snopCompany\\companyName is a correctly formatted company name, no validation errors should be returned",
         "Return an error message when snopCompany\\companyName exceeds the maximum amount of characters allowed",
-        "Reurn an error message when snopCompany\\companyName is left empty",
+        "Return an error message when snopCompany\\companyName is left empty",
+        //J
         "When snopCompany\\companyAddress\\addressLine1 is a correctly formatted address, no validation error should be raised",
         "Return an error message when snopCompany\\companyAddress\\addressLine1 exceeds the maximum character limit",
         "Return an error message when snopCompany\\companyAddress\\addressLine1 is left empty",
+        //K
         "When snopCompany\\companyAddress\\addressLine2 is a correctly formatted address, no validation error should be raised",
         "Return an error message when snopCompany\\companyAddress\\addressLine2 exceeds the maximum character limit",
+        //L
         "When snopCompany\\companyAddress\\addressLine3 is a correctly formatted address, no validation error should be raised",
         "Return an error message when snopCompany\\companyAddress\\addressLine3 exceeds the maximum character limit",
+        //M
         "When snopCompany\\companyAddress\\addressLine4 is a correctly formatted address, no validation error should be raised",
         "Return an error message when snopCompany\\companyAddress\\addressLine4 exceeds the maximum character limit",
+        //N
         "When snopCompany\\companyAddress\\country is a correctly formatted country name, no validation error should be raised",
         "Return an error message when snopCompany\\companyAddress\\country exceeds the maximum character limit for countries",
+        //O
         "When snopCompany\\companyAddress\\postCode is a correctly formatted postcode, no validation error should be raised",
         "Return an error when snopCompany\\companyAddress\\postCode exceeds the character limit for postcodes",
         "Return an error when snopCompany\\companyAddress\\postCode is left empty",
+        //P
         "When snopCompany\\companyCTRef is a correctly formatted Company CT Ref, no validation error should be raised",
         "Return an error when snopCompany\\companyCTRef is not a 10 digit number",
+        //Q
         "When snopCompany\\companyCRN is a valid company reference number, no validation error should be raised",
         "Return an error when snopCompany\\companyCRN does not conform to the expected Company Reference Number format"
       )
@@ -94,6 +113,8 @@ trait ERSValidationEMIReplacedTestData {
       Cell("E", rowNumber, ""),
       Cell("F", rowNumber, "AA123456A"),
       Cell("F", rowNumber, "aaaAA12223456Aaaaa"),
+      Cell("F", rowNumber, "AA123456"),
+      Cell("F", rowNumber, ""),
       Cell("G", rowNumber, "123/XZ55555555"),
       Cell("G", rowNumber, "1a231/XZ555a555155"),
       Cell("H", rowNumber, "10.1234"),
@@ -143,7 +164,9 @@ trait ERSValidationEMIReplacedTestData {
       Some(List(ValidationErrorData("error.5", "005", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       Some(List(ValidationErrorData("error.5", "005", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       None,
-      Some(List(ValidationErrorData("error.6", "006", "National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+      Some(List(ValidationErrorData("error.6", "006", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.6", "006", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.6", "006", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
       None,
       Some(List(ValidationErrorData("error.7", "007", "PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
       None,

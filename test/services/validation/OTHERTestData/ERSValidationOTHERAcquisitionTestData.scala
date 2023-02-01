@@ -53,6 +53,8 @@ trait ERSValidationOTHERAcquisitionTestData {
         //G
         "validate individualOptions\\nino without ValidationErrors for valid data",
         "validate individualOptions\\nino with ValidationErrors for invalid data",
+        "validate individualOptions\\nino with ValidationErrors for missing a letter",
+        "validate individualOptions\\nino with ValidationErrors for no data",
         //H
         "validate individualOptions\\payeReference without ValidationErrors for valid data",
         "validate individualOptions\\payeReference with ValidationErrors for invalid data",
@@ -156,7 +158,15 @@ trait ERSValidationOTHERAcquisitionTestData {
         "validate sharesIssuedUnderAnEmployeeShareholderArrangement with ValidationErrors for invalid data",
         //AL
         "validate totalMarketValueOfShares2000OrMore without ValidationErrors for valid data",
-        "validate totalMarketValueOfShares2000OrMore with ValidationErrors for invalid data"
+        "validate totalMarketValueOfShares2000OrMore with ValidationErrors for invalid data",
+        //AM
+        "validate payeOperated without ValidationErrors for valid data",
+        "validate payeOperated with ValidationErrors for invalid data",
+        "validate payeOperated with ValidationErrors for no data",
+        //AN
+        "validate adjustmentMadeForAmountsSubject without ValidationErrors for valid data",
+        "validate adjustmentMadeForAmountsSubject with ValidationErrors for invalid data",
+        "validate adjustmentMadeForAmountsSubject with ValidationErrors for no data"
       )
     descriptions
   }
@@ -181,6 +191,8 @@ trait ERSValidationOTHERAcquisitionTestData {
       Cell("F",rowNumber,""),
       Cell("G",rowNumber,"AB123456A"),
       Cell("G",rowNumber,"AB1234A"),
+      Cell("G",rowNumber,"AB123456"),
+      Cell("G",rowNumber,""),
       Cell("H",rowNumber,"123/XZ55555555"),
       Cell("H",rowNumber,"123XZ55555555???"),
       Cell("I",rowNumber,"Company"),
@@ -290,7 +302,9 @@ trait ERSValidationOTHERAcquisitionTestData {
       Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //G
       None,
-      Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
       //H
       None,
       Some(List(ValidationErrorData("error.8","008","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
@@ -402,7 +416,7 @@ trait ERSValidationOTHERAcquisitionTestData {
       //AN
       None,
       Some(List(ValidationErrorData("error.40","040","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.40","040","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.40","040","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

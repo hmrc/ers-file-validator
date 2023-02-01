@@ -47,3 +47,5 @@ lazy val microservice = Project(appName, file("."))
 scalacOptions ++= Seq(
   "-P:silencer:pathFilters=views;routes"
 )
+
+addCommandAlias("scalastyleAll", "all scalastyle test:scalastyle")
