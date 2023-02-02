@@ -5,8 +5,6 @@
         <encoder class="uk.gov.hmrc.play.logging.JsonEncoder"/>
     </appender>
 
-	<logger name="uk.gov" level="${logger.uk.gov:-WARN}"/>
-
 	<logger name="controllers" level="${logger.application:-INFO}"/>
 	<logger name="connectors" level="${logger.application:-INFO}"/>
 	<logger name="services" level="${logger.application:-INFO}"/>
