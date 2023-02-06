@@ -190,7 +190,7 @@ trait ERSValidationOTHEREnhancementTestData {
       //column M
       None,
       Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

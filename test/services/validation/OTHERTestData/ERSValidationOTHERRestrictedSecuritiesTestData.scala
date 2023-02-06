@@ -247,7 +247,7 @@ trait ERSValidationOTHERRestrictedSecuritiesTestData {
       //T
       None,
       Some(List(ValidationErrorData("error.20","020","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.20","020","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.20","020","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

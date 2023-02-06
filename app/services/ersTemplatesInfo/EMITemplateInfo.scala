@@ -37,44 +37,44 @@ trait EMITemplateInfo {
   val emiSheet5Desc = "EMI template - Taxable exercise of options"
 
   val emiSheet5ValConfig = "ers-emi-taxable-validation-config"
-  val emiAdjustmentsHeaderRow = List(
+  val emiAdjustmentsHeaderRow: List[String] = List(
     "1.Has there been any adjustment of options following a variation in the share capital of the company?(yes/no)",
     "2.Has there been a change to the description of the shares under option?(yes/no)",
     "3.Is the adjustment a disqualifying event?(yes/no). If YES go to question 4. If NO go to question 5.",
-    "4.If yes, enter a number from 1 to 8 depending on the nature of the disqualifying event.Follow the link at cell A7 for a list of disqualifying events"	,
+    "4.If yes, enter a number from 1 to 8 depending on the nature of the disqualifying event.Follow the link at cell A7 for a list of disqualifying events",
     "5.Date option adjusted(yyyy-mm-dd)",
-    "6.Employee first name"	,
-    "7.Employee second name(if applicable)"	,
+    "6.Employee first name",
+    "7.Employee second name(if applicable)",
     "8.Employee last name",
     "9.National Insurance number(if applicable)",
-    "10.PAYE reference of employing company"	,
-    "11.Exercise price per share under option before adjustment£e.g. 10.1234"	,
+    "10.PAYE reference of employing company",
+    "11.Exercise price per share under option before adjustment£e.g. 10.1234",
     "12.Number of shares under the option after adjustmente.g. 100.00",
     "13.Exercise price per share under option after the adjustment £e.g. 10.1234",
     "14.Actual market value of a share at the date of grant£e.g. 10.1234"
   )//.map(_.replaceAll(headerFormat,""))
 
-  val emiReplacedHeaderRow = List(
+  val emiReplacedHeaderRow: List[String] = List(
     "1.Date of grant of old option(yyyy-mm-dd)",
     "2.Date of grant of new option(yyyy-mm-dd)",
-    "3.Employee first name"	,
+    "3.Employee first name",
     "4.Employee second name(if applicable)",
-    "5.Employee last name"	,
-    "6.National Insurance number(if applicable)"	,
+    "5.Employee last name",
+    "6.National Insurance number(if applicable)",
     "7.PAYE reference of employing company",
     "8.Actual market value of original shares at the date the option(s) were replaced£e.g. 10.1234",
-    "9.Name of the company whose shares are the subject of the new option"	,
+    "9.Name of the company whose shares are the subject of the new option",
     "10.Company address line 1",
     "11.Company address line 2",
-    "12.Company address line 3"	,
-    "13.Company address line 4"	,
-    "14.Country"	,
-    "15.Postcode"	,
-    "16.Corporation Tax reference(Unique Taxpayer Reference)"	,
+    "12.Company address line 3",
+    "13.Company address line 4",
+    "14.Country",
+    "15.Postcode",
+    "16.Corporation Tax reference(Unique Taxpayer Reference)",
     "17.Company Reference Number (CRN)"
   )//.map(_.replaceAll(headerFormat,""))
 
-  val emiRCLHeaderRow = List(
+  val emiRCLHeaderRow: List[String] = List(
     "1.Date of event(yyyy-mm-dd)",
     "2.Is the release, lapse or cancellation the result of a disqualifying event?(yes/no)",
     "3.If yes, enter a number from 1 to 8 depending on the nature of the disqualifying event.Follow the link at cell A7 for a list of disqualifying events",
@@ -89,7 +89,7 @@ trait EMITemplateInfo {
     "12.PAYE operated?(yes/no)"
   )//.map(_.replaceAll(headerFormat,""))
 
-  val emiNonTaxableHeaderRow = List(
+  val emiNonTaxableHeaderRow: List[String] = List(
     "1.Date of option exercise(yyyy-mm-dd)",
     "2.Employee first name",
     "3.Employee second name(if applicable)",
@@ -102,19 +102,19 @@ trait EMITemplateInfo {
     "10.AMV of a share at date of exercise£e.g. 10.1234",
     "11.Are the shares subject to the option exercised listed on a recognised stock exchange?(yes/no)If yes go to question 14If no go to next question 12",
     "12.If no, was the market value agreed with HMRC?(yes/no)",
-    "13.If yes, enter the HMRC reference given",
+    "13.If yes, enter the HMRC valuation reference given",
     "14.Total amount paid for shares£e.g. 10.1234",
     "15.Were all shares resulting from the exercise sold? (yes/no). Answer yes if they were either sold on the same day as the exercise in connection with the exercise or sale instructions were given for all shares to be sold on exercise"
   )//.map(_.replaceAll(headerFormat,""))
 
-  val emiTaxableHeaderRow = List(
+  val emiTaxableHeaderRow: List[String] = List(
     "1.Date option exercised(yyyy-mm-dd)",
     "2.Is this as a result of a disqualifying event? (yes/no)",
     "3.If yes, enter a number from 1 to 8 depending on the nature of the disqualifying event.Follow the link at cell A7 for a list of disqualifying events",
     "4.Employee first name",
     "5.Employee second name(if applicable)",
     "6.Employee last name",
-    "7.National Insurance number(if applicable)"	,
+    "7.National Insurance number(if applicable)",
     "8.PAYE reference",
     "9.Total number of shares employee entitled to on exercise of the option before any cashless exercise or other adjustmente.g. 100.00",
     "10.Actual market value (AMV) of a share at date of grant£e.g. 10.1234",
@@ -124,7 +124,7 @@ trait EMITemplateInfo {
     "14.Total amount paid for the shares£e.g. 10.1234",
     "15.Is the company listed on a recognised stock exchange? (yes/no)If no go to question 16If yes go to question 18",
     "16.Has the market value been agreed with HMRC?(yes/no)",
-    "17.If yes, enter the HMRC reference given",
+    "17.If yes, enter the HMRC valuation reference given",
     "18.Has an election under Section 431(1) been made to disregard restrictions?(yes/ no)",
     "19.Has a National Insurance Contribution election or agreement been operated (yes/no)",
     "20.Amount subjected to PAYE£e.g. 10.1234"

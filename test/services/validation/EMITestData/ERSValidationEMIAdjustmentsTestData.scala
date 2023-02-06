@@ -28,41 +28,63 @@ trait ERSValidationEMIAdjustmentsTestData {
   def getDescriptions: List[String] = {
     val descriptions =
       List(
+        //A
         "validate column A (yes/no) without returning ValidationErrors for valid data",
         "validate column A returning ValidationErrors for empty data",
         "validate column A returning ValidationErrors for invalid data",
+        //B
         "validate column B (yes/no) without returning ValidationErrors for valid data",
         "validate column B returning ValidationErrors for invalid data",
+        //C
         "validate column C (yes/no) without returning ValidationErrors for valid data",
         "validate column C returning ValidationErrors for invalid data",
+        //D
         "validate column D without returning ValidationErrors for valid data",
         "validate column D returning ValidationErrors for a number greater than 8",
         "validate column D returning ValidationErrors for a value not a number",
         "validate column D returning ValidationErrors for decimal number",
+        //E
         "validate dateOptionAdjusted without returning ValidationErrors for valid data",
         "validate dateOptionAdjusted returning ValidationErrors for an empty date",
         "validate dateOptionAdjusted returning ValidationErrors for an invalid date",
+        //F
         "validate firstName without returning ValidationErrors for valid data",
         "validate firstName without returning ValidationErrors for name with hyphen",
         "validate firstName returning ValidationErrors for a string over 35 characters in length",
         "validate firstName returning ValidationErrors for empty string",
+        //G
         "validate secondName without returning ValidationErrors for valid data",
         "validate secondName returning ValidationErrors for a string over 35 characters in length",
+        //H
         "validate surName without returning ValidationErrors for valid data",
         "validate surName returning ValidationErrors for a string over 35 characters in length",
         "validate surName returning ValidationErrors for an empty string",
+        //I
         "validate NINO without returning ValidationErrors for a valid NINO",
         "validate NINO returning ValidationErrors for invalid data",
+        //J
         "validate PAYE ref without returning ValidationErrors for valid data",
         "validate PAYE ref returning ValidationErrors given invalid PAYE ref",
+        //K
         "validate exercisePricePerSUOPBeforeAdjustment without returning ValidationErrors given valid data",
         "validate exercisePricePerSUOPBeforeAdjustment returning ValidationErrors for a number without 4 digits",
         "validate exercisePricePerSUOPBeforeAdjustment returning ValidationErrors for an alphanumeric string",
         "validate exercisePricePerSUOPBeforeAdjustment returning ValidationErrors for a number large than that allowed",
+        //L
         "validate numberOfSUOPAfterAdjustment without returning ValidationErrors given valid data",
         "validate numberOfSUOPAfterAdjustment returning ValidationErrors for a number without 2 digits",
         "validate numberOfSUOPAfterAdjustment returning ValidationErrors for an alphanumeric string",
-        "validate numberOfSUOPAfterAdjustment returning ValidationErrors for a number large than that allowed"
+        "validate numberOfSUOPAfterAdjustment returning ValidationErrors for a number large than that allowed",
+        //M
+        "validate exercisePricePerSUOPBeforeAdjustment2 without returning ValidationErrors given valid data",
+        "validate exercisePricePerSUOPBeforeAdjustment2 returning ValidationErrors for a number without 4 digits",
+        "validate exercisePricePerSUOPBeforeAdjustment2 returning ValidationErrors for an alphanumeric string",
+        "validate exercisePricePerSUOPBeforeAdjustment2 returning ValidationErrors for a number large than that allowed",
+        //N
+        "validate actualMarketValueOASAtTheDateOfGrant without returning ValidationErrors given valid data",
+        "validate actualMarketValueOASAtTheDateOfGrant returning ValidationErrors for a number without 4 digits",
+        "validate actualMarketValueOASAtTheDateOfGrant returning ValidationErrors for an alphanumeric string",
+        "validate actualMarketValueOASAtTheDateOfGrant returning ValidationErrors for a number large than that allowed"
       )
     descriptions
   }
@@ -154,21 +176,13 @@ trait ERSValidationEMIAdjustmentsTestData {
       Some(List(ValidationErrorData("error.12","012","Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
       Some(List(ValidationErrorData("error.12","012","Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
       None,
-      Some(List(ValidationErrorData("error.21","021","This entry must be a number with 4 digits after the decimal point."))),
-      Some(List(
-        ValidationErrorData("error.21","021","This entry must be a number with 4 digits after the decimal point."),
-        ValidationErrorData("error.22","022","This entry must be a number made up of digits."),
-        ValidationErrorData("error.23","023","This entry is larger than the maximum number value allowed.")
-      )),
-      Some(List(ValidationErrorData("error.22","023","This entry is larger than the maximum number value allowed."))),
+      Some(List(ValidationErrorData("error.13", "013", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
+      Some(List(ValidationErrorData("error.13", "013", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
+      Some(List(ValidationErrorData("error.13", "013", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
       None,
-      Some(List(ValidationErrorData("error.24","024","This entry must be a number with 4 digits after the decimal point."))),
-      Some(List(
-        ValidationErrorData("error.24","024","This entry must be a number with 4 digits after the decimal point."),
-        ValidationErrorData("error.25","025","This entry must be a number made up of digits."),
-        ValidationErrorData("error.26","026","This entry is larger than the maximum number value allowed.")
-      )),
-      Some(List(ValidationErrorData("error.26","026","This entry is larger than the maximum number value allowed.")))
+      Some(List(ValidationErrorData("error.14", "014", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
+      Some(List(ValidationErrorData("error.14", "014", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
+      Some(List(ValidationErrorData("error.14", "014", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it).")))
     )
     expectedResults
   }

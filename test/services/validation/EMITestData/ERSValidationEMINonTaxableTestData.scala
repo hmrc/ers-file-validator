@@ -189,7 +189,7 @@ trait ERSValidationEMINonTaxableTestData {
       Some(List(ValidationErrorData("error.14","014","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
       None,
       Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

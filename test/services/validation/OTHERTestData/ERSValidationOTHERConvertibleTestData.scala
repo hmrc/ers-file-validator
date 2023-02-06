@@ -201,7 +201,7 @@ trait ERSValidationOTHERConvertibleTestData {
       //O
       None,
       Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }
