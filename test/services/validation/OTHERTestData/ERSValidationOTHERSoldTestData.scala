@@ -55,6 +55,7 @@ trait ERSValidationOTHERSoldTestData {
       //column H
         "When individualOptionsPAS\\payeReference is a correctly formatted PAYE reference, no validation error should be raised",
         "Return an error message when individualOptionsPAS\\payeReference does not conform to the expected PAYE format",
+        "Return an error message when individualOptionsPAS\\payeReference does not exist",
       //column I
         "When numberOfSecuritiesOriginallyAcquired is a correctly formatted number, no validation error should be raised",
         "Return an error message when numberOfSecuritiesOriginallyAcquired does not have the correct number of decimal places",
@@ -109,6 +110,7 @@ trait ERSValidationOTHERSoldTestData {
       Cell("G", rowNumber, "AB123456AA"),
       Cell("H", rowNumber, "123/XZ55555555"),
       Cell("H", rowNumber, "123/XZ555555556"),
+      Cell("H", rowNumber, ""),
       Cell("I", rowNumber, "120.33"),
       Cell("I", rowNumber, "120.1234"),
       Cell("I", rowNumber, "AbC120.33"),
@@ -157,7 +159,8 @@ trait ERSValidationOTHERSoldTestData {
       None,
       Some(List(ValidationErrorData("error.7", "007", "National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
       None,
-      Some(List(ValidationErrorData("error.8", "008", "PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
+      Some(List(ValidationErrorData("error.8", "008", "Enter an employer PAYE reference. For example '123/AB456'."))),
+      Some(List(ValidationErrorData("error.8", "008", "Enter an employer PAYE reference. For example '123/AB456'."))),
       None,
       Some(List(ValidationErrorData("error.9" , "009", "Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
       Some(List(ValidationErrorData("error.9" , "009", "Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
@@ -179,7 +182,7 @@ trait ERSValidationOTHERSoldTestData {
       Some(List(ValidationErrorData("error.13", "013", "Enter 'yes' or 'no'."))),
       None,
       Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

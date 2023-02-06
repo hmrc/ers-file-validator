@@ -56,6 +56,7 @@ trait ERSValidationOTHERConvertibleTestData {
         //H
         "validate individualPAC\\payeReference without ValidationErrors for valid data",
         "validate individualPAC\\payeReference with ValidationErrors for invalid data",
+        "validate individualPAC\\payeReference with ValidationErrors for empty data",
         //I
         "validate dateSecuritiesOriginallyAcquired without ValidationErrors for valid data",
         "validate dateSecuritiesOriginallyAcquired with ValidationErrors for invalid data",
@@ -113,6 +114,7 @@ trait ERSValidationOTHERConvertibleTestData {
       Cell("G",rowNumber,"abc"),
       Cell("H",rowNumber,"123/XZ55555555"),
       Cell("H",rowNumber,"abcXZ55555555////"),
+      Cell("H",rowNumber,""),
       Cell("I",rowNumber,"2012-02-22"),
       Cell("I",rowNumber,"20120222"),
       Cell("I",rowNumber,""),
@@ -170,7 +172,8 @@ trait ERSValidationOTHERConvertibleTestData {
       Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
       //H
       None,
-      Some(List(ValidationErrorData("error.8","008","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
+      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
+      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
       //I
       None,
       Some(List(ValidationErrorData("error.9","009","Enter a date that matches the yyyy-mm-dd pattern."))),
@@ -201,7 +204,7 @@ trait ERSValidationOTHERConvertibleTestData {
       //O
       None,
       Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

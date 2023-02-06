@@ -56,6 +56,7 @@ trait ERSValidationOTHEROptionsTestData {
         //Column H
         "validate individualOptions\\payeReference without ValidationErrors for valid data",
         "validate individualOptions\\payeReference with ValidationErrors for invalid data",
+        "validate individualOptions\\payeReference with ValidationErrors for empty data",
         //Column I
         "validate dateOfGrant without ValidationErrors for valid data",
         "validate dateOfGrant with ValidationErrors for invalid data",
@@ -199,6 +200,7 @@ trait ERSValidationOTHEROptionsTestData {
       Cell("G",rowNumber,"abc"),
       Cell("H",rowNumber,"123/XZ55555555"),
       Cell("H",rowNumber,"ab$%c"),
+      Cell("H",rowNumber,""),
       Cell("I",rowNumber,"2014-08-09"),
       Cell("I",rowNumber,"2014/08/09"),
       Cell("I",rowNumber,""),
@@ -315,7 +317,8 @@ trait ERSValidationOTHEROptionsTestData {
       Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
       //Column H
       None,
-      Some(List(ValidationErrorData("error.8","008","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
+      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
+      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
       //Column I
       None,
       Some(List(ValidationErrorData("error.9","009","Enter a date that matches the yyyy-mm-dd pattern."))),

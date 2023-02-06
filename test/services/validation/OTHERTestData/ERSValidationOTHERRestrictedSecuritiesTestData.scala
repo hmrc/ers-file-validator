@@ -56,6 +56,7 @@ trait ERSValidationOTHERRestrictedSecuritiesTestData {
         //H
         "validate individualPAR\\payeReference without ValidationErrors for valid data",
         "validate individualPAR\\payeReference with ValidationErrors for invalid data",
+        "validate individualPAR\\payeReference with ValidationErrors for empty data",
         //I
         "validate dateSecuritiesOriginallyAcquired without ValidationErrors for valid data",
         "validate dateSecuritiesOriginallyAcquired with ValidationErrors for invalid data",
@@ -130,6 +131,7 @@ trait ERSValidationOTHERRestrictedSecuritiesTestData {
       Cell("G",rowNumber,"12123456A"),
       Cell("H",rowNumber,"123/XZ55555555"),
       Cell("H",rowNumber,"123/??"),
+      Cell("H",rowNumber,""),
       Cell("I",rowNumber,"2018-09-12"),
       Cell("I",rowNumber,"20150918"),
       Cell("I",rowNumber,""),
@@ -199,7 +201,8 @@ trait ERSValidationOTHERRestrictedSecuritiesTestData {
       Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
       //H
       None,
-      Some(List(ValidationErrorData("error.8","008","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
+      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
+      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
       //I
       None,
       Some(List(ValidationErrorData("error.9","009","Enter a date that matches the yyyy-mm-dd pattern."))),
@@ -247,7 +250,7 @@ trait ERSValidationOTHERRestrictedSecuritiesTestData {
       //T
       None,
       Some(List(ValidationErrorData("error.20","020","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.20","020","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.20","020","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

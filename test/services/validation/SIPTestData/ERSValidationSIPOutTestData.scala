@@ -47,6 +47,7 @@ trait ERSValidationSIPOutTestData {
         //column F
         "When the PAYE reference is valid, no validation error should be raised",
         "Return an error message when an invalid PAYE reference is provided",
+        "Return an error message when an empty PAYE reference is provided",
         //coluimn G
         "When valid number of free shares is enterered, no validation error should be raised",
         "Return an error message when free shares does not contain two decimal places",
@@ -113,6 +114,7 @@ trait ERSValidationSIPOutTestData {
       Cell("E", rowNumber, "AB123456A.12"),
       Cell("F", rowNumber, "123/XZ55555555"),
       Cell("F", rowNumber, "123/XZ55555555.12"),
+      Cell("F", rowNumber, ""),
       Cell("G", rowNumber, "12.12"),
       Cell("G", rowNumber, "12.1234"),
       Cell("G", rowNumber, "123456789012.12"),
@@ -173,7 +175,8 @@ trait ERSValidationSIPOutTestData {
       Some(List(ValidationErrorData("error.5", "005", "National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
       //column F
       None,
-      Some(List(ValidationErrorData("error.6", "006", "PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
+      Some(List(ValidationErrorData("error.6", "006", "Enter an employer PAYE reference. For example '123/AB456'."))),
+      Some(List(ValidationErrorData("error.6", "006", "Enter an employer PAYE reference. For example '123/AB456'."))),
       //column G
       None,
       Some(List(ValidationErrorData("error.7", "007", "Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),

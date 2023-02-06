@@ -49,6 +49,7 @@ trait ERSValidationEMINonTaxableTestData {
         //Column F
         "validate individualNTExercise\\payeReference without ValidationErrors for a valid payeReference",
         "validate individualNTExercise\\payeReference with ValidationErrors for an invalid payeReference",
+        "validate individualNTExercise\\payeReference with ValidationErrors for an empty payeReference",
         //Column G
         "validate numberOfSharesAcquired without ValidationErrors for valid data",
         "validate numberOfSharesAcquired with ValidationErrors for a number with more than 2 decimal points",
@@ -109,6 +110,7 @@ trait ERSValidationEMINonTaxableTestData {
       Cell("E", rowNumber, "abc"),
       Cell("F", rowNumber, "123/XZ55555555"),
       Cell("F", rowNumber, "abc???"),
+      Cell("F", rowNumber, ""),
       Cell("G", rowNumber, "10.12"),
       Cell("G", rowNumber, "10.1212"),
       Cell("G", rowNumber, "abc123"),
@@ -159,7 +161,8 @@ trait ERSValidationEMINonTaxableTestData {
       None,
       Some(List(ValidationErrorData("error.5","005","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
       None,
-      Some(List(ValidationErrorData("error.6","006","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
+      Some(List(ValidationErrorData("error.6","006","Enter an employer PAYE reference. For example '123/AB456'."))),
+      Some(List(ValidationErrorData("error.6","006","Enter an employer PAYE reference. For example '123/AB456'."))),
       None,
       Some(List(ValidationErrorData("error.7","007","Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
       Some(List(ValidationErrorData("error.7","007","Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
@@ -189,7 +192,7 @@ trait ERSValidationEMINonTaxableTestData {
       Some(List(ValidationErrorData("error.14","014","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
       None,
       Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

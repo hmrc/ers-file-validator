@@ -62,6 +62,7 @@ trait ERSValidationEMITaxableTestData {
         //Column H
         "validate individualTaxExercise\\payeReference without ValidationErrors for valid data",
         "validate individualTaxExercise\\payeReference with ValidationErrors for invalid PAYE ref",
+        "validate individualTaxExercise\\payeReference with ValidationErrors for an empty PAYE ref",
         //Column I
         "validate numberOfSharesAcquired without ValidationErrors for valid data",
         "validate numberOfSharesAcquired with ValidationErrors for a number with more than 2 digits following the decimal point",
@@ -144,6 +145,7 @@ trait ERSValidationEMITaxableTestData {
       Cell("G", rowNumber, "abc"),
       Cell("H", rowNumber, "123/XZ55555555"),
       Cell("H", rowNumber, "123/XZ55555555///"),
+      Cell("H", rowNumber, ""),
       Cell("I", rowNumber, "100.00"),
       Cell("I", rowNumber, "100.04030"),
       Cell("I", rowNumber, "abc100"),
@@ -213,6 +215,7 @@ trait ERSValidationEMITaxableTestData {
       None,
       Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
       None,
+      Some(List(ValidationErrorData("error.8","008","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
       Some(List(ValidationErrorData("error.8","008","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
       None,
       Some(List(ValidationErrorData("error.9","009","Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
