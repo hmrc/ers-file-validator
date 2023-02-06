@@ -99,7 +99,7 @@ class SIPOutV3ValidationTest extends PlaySpec with ERSValidationSIPOutTestData w
     val row = Row(1, Seq(cellP, cellO))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
     resOpt.get must contain (
-      ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no'.")
+      ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated.")
     )
   }
 

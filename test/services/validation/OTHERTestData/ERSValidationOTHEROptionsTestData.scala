@@ -170,6 +170,7 @@ trait ERSValidationOTHEROptionsTestData {
         //Column AO
         "validate payeOperatedApplied without ValidationErrors for valid data",
         "validate payeOperatedApplied with ValidationErrors for invalid data",
+        "validate payeOperatedApplied with no data",
         //Column AP
         "validate adjusmentMadeForUKDuties without ValidationErrors for valid data",
         "validate adjusmentMadeForUKDuties with ValidationErrors for invalid data"
@@ -280,6 +281,7 @@ trait ERSValidationOTHEROptionsTestData {
       Cell("AN",rowNumber,"av"),
       Cell("AO",rowNumber,"yes"),
       Cell("AO",rowNumber,"?!"),
+      Cell("AO",rowNumber,""),
       Cell("AP",rowNumber,"no"),
       Cell("AP",rowNumber,"av")
     )
@@ -429,7 +431,8 @@ trait ERSValidationOTHEROptionsTestData {
       Some(List(ValidationErrorData("error.40","040","Enter 'yes' or 'no'."))),
       //Column AO
       None,
-      Some(List(ValidationErrorData("error.41","041","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.41","041","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      Some(List(ValidationErrorData("error.41","041","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
       //Column AP
       None,
       Some(List(ValidationErrorData("error.42","042","Enter 'yes' or 'no'.")))

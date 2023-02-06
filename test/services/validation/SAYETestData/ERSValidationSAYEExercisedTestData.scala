@@ -218,6 +218,6 @@ trait ERSValidationSAYEExercisedTestData {
     //P
     None,
     Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'."))),
-    Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'."))),
+    Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'.")))
   )
 }

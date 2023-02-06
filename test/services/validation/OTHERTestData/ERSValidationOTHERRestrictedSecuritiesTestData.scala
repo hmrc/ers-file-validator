@@ -242,12 +242,12 @@ trait ERSValidationOTHERRestrictedSecuritiesTestData {
       Some(List(ValidationErrorData("error.18","018","Enter 'yes' or 'no'."))),
       //S
       None,
-      Some(List(ValidationErrorData("error.19","019","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.19","019","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.19","019","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      Some(List(ValidationErrorData("error.19","019","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
       //T
       None,
       Some(List(ValidationErrorData("error.20","020","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.20","020","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.20","020","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

@@ -185,12 +185,12 @@ trait ERSValidationOTHEREnhancementTestData {
       Some(List(ValidationErrorData("error.12", "012", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
       //column M
       None,
-      Some(List(ValidationErrorData("error.13", "013", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.13", "013", "Enter 'yes' or 'no'."))),
-      //column M
+      Some(List(ValidationErrorData("error.13", "013", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      Some(List(ValidationErrorData("error.13", "013", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      //column N
       None,
       Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.14", "014", "Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

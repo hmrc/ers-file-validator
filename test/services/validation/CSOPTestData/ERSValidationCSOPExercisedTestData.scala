@@ -233,8 +233,8 @@ trait ERSValidationCSOPExercisedTestData {
       Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'."))),
       //Q
       None,
-      Some(List(ValidationErrorData("error.17", "017", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.17", "017", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.17", "017", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      Some(List(ValidationErrorData("error.17", "017", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
       //R
       None,
       Some(List(ValidationErrorData("error.18", "018","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
@@ -247,7 +247,7 @@ trait ERSValidationCSOPExercisedTestData {
       //T
       None,
       Some(List(ValidationErrorData("error.20", "020", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.20", "020", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.20", "020", "Enter 'yes' or 'no'.")))
       )
     expectedResults
   }

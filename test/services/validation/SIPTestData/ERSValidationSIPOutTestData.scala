@@ -215,7 +215,7 @@ trait ERSValidationSIPOutTestData {
       Some(List(ValidationErrorData("error.15", "015", "Enter 'yes' or 'no'."))),
       //column P
       None,
-      Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
       //column Q
       None,
       Some(List(ValidationErrorData("error.17", "017", "Enter 'yes' or 'no'.")))

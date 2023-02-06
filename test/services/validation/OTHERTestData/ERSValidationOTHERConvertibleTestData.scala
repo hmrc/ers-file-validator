@@ -196,12 +196,12 @@ trait ERSValidationOTHERConvertibleTestData {
       Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
       //N
       None,
-      Some(List(ValidationErrorData("error.14","014","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.14","014","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.14","014","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      Some(List(ValidationErrorData("error.14","014","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
       //O
       None,
       Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.15","015","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

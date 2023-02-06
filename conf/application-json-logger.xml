@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="uk.gov.hmrc.play.logging.JsonEncoder"/>
-    </appender>
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder class="uk.gov.hmrc.play.logging.JsonEncoder"/>
+	</appender>
 
-	<logger name="uk.gov" level="${logger.uk.gov:-WARN}"/>
+	<logger name="uk.gov" level="WARN"/>
 
-	<logger name="controllers" level="${logger.application:-INFO}"/>
-	<logger name="connectors" level="${logger.application:-INFO}"/>
-	<logger name="services" level="${logger.application:-INFO}"/>
+	<logger name="controllers" level="INFO"/>
+	<logger name="connectors" level="INFO"/>
+	<logger name="services" level="INFO"/>
 
-	<root level="${logger.root:-ERROR}">
+	<root level="ERROR">
 		<appender-ref ref="STDOUT"/>
 	</root>
 </configuration>
