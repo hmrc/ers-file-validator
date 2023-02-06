@@ -41,9 +41,9 @@ trait ERSValidationCSOPExercisedTestData {
         "Return This entry must contain 35 characters or less. When the data is larger than 35 characters for individualLastName.",
         //E
         "When individualNino contains a correctly formatted Nino, no validation error should be raised.",
-        "Return Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y). For individualNino when an incorrect Nino is provided.",
-        "Return Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y). For individualNino when a Nino is missing a letter.",
-        "Return Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y). For individualNino when no nino is provided.",
+        "Return Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y). For individualNino when an incorrect Nino is provided.",
+        "Return Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y). For individualNino when a Nino is missing a letter.",
+        "Return Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y). For individualNino when no nino is provided.",
         //F
         "When individualPayeReference is correctly formatted, no validation error should be raised.",
         "Return The PAYE reference must be less than 15 characters. For individualPayeReference",
@@ -190,9 +190,9 @@ trait ERSValidationCSOPExercisedTestData {
       Some(List(ValidationErrorData("error.4", "004", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //E
       None,
-      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
-      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
-      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
       //F
       None,
       Some(List(ValidationErrorData("error.6", "006", "PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),

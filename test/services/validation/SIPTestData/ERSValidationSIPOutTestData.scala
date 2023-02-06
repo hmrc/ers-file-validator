@@ -174,9 +174,9 @@ trait ERSValidationSIPOutTestData {
       Some(List(ValidationErrorData("error.4", "004", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //column E
       None,
-      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
-      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
-      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (For example QQ123456C) or an ERS reference (For example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
       //column F
       None,
       Some(List(ValidationErrorData("error.6", "006", "PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
