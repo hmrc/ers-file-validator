@@ -1,6 +1,5 @@
 import uk.gov.hmrc._
 import DefaultBuildSettings._
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 import play.sbt.PlayImport.PlayKeys
 import play.sbt.routes.RoutesKeys.{InjectedRoutesGenerator, routesGenerator}
 import sbt.Keys._
@@ -28,7 +27,6 @@ lazy val scoverageSettings = {
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(plugins: _*)
   .settings(scoverageSettings: _*)
-  .settings(publishingSettings)
   .settings(scalaSettings: _*)
   .settings(defaultSettings(): _*)
   .settings(
