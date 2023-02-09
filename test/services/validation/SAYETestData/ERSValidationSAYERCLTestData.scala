@@ -120,7 +120,7 @@ trait ERSValidationSAYERCLTestData {
       Some(List(ValidationErrorData("error.8", "008", "PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
       None,
       Some(List(ValidationErrorData("error.9", "009", "Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.9", "009", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.9", "009", "Enter 'yes' or 'no'.")))
     )
 
     expectedResults

@@ -20,9 +20,9 @@ trait SayeTemplateInfo {
 
   val saye = "SAYE"
 
-  val sayeSheet1Name = "SAYE_Granted_V3"
-  val sayeSheet2Name = "SAYE_RCL_V3"
-  val sayeSheet3Name = "SAYE_Exercised_V3"
+  val sayeSheet1Name = "SAYE_Granted_V4"
+  val sayeSheet2Name = "SAYE_RCL_V4"
+  val sayeSheet3Name = "SAYE_Exercised_V4"
 
   val sayeSheet1Desc = "SAYE scheme template – Options granted"
   val sayeSheet1ValConfig = "ers-saye-granted-validation-config"

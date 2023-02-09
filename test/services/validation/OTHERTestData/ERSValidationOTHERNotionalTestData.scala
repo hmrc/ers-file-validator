@@ -179,7 +179,7 @@ trait ERSValidationOTHERNotionalTestData {
       //column M
       None,
       Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

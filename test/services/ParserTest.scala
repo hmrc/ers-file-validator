@@ -96,7 +96,7 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     "display incorrectHeader exception in validateHeaderRow method" in {
       def exceptionMessage: String = {
         try {
-          dataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V3")(schemeInfo, hc, request).toString
+          dataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V4")(schemeInfo, hc, request).toString
         }
         catch {
           case e: ERSFileProcessingException => e.message + ", " + e.context
@@ -111,19 +111,19 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
       sheet.sheetId mustBe 5
     }
 
-    "return sheetInfo for CSOP_OptionsGranted_V3" in {
+    "return sheetInfo for CSOP_OptionsGranted_V4" in {
       val sheet = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet1Name)(schemeInfo, hc, request)
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 1
     }
 
-    "return sheetInfo for CSOP_OptionsRCL_V3" in {
+    "return sheetInfo for CSOP_OptionsRCL_V4" in {
       val sheet = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet2Name)(schemeInfo, hc, request)
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 2
     }
 
-    "return sheetInfo for CSOP_OptionsExercised_V3" in {
+    "return sheetInfo for CSOP_OptionsExercised_V4" in {
       val sheet = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet3Name)(schemeInfo, hc, request)
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 3

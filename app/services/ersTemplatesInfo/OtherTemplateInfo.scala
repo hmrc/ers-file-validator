@@ -20,15 +20,15 @@ trait OtherTemplateInfo {
 
   val other="OTHER"
 
-  val otherSheet1Name = "Other_Grants_V3"
-  val otherSheet2Name = "Other_Options_V3"
-  val otherSheet3Name = "Other_Acquisition_V3"
-  val otherSheet4Name = "Other_RestrictedSecurities_V3"
-  val otherSheet5Name = "Other_OtherBenefits_V3"
-  val otherSheet6Name = "Other_Convertible_V3"
-  val otherSheet7Name = "Other_Notional_V3"
-  val otherSheet8Name = "Other_Enhancement_V3"
-  val otherSheet9Name = "Other_Sold_V3"
+  val otherSheet1Name = "Other_Grants_V4"
+  val otherSheet2Name = "Other_Options_V4"
+  val otherSheet3Name = "Other_Acquisition_V4"
+  val otherSheet4Name = "Other_RestrictedSecurities_V4"
+  val otherSheet5Name = "Other_OtherBenefits_V4"
+  val otherSheet6Name = "Other_Convertible_V4"
+  val otherSheet7Name = "Other_Notional_V4"
+  val otherSheet8Name = "Other_Enhancement_V4"
+  val otherSheet9Name = "Other_Sold_V4"
 
 
   val otherSheet1Desc = "Other ERS schemes or arrangements – Grant of securities options, including Restricted Stock Units (RSUs)"

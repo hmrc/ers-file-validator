@@ -20,8 +20,8 @@ trait SipTemplateInfo {
 
   val sip = "SIP"
 
-  val sipSheet1Name = "SIP_Awards_V3"
-  val sipSheet2Name = "SIP_Out_V3"
+  val sipSheet1Name = "SIP_Awards_V4"
+  val sipSheet2Name = "SIP_Out_V4"
 
   val sipSheet1Desc = "SIP template – Share awards"
   val sipSheet1ValConfig = "ers-sip-awards-validation-config"
