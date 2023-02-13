@@ -90,7 +90,7 @@ class EMIRLCV3ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData w
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-emi-rlc-validation-config"))
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
 
-    "when Column K is answered yes, column L is a mandatory field" in {
+    "when Column B is answered yes, column C is a mandatory field" in {
       val cellC = Cell("C", rowNumber, "")
       val cellB = Cell("B", rowNumber, "yes")
       val row = Row(1, Seq(cellC, cellB))

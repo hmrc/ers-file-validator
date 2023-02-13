@@ -40,7 +40,7 @@ trait SayeTemplateInfo {
     "5.Option exercise price per share £ e.g. 10.1234",
     "6.Are the shares listed on a recognised stock exchange? (yes/no)",
     "7.If no, was the market value agreed with HMRC? (yes/no)",
-    "8.If yes enter the HMRC reference given"
+    "8.If yes, enter the HMRC valuation reference given"
   )
 
   val sayeRCLHeaderRow = List(
@@ -50,7 +50,7 @@ trait SayeTemplateInfo {
     "4.Employee first name",
     "5.Employee second name (if applicable)",
     "6.Employee last name",
-    "7.National Insurance number (if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference",
     "9.Was PAYE operated? (yes/no)"
   )
@@ -60,13 +60,13 @@ trait SayeTemplateInfo {
     "2.Employee first name",
     "3.Employee second name (if applicable)",
     "4.Employee last name",
-    "5.National Insurance number (if applicable)",
+    "5.National Insurance number",
     "6.PAYE reference of employing company",
     "7.Date of grant (yyyy-mm-dd)",
     "8.Total number of shares employee entitled to on exercise of the option e.g. 100.00",
     "9.Were the shares subject to the option listed on a recognised stock exchange? (yes/no) If yes go to question 12 If no go to question 10",
     "10.If no, was the market value agreed with HMRC? (yes/no)",
-    "11.If yes enter the HMRC reference given",
+    "11.If yes, enter the HMRC valuation reference given",
     "12.Actual market value (AMV) of a share on the date of exercise £ e.g. 10.1234",
     "13.Exercise price per share £ e.g. 10.1234",
     "14.Unrestricted market value (UMV) of a share on the date of exercise £ e.g. 10.1234",

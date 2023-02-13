@@ -40,7 +40,7 @@ trait CsopTemplateInfo {
     "5.Option exercise price per share£e.g. 10.1234",
     "6.Are the shares under the CSOP option listed on a recognised stock exchange?(yes/no)",
     "7.If no, was the market value agreed with HMRC?(yes/no)",
-    "8.If yes enter the HMRC reference given",
+    "8.If yes, enter the HMRC valuation reference given",
     "9.Using the UMV at the time of each relevant grant, does any employee hold unexercised CSOP options over shares totalling more than £30k, including this grant?(yes/no)"
   )//.map(_.replaceAll(csopHeaderFormat,""))
 
@@ -50,7 +50,7 @@ trait CsopTemplateInfo {
     "4.Employee first name",
     "5.Employee second name(if applicable)",
     "6.Employee last name",
-    "7.National Insurance number(if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference of employing company",
     "9.Was PAYE operated?(yes/no)")//.map(_.replaceAll(csopHeaderFormat,""))
 
@@ -59,7 +59,7 @@ trait CsopTemplateInfo {
       "2.Employee first name",
       "3.Employee second name(if applicable)",
       "4.Employee last name",
-      "5.National Insurance number(if applicable)",
+      "5.National Insurance number",
       "6.PAYE reference of employing company",
       "7.Date of grant(yyyy-mm-dd)",
       "8.Total number of shares employee entitled to on exercise of the option before any cashless exercise or other adjustmente.g. 100.00",
@@ -69,7 +69,7 @@ trait CsopTemplateInfo {
       "12.Exercise price per shareￂﾣe.g. 10.1234",
       "13.Unrestricted market value (UMV) of a share on the date of exerciseￂﾣe.g. 10.1234",
       "14.If the answer to question 10 is no, was the market value agreed with HMRC?(yes/no)",
-      "15.If yes enter the HMRC reference given",
+      "15.If yes, enter the HMRC valuation reference given",
       "16.Does the exercise qualify for tax relief?(yes/no)",
       "17.Was PAYE operated?(yes/no)",
       "18.If yes, deductible amountￂﾣe.g. 10.1234",

@@ -46,7 +46,7 @@ trait SipTemplateInfo {
     "14.Total number of employees whose award of matching shares during the year was at or below the limit of £3,600",
     "15.Are the shares listed on a recognised stock exchange? (yes/no)",
     "16.If no, was the market value agreed with HMRC? (yes/no)",
-    "17.If yes, enter the HMRC reference given"
+    "17.If yes, enter the HMRC valuation reference given"
   )//.map(_.replaceAll(sipHeaderFormat,""))
 
   val sipOutHeaderRow = List(
@@ -54,7 +54,7 @@ trait SipTemplateInfo {
     "2.Employee first name",
     "3.Employee second name (if applicable)",
     "4.Employee last name",
-    "5.National Insurance number (if applicable)",
+    "5.National Insurance number",
     "6.PAYE reference of the employing company",
     "7.Number of free shares ceasing to be part of the plan e.g. 100.00",
     "8.Number of partnership shares ceasing to be part of the plan e.g. 100.00",
