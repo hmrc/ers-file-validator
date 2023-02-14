@@ -20,9 +20,9 @@ trait CsopTemplateInfo {
 
   val csop = "CSOP"
 
-  val csopSheet1Name = "CSOP_OptionsGranted_V3"
-  val csopSheet2Name =  "CSOP_OptionsRCL_V3"
-  val csopSheet3Name = "CSOP_OptionsExercised_V3"
+  val csopSheet1Name = "CSOP_OptionsGranted_V4"
+  val csopSheet2Name =  "CSOP_OptionsRCL_V4"
+  val csopSheet3Name = "CSOP_OptionsExercised_V4"
 
 
   val csopSheet1title = "CSOP scheme template – Options granted"

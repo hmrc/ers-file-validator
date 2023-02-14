@@ -20,11 +20,11 @@ trait EMITemplateInfo {
 
   val emi="EMI"
 
-  val emiSheet1Name = "EMI40_Adjustments_V3"
-  val emiSheet2Name = "EMI40_Replaced_V3"
-  val emiSheet3Name = "EMI40_RLC_V3"
-  val emiSheet4Name = "EMI40_NonTaxable_V3"
-  val emiSheet5Name = "EMI40_Taxable_V3"
+  val emiSheet1Name = "EMI40_Adjustments_V4"
+  val emiSheet2Name = "EMI40_Replaced_V4"
+  val emiSheet3Name = "EMI40_RLC_V4"
+  val emiSheet4Name = "EMI40_NonTaxable_V4"
+  val emiSheet5Name = "EMI40_Taxable_V4"
 
   val emiSheet1Desc = "EMI template - Adjustment of options"
   val emiSheet1ValConfig = "ers-emi-adjustments-validation-config"

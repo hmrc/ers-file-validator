@@ -22,7 +22,7 @@ import services.validation.CSOPTestData.{ERSValidationCSOPExercisedTestData, ERS
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 
-class CSOPOptionsGrantedV3ValidationCSOPTest extends PlaySpec with ERSValidationCSOPGrantedTestData with ValidationTestRunner{
+class CSOPOptionsGrantedV4ValidationCSOPTest extends PlaySpec with ERSValidationCSOPGrantedTestData with ValidationTestRunner{
 
   " ERS CSOP Granted Validation tests" should {
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-csop-granted-validation-config"))

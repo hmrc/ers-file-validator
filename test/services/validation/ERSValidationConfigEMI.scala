@@ -23,7 +23,7 @@ import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 
 
-class EMIAdjustmentsV3ValidationTest extends PlaySpec with ERSValidationEMIAdjustmentsTestData with ValidationTestRunner {
+class EMIAdjustmentsV4ValidationTest extends PlaySpec with ERSValidationEMIAdjustmentsTestData with ValidationTestRunner {
 
   "ERS Validation tests for EMI Adjustments" should {
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
@@ -75,7 +75,7 @@ class EMIAdjustmentsV3ValidationTest extends PlaySpec with ERSValidationEMIAdjus
 
 }
 
-class EMIReplacedV3ValidationTest extends PlaySpec with ERSValidationEMIReplacedTestData with ValidationTestRunner{
+class EMIReplacedV4ValidationTest extends PlaySpec with ERSValidationEMIReplacedTestData with ValidationTestRunner{
 
   "ERS EMI Replaced Validation Test" should {
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-emi-replaced-validation-config"))
@@ -83,7 +83,7 @@ class EMIReplacedV3ValidationTest extends PlaySpec with ERSValidationEMIReplaced
   }
 
 }
-class EMIRLCV3ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData with ValidationTestRunner{
+class EMIRLCV4ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData with ValidationTestRunner{
 
 
   "ERS EMI RLC Validation Test" should {
@@ -120,7 +120,7 @@ class EMIRLCV3ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData w
   }
 }
 
-class EMINonTaxableV3ValidationTest extends PlaySpec with ERSValidationEMINonTaxableTestData with ValidationTestRunner{
+class EMINonTaxableV4ValidationTest extends PlaySpec with ERSValidationEMINonTaxableTestData with ValidationTestRunner{
 
   "ERS EMI Replaced Exercised Validation Test" should {
 
@@ -164,7 +164,7 @@ class EMINonTaxableV3ValidationTest extends PlaySpec with ERSValidationEMINonTax
 }
 
 
-class EMITaxableV3ValidationTest extends PlaySpec with ERSValidationEMITaxableTestData with ValidationTestRunner {
+class EMITaxableV4ValidationTest extends PlaySpec with ERSValidationEMITaxableTestData with ValidationTestRunner {
 
   "ERS Validation tests for EMI Taxable" should {
 
