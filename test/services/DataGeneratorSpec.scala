@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -69,86 +69,86 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo), argEq("csopHeaderSheet1Data"), argEq("Could not set the validator"))(any(), any())
     }
 
-    "validate CSOP_OptionsGranted_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(csopHeaderSheet1Data, "CSOP_OptionsGranted_V3")(schemeInfo, hc, request) must be(9)
+    "validate CSOP_OptionsGranted_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(csopHeaderSheet1Data, "CSOP_OptionsGranted_V4")(schemeInfo, hc, request) must be(9)
     }
 
-    "validate CSOP_OptionsRCL_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(csopHeaderSheet2Data, "CSOP_OptionsRCL_V3")(schemeInfo, hc, request) must be(9)
+    "validate CSOP_OptionsRCL_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(csopHeaderSheet2Data, "CSOP_OptionsRCL_V4")(schemeInfo, hc, request) must be(9)
     }
 
-    "validate CSOP_OptionsExercised_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(csopHeaderSheet3Data, "CSOP_OptionsExercised_V3")(schemeInfo, hc, request) must be(20)
+    "validate CSOP_OptionsExercised_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(csopHeaderSheet3Data, "CSOP_OptionsExercised_V4")(schemeInfo, hc, request) must be(20)
     }
 
-    "validate SIP_Awards_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(sipHeaderSheet1Data, "SIP_Awards_V3")(schemeInfo, hc, request) must be(17)
+    "validate SIP_Awards_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(sipHeaderSheet1Data, "SIP_Awards_V4")(schemeInfo, hc, request) must be(17)
     }
 
-    "validate SIP_Out_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(sipHeaderSheet2Data, "SIP_Out_V3")(schemeInfo, hc, request) must be(17)
+    "validate SIP_Out_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(sipHeaderSheet2Data, "SIP_Out_V4")(schemeInfo, hc, request) must be(17)
     }
 
-    "validate EMI40_Adjustments_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(emiHeaderSheet1Data, "EMI40_Adjustments_V3")(schemeInfo, hc, request) must be(14)
+    "validate EMI40_Adjustments_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(emiHeaderSheet1Data, "EMI40_Adjustments_V4")(schemeInfo, hc, request) must be(14)
     }
 
-    "validate EMI40_Replaced_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(emiHeaderSheet2Data, "EMI40_Replaced_V3")(schemeInfo, hc, request) must be(17)
+    "validate EMI40_Replaced_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(emiHeaderSheet2Data, "EMI40_Replaced_V4")(schemeInfo, hc, request) must be(17)
     }
 
-    "validate EMI40_RLC_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(emiHeaderSheet3Data, "EMI40_RLC_V3")(schemeInfo, hc, request) must be(12)
+    "validate EMI40_RLC_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(emiHeaderSheet3Data, "EMI40_RLC_V4")(schemeInfo, hc, request) must be(12)
     }
 
-    "validate EMI40_NonTaxable_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(emiHeaderSheet4Data, "EMI40_NonTaxable_V3")(schemeInfo, hc, request) must be(15)
+    "validate EMI40_NonTaxable_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(emiHeaderSheet4Data, "EMI40_NonTaxable_V4")(schemeInfo, hc, request) must be(15)
     }
 
-    "validate EMI40_Taxable_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(emiHeaderSheet5Data, "EMI40_Taxable_V3")(schemeInfo, hc, request) must be(20)
+    "validate EMI40_Taxable_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(emiHeaderSheet5Data, "EMI40_Taxable_V4")(schemeInfo, hc, request) must be(20)
     }
 
-    "validate Other_Grants_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet1Data, "Other_Grants_V3")(schemeInfo, hc, request) must be(4)
+    "validate Other_Grants_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(otherHeaderSheet1Data, "Other_Grants_V4")(schemeInfo, hc, request) must be(4)
     }
 
-    "validate Other_Options_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet2Data, "Other_Options_V3")(schemeInfo, hc, request) must be(42)
+    "validate Other_Options_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(otherHeaderSheet2Data, "Other_Options_V4")(schemeInfo, hc, request) must be(42)
     }
 
-    "validate Other_Acquisition_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet3Data, "Other_Acquisition_V3")(schemeInfo, hc, request) must be(40)
+    "validate Other_Acquisition_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(otherHeaderSheet3Data, "Other_Acquisition_V4")(schemeInfo, hc, request) must be(40)
     }
 
-    "validate Other_RestrictedSecurities_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet4Data, "Other_RestrictedSecurities_V3")(schemeInfo, hc, request) must be(20)
+    "validate Other_RestrictedSecurities_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(otherHeaderSheet4Data, "Other_RestrictedSecurities_V4")(schemeInfo, hc, request) must be(20)
     }
 
-    "validate Other_OtherBenefits_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet5Data, "Other_OtherBenefits_V3")(schemeInfo, hc, request) must be(13)
+    "validate Other_OtherBenefits_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(otherHeaderSheet5Data, "Other_OtherBenefits_V4")(schemeInfo, hc, request) must be(13)
     }
 
-    "validate Other_Convertible_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet6Data, "Other_Convertible_V3")(schemeInfo, hc, request) must be(15)
+    "validate Other_Convertible_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(otherHeaderSheet6Data, "Other_Convertible_V4")(schemeInfo, hc, request) must be(15)
     }
 
-    "validate Other_Notional_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet7Data, "Other_Notional_V3")(schemeInfo, hc, request) must be(13)
+    "validate Other_Notional_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(otherHeaderSheet7Data, "Other_Notional_V4")(schemeInfo, hc, request) must be(13)
     }
 
-    "validate Other_Enhancement_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet8Data, "Other_Enhancement_V3")(schemeInfo, hc, request) must be(14)
+    "validate Other_Enhancement_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(otherHeaderSheet8Data, "Other_Enhancement_V4")(schemeInfo, hc, request) must be(14)
     }
 
-    "validate Other_Sold_V3 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet9Data, "Other_Sold_V3")(schemeInfo, hc, request) must be(14)
+    "validate Other_Sold_V4 headerRow as valid" in {
+      dataGenerator.validateHeaderRow(otherHeaderSheet9Data, "Other_Sold_V4")(schemeInfo, hc, request) must be(14)
     }
   }
 
   "setValidator" should {
     "return a DataValidator if the given sheet name is valid" in {
-      assert(dataGenerator.setValidator("EMI40_Adjustments_V3")(SchemeInfo("", DateTime.now(), "" ,"" ,"", ""), hc, request).isInstanceOf[DataValidator])
+      assert(dataGenerator.setValidator("EMI40_Adjustments_V4")(SchemeInfo("", DateTime.now(), "" ,"" ,"", ""), hc, request).isInstanceOf[DataValidator])
     }
 
     "throw an exception if the given sheet name is not valid" in {
@@ -158,7 +158,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   "getValidatorAndSheetInfo" should {
     "return a Right with a DataValidator if the given sheet name is valid" in {
-      dataGenerator.getValidatorAndSheetInfo("EMI40_Adjustments_V3", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
+      dataGenerator.getValidatorAndSheetInfo("EMI40_Adjustments_V4", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
         case Left(_) => fail("Did not return validator")
         case Right(_) => succeed
       }
@@ -174,7 +174,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   "identifyAndDefineSheet" should {
     "identify and define the sheet with correct scheme type" in {
-      dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V3")(schemeInfo, hc, request) mustBe ("EMI40_Adjustments_V3")
+      dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfo, hc, request) mustBe ("EMI40_Adjustments_V4")
     }
 
     "return an error when sheet name is invalid" in {
@@ -192,9 +192,9 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
         schemeName = "MyScheme",
         schemeType = "CSOP"
       )
-      val result = Try(dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V3")(schemeInfo2, hc, request))
+      val result = Try(dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfo2, hc, request))
       result.isFailure must be(true)
-      verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo2), argEq("EMI40_Adjustments_V3"), argEq("emi is not equal to csop"))(any(), any())
+      verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo2), argEq("EMI40_Adjustments_V4"), argEq("emi is not equal to csop"))(any(), any())
     }
   }
 
@@ -218,15 +218,15 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-other-grants-validation-config"))
 
     "return the data when parsed correctly and no errors are found" in {
-      val result = dataGenerator.generateRowData(XMLTestData.otherGrantsExpData, 10, validator)(schemeInfo, "Other_Grants_V3", hc, request)
+      val result = dataGenerator.generateRowData(XMLTestData.otherGrantsExpData, 10, validator)(schemeInfo, "Other_Grants_V4", hc, request)
       result must be(XMLTestData.otherGrantsExpData)
     }
 
     "return an error when an issue is found" in {
       val err = List(ValidationError(Cell("A",10,""),"error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))
-      val res1 = Try(dataGenerator.generateRowData(testAct, 10, validator)(schemeInfo, "Other_Grants_V3", hc, request))
+      val res1 = Try(dataGenerator.generateRowData(testAct, 10, validator)(schemeInfo, "Other_Grants_V4", hc, request))
       res1.isFailure mustBe true
-      verify(mockAuditEvents, times(1)).validationErrorAudit(argEq(err), argEq(schemeInfo), argEq("Other_Grants_V3"))(any(), any())
+      verify(mockAuditEvents, times(1)).validationErrorAudit(argEq(err), argEq(schemeInfo), argEq("Other_Grants_V4"))(any(), any())
     }
 
     "throw exception if ErsValidator.validateRow throws exception" in {
@@ -234,7 +234,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       when(mockValidator.validateRow(any[Row])).thenThrow(new RuntimeException("this is a runtime exception"))
 
      val caughtException = intercept[RuntimeException] {
-       dataGenerator.generateRowData(testAct, 10, mockValidator)(schemeInfo, "Other_Grants_V3", hc, request)
+       dataGenerator.generateRowData(testAct, 10, mockValidator)(schemeInfo, "Other_Grants_V4", hc, request)
      }
 
       caughtException.getMessage mustBe "this is a runtime exception"

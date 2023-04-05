@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,9 +53,12 @@ trait ERSValidationOTHERAcquisitionTestData {
         //G
         "validate individualOptions\\nino without ValidationErrors for valid data",
         "validate individualOptions\\nino with ValidationErrors for invalid data",
+        "validate individualOptions\\nino with ValidationErrors for missing a letter",
+        "validate individualOptions\\nino with ValidationErrors for no data",
         //H
         "validate individualOptions\\payeReference without ValidationErrors for valid data",
         "validate individualOptions\\payeReference with ValidationErrors for invalid data",
+        "validate individualOptions\\payeReference with ValidationErrors for empty data",
         //I
         "validate secAwdCompany\\compnayName without ValidationErrors for valid data",
         "validate secAwdCompany\\compnayName without ValidationErrors for a string too long",
@@ -156,7 +159,15 @@ trait ERSValidationOTHERAcquisitionTestData {
         "validate sharesIssuedUnderAnEmployeeShareholderArrangement with ValidationErrors for invalid data",
         //AL
         "validate totalMarketValueOfShares2000OrMore without ValidationErrors for valid data",
-        "validate totalMarketValueOfShares2000OrMore with ValidationErrors for invalid data"
+        "validate totalMarketValueOfShares2000OrMore with ValidationErrors for invalid data",
+        //AM
+        "validate payeOperated without ValidationErrors for valid data",
+        "validate payeOperated with ValidationErrors for invalid data",
+        "validate payeOperated with ValidationErrors for no data",
+        //AN
+        "validate adjustmentMadeForAmountsSubject without ValidationErrors for valid data",
+        "validate adjustmentMadeForAmountsSubject with ValidationErrors for invalid data",
+        "validate adjustmentMadeForAmountsSubject with ValidationErrors for no data"
       )
     descriptions
   }
@@ -181,8 +192,11 @@ trait ERSValidationOTHERAcquisitionTestData {
       Cell("F",rowNumber,""),
       Cell("G",rowNumber,"AB123456A"),
       Cell("G",rowNumber,"AB1234A"),
+      Cell("G",rowNumber,"AB123456"),
+      Cell("G",rowNumber,""),
       Cell("H",rowNumber,"123/XZ55555555"),
       Cell("H",rowNumber,"123XZ55555555???"),
+      Cell("H",rowNumber,""),
       Cell("I",rowNumber,"Company"),
       Cell("I",rowNumber,StringUtils.leftPad("",150, "A")),
       Cell("I",rowNumber,""),
@@ -290,10 +304,13 @@ trait ERSValidationOTHERAcquisitionTestData {
       Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //G
       None,
-      Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
       //H
       None,
-      Some(List(ValidationErrorData("error.8","008","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
+      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
+      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
       //I
       None,
       Some(List(ValidationErrorData("error.9","009","Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."))),
@@ -397,12 +414,12 @@ trait ERSValidationOTHERAcquisitionTestData {
       Some(List(ValidationErrorData("error.38","038","Enter 'yes' or 'no'."))),
       //AM
       None,
-      Some(List(ValidationErrorData("error.39","039","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.39","039","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.39","039","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      Some(List(ValidationErrorData("error.39","039","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
       //AN
       None,
       Some(List(ValidationErrorData("error.40","040","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.40","040","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.40","040","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

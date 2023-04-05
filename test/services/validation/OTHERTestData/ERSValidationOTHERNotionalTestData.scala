@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,9 +53,12 @@ trait ERSValidationOTHERNotionalTestData {
       //column G
         "When individualPAD\\nino is a correctly formatted NINO, no validation error should be raised",
         "Return an error message when individualPAD\\nino does not conform to the expected NINO format",
+        "Return an error message when individualPAD\\nino is missing a letter",
+        "Return an error message when individualPAD\\nino does not contain any data",
       //column H
         "When individualPAD\\payeReference is a correctly formatted PAYE reference, no validation error should be raised",
         "Return an error message when nindividualPAD\\payeReference does not conform to the expected PAYE format",
+        "Return an error message when nindividualPAD\\payeReference does not exist",
       //column I
         "When dateSecuritiesOriginallyAcquired is a correctly formatted date, no validation error should be raised",
         "Return an error message when dateSecuritiesOriginallyAcquired does not conform to the expected data format",
@@ -102,8 +105,11 @@ trait ERSValidationOTHERNotionalTestData {
       Cell("F",rowNumber,""),
       Cell("G",rowNumber,"AB123456A"),
       Cell("G",rowNumber,"AAB123456A"),
+      Cell("G",rowNumber,"AB123456"),
+      Cell("G",rowNumber,""),
       Cell("H",rowNumber,"123/XZ55555555"),
       Cell("H",rowNumber,"AABaaa/123456A///"),
+      Cell("H",rowNumber,""),
       Cell("I",rowNumber,"2014-08-30"),
       Cell("I",rowNumber,"2140830"),
       Cell("I",rowNumber,""),
@@ -154,10 +160,13 @@ trait ERSValidationOTHERNotionalTestData {
       Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       //column G
       None,
-      Some(List(ValidationErrorData("error.7","007","National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
       //column H
       None,
-      Some(List(ValidationErrorData("error.8","008","PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
+      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
+      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
       //column I
       None,
       Some(List(ValidationErrorData("error.9","009","Enter a date that matches the yyyy-mm-dd pattern."))),
@@ -174,12 +183,12 @@ trait ERSValidationOTHERNotionalTestData {
       Some(List(ValidationErrorData("error.11","011","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
       //column L
       None,
-      Some(List(ValidationErrorData("error.12","012","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.12","012","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.12","012","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      Some(List(ValidationErrorData("error.12","012","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
       //column M
       None,
       Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'.")))
     )
     expectedResults
   }

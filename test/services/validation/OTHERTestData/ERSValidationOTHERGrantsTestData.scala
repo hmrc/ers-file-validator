@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,20 @@ trait ERSValidationOTHERGrantsTestData {
   def getDescriptions: List[String] = {
     val descriptions =
       List(
+        //A
         "validate dateOfGrant without ValidationErrors for valid data",
         "validate dateOfGrant with ValidationErrors for invalid data",
         "validate dateOfGrant with ValidationErrors for no data",
+        //B
         "validate numberOfEmployeesGrantedOptions without ValidationErrors for valid data",
         "validate numberOfEmployeesGrantedOptions with ValidationErrors for an alphanumeric string",
         "validate numberOfEmployeesGrantedOptions with ValidationErrors for an entry larger than that allowed",
+        //C
         "validate umv without ValidationErrors for valid data",
         "validate umv with ValidationErrors for a number with more than 4 decimal places",
         "validate umv with ValidationErrors for an alphanumeric string",
         "validate umv with ValidationErrors for an entry larger than that allowed",
+        //D
         "validate numberOfSharesOverWhichOptionsGranted without ValidationErrors valid data",
         "validate numberOfSharesOverWhichOptionsGranted with ValidationErrors a number with more than 2 decimal places",
         "validate numberOfSharesOverWhichOptionsGranted with ValidationErrors an alphanumeric string",

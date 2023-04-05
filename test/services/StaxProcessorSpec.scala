@@ -1,21 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,17 +32,17 @@ class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {
       processor.hasNext must equal(true)
     }
 
-    "say that the table name is CSOP_OptionsGranted_V3" in {
+    "say that the table name is CSOP_OptionsGranted_V4" in {
       val inputXml = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
       val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))
       processor.hasNext
-      processor.next must equal("CSOP_OptionsGranted_V3")
+      processor.next must equal("CSOP_OptionsGranted_V4")
     }
 
     "information can be extracted from incoming string" in {
       val inputXml = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
       val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))
-      processor.getName("<['urn:oasis:names:tc:opendocument:xmlns:table:1.0']:table:table table:name='EMI40_Adjustments_V3' table:style-name='ta1'>") must equal("EMI40_Adjustments_V3")
+      processor.getName("<['urn:oasis:names:tc:opendocument:xmlns:table:1.0']:table:table table:name='EMI40_Adjustments_V4' table:style-name='ta1'>") must equal("EMI40_Adjustments_V4")
     }
 
     def constructXmlDocument(elements : Elem*) : InputStream = {

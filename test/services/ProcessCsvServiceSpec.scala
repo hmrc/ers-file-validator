@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,9 +31,10 @@ import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.matchers.must.Matchers
-import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
 import org.scalatest.OptionValues
+import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
+import org.scalatest.matchers.must.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Request
 import services.audit.AuditEvents
@@ -46,7 +47,6 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
-import org.scalatest.wordspec.AnyWordSpecLike
 
 class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with TimeLimits with ScalaFutures {
 
@@ -57,7 +57,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
   when(mockAppConfig.uploadCsvSizeLimit).thenReturn(10000)
   when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(10000)
 
-  val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "CSOP_OptionsGranted_V3", "sheetTitle", "configFileName", List("aHeader"))
+  val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "CSOP_OptionsGranted_V4", "sheetTitle", "configFileName", List("aHeader"))
 
   implicit val request: Request[_] = mock[Request[_]]
   implicit val hc: HeaderCarrier = mock[HeaderCarrier]
@@ -72,7 +72,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
   )
 
   val submissionsSchemeData: SubmissionsSchemeData = SubmissionsSchemeData(schemeInfo, "sheetName",
-    UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(11)), numberOfRows = 11)
+    UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(11)), numberOfRows = 11)
 
   def testProcessCsvService: ProcessCsvService = new ProcessCsvService(mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)
 
@@ -91,7 +91,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       )
       val dataValidator = new MockDataValidator(mock[Config], Some(List(ValidationError(Cell("A", 1, "value"), "ruleId", "errorId", "errorMessage"))))
       val result = testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
-        "Other_Grants_V3.csv", schemeInfo, dataValidator, sheetTest)
+        "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
 
       result.left.get mustBe ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserFileInvalid}",
@@ -109,7 +109,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       )
       val dataValidator = new MockDataValidator(mock[Config], None)
       val result = testService.processRow(List(ByteString("thisIsARow,With,ManyValues")),
-        "CSOP_OptionsGranted_V3.csv", schemeInfo, dataValidator, sheetTest)
+        "CSOP_OptionsGranted_V4.csv", schemeInfo, dataValidator, sheetTest)
 
       assert(result.isRight)
       result.right.get mustBe List("thisIsARow", "With", "ManyValues")
@@ -126,7 +126,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val dataValidator = mock[DataValidator]
       when(dataValidator.validateRow(any())).thenThrow(new RuntimeException("this validation failed"))
       val result = testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
-        "Other_Grants_V3.csv", schemeInfo, dataValidator, sheetTest)
+        "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
 
       assert(result.isLeft)
       result.left.get.getMessage mustBe "this validation failed"
@@ -142,7 +142,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
     }
 
     "return true if all rows are valid" in {
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(1))), schemeInfo)
+      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
       val testService: ProcessCsvService = new MockProcessCsvService(
@@ -156,11 +156,11 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
-      boolList mustBe List(Right(CsvFileContents("CSOP_OptionsGranted_V3", Seq(Seq(data)))))
+      boolList mustBe List(Right(CsvFileContents("CSOP_OptionsGranted_V4", Seq(Seq(data)))))
       assert(boolList.forall(_.isRight))
     }
     "return a throwable when an error occurs during the file validation" in {
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(1))), schemeInfo)
+      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,test,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
       val testService: ProcessCsvService = new MockProcessCsvService(
@@ -177,11 +177,11 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
     }
 
     "return a throwable when an error occurs during the file processing" in {
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(1))), schemeInfo)
+      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
       when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any())).thenReturn(Left(ERSFileProcessingException(
         "ers.exceptions.dataParser.configFailure",
-        "ers.exceptions.dataParser.validatorError",
+        "ers.exceptions.dataParser.validatorError"
       )))
 
       val resultFuture = testProcessCsvService.processFiles(callback, returnStubSource(_, data))
@@ -202,7 +202,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       )
       when(mockDataGenerator.getValidatorAndSheetInfo(any(), any())(any(), any())).thenReturn(Right((mock[DataValidator], sheetTest)))
 
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(1))), schemeInfo)
+      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
       val resultFuture = testService.processFiles(callback, returnStubSource(_, data))
@@ -210,7 +210,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       assert(boolList.head.isLeft)
-      boolList.head.left.get.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V3.csv as part of your annual return."
+      boolList.head.left.get.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
       assert(boolList.forall(_.isLeft))
     }
 
@@ -223,7 +223,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
     }
 
     "return true if all rows are valid" in {
-      val upscanCallback = UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(1))
+      val upscanCallback = UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))
 
       val callback = UpscanCsvFileData(List(upscanCallback), schemeInfo)
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
@@ -242,7 +242,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
-      boolList mustBe List(Right(CsvFileSubmissions("CSOP_OptionsGranted_V3", 1, upscanCallback)))
+      boolList mustBe List(Right(CsvFileSubmissions("CSOP_OptionsGranted_V4", 1, upscanCallback)))
       assert(boolList.forall(_.isRight))
     }
 
@@ -253,7 +253,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         mockExtractBodyOfRequest = Some(_ => Source.empty),
         processRow = Some(Right(Seq.empty))
       )
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(1))), schemeInfo)
+      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
       val resultFuture = testService.processFilesNew(callback, returnStubSource(_, data))
@@ -261,12 +261,12 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       assert(boolList.head.isLeft)
-      boolList.head.left.get.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V3.csv as part of your annual return."
+      boolList.head.left.get.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
       assert(boolList.forall(_.isLeft))
     }
 
     "return a throwable when an error occurs during the file validation" in {
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(1))), schemeInfo)
+      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,test,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
       val testService: ProcessCsvService = new MockProcessCsvService(
@@ -285,11 +285,11 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
     }
 
     "return a throwable when an error occurs during the file processing" in {
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(1))), schemeInfo)
+      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
       when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any())).thenReturn(Left(ERSFileProcessingException(
         "ers.exceptions.dataParser.configFailure",
-        "ers.exceptions.dataParser.validatorError",
+        "ers.exceptions.dataParser.validatorError"
       )))
 
       val resultFuture = testProcessCsvService.processFilesNew(callback, returnStubSource(_, data))
@@ -417,7 +417,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         sendSchemeCsvNew = Some(Future.successful(Some(new Exception("this was bad")))))
 
       val result = Await.result(testService
-        .extractSchemeDataNew(schemeInfo, "anEmpRef", Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V3.csv", "no", noOfRows = Some(1))))),
+        .extractSchemeDataNew(schemeInfo, "anEmpRef", Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))))),
         Duration.Inf
       )
 
@@ -432,7 +432,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       val result = Await.result(testService
         .extractSchemeDataNew(schemeInfo, "anEmpRef",
-          Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V3.csv", "no")))),
+          Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no")))),
         Duration.Inf
       )
 

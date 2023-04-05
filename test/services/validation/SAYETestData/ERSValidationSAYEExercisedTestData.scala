@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,10 +41,13 @@ trait ERSValidationSAYEExercisedTestData {
     "raise a ValidationError if the cell individual\\lastName is empty",
     //E
     "not raise ValidationError if the national insurance number is valid",
-    "raise a ValidationError if National Insurance Number is not conforming to the expected format",
+    "raise a ValidationError if National Insurance number is not conforming to the expected format",
+    "raise a ValidationError if National Insurance number is missing a letter",
+    "raise a ValidationError if National Insurance number does not contain any data",
     //F
     "not raise ValidationError individual\\payeReference is valid format",
     "raise a ValidationError if individual\\payeReference is not matching the expected format",
+    "raise a ValidationError if individual\\payeReference does not exist",
     //G
     "not raise a ValidationError if dataOfGrant is a valid format",
     "raise ValidationError when dataOfGrant in not matching the date expected format",
@@ -108,9 +111,12 @@ trait ERSValidationSAYEExercisedTestData {
     //E
     Cell("E", rowNumber, "AA123456A"),
     Cell("E", rowNumber, "AAAA12341.135a"),
+    Cell("E", rowNumber, "AA123456"),
+    Cell("E", rowNumber, ""),
     //F
     Cell("F", rowNumber, "123/XZ55555555"),
     Cell("F", rowNumber, "1234/12345/12341234"),
+    Cell("F", rowNumber, ""),
     //G
     Cell("G", rowNumber, "2016-04-18"),
     Cell("G", rowNumber, "garbage-date"),
@@ -173,10 +179,13 @@ trait ERSValidationSAYEExercisedTestData {
     Some(List(ValidationErrorData("error.4", "004", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
     //E
     None,
-    Some(List(ValidationErrorData("error.5", "005", "National Insurance number must be 2 letters followed by 6 number digits, with an optional final letter."))),
+    Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+    Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+    Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
     //F
     None,
-    Some(List(ValidationErrorData("error.6", "006", "PAYE reference must be a 3 digit number followed by a forward slash and up to 10 more characters."))),
+    Some(List(ValidationErrorData("error.6", "006", "Enter an employer PAYE reference. For example '123/AB456'."))),
+    Some(List(ValidationErrorData("error.6", "006", "Enter an employer PAYE reference. For example '123/AB456'."))),
     //G
     None,
     Some(List(ValidationErrorData("error.7", "007", "Enter a date that matches the yyyy-mm-dd pattern."))),
@@ -218,6 +227,6 @@ trait ERSValidationSAYEExercisedTestData {
     //P
     None,
     Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'."))),
-    Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'."))),
+    Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'.")))
   )
 }

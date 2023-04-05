@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import services.validation.SIPTestData.{ERSValidationSIPAwardsTestData, ERSValid
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 
-class SIPAwardsV3ValidationTest extends PlaySpec with ERSValidationSIPAwardsTestData with ValidationTestRunner{
+class SIPAwardsV4ValidationTest extends PlaySpec with ERSValidationSIPAwardsTestData with ValidationTestRunner{
 
   val validator = new DataValidator(ConfigFactory.load.getConfig("ers-sip-awards-validation-config"))
 
@@ -85,7 +85,7 @@ class SIPAwardsV3ValidationTest extends PlaySpec with ERSValidationSIPAwardsTest
 
 
 }
-class SIPOutV3ValidationTest extends PlaySpec with ERSValidationSIPOutTestData with ValidationTestRunner{
+class SIPOutV4ValidationTest extends PlaySpec with ERSValidationSIPOutTestData with ValidationTestRunner{
 
   val validator = new DataValidator(ConfigFactory.load.getConfig("ers-sip-out-validation-config"))
 
@@ -99,7 +99,7 @@ class SIPOutV3ValidationTest extends PlaySpec with ERSValidationSIPOutTestData w
     val row = Row(1, Seq(cellP, cellO))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
     resOpt.get must contain (
-      ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no'.")
+      ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated.")
     )
   }
 

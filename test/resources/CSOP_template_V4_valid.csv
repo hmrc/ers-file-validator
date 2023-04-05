@@ -15,8 +15,7 @@ Employee first name","3.
 Employee second name
 (if applicable)","4.
 Employee last name","5.
-National Insurance number
-(if applicable)","6.
+National Insurance number","6.
 PAYE reference of employing company","7.
 Date of grant
 (yyyy-mm-dd)","8.
@@ -38,7 +37,7 @@ Unrestricted market value (UMV) of a share on the date of exercise
 e.g. 10.1234","14.
 If the answer to question 10 is no, was the market value agreed with HMRC?
 (yes/no)","15.
-If yes enter the HMRC reference given","16.
+If yes, enter the HMRC valuation reference given","16.
 Does the exercise qualify for tax relief?
 (yes/no)","17.
 Was PAYE operated?

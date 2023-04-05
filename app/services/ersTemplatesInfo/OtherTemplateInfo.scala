@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +20,15 @@ trait OtherTemplateInfo {
 
   val other="OTHER"
 
-  val otherSheet1Name = "Other_Grants_V3"
-  val otherSheet2Name = "Other_Options_V3"
-  val otherSheet3Name = "Other_Acquisition_V3"
-  val otherSheet4Name = "Other_RestrictedSecurities_V3"
-  val otherSheet5Name = "Other_OtherBenefits_V3"
-  val otherSheet6Name = "Other_Convertible_V3"
-  val otherSheet7Name = "Other_Notional_V3"
-  val otherSheet8Name = "Other_Enhancement_V3"
-  val otherSheet9Name = "Other_Sold_V3"
+  val otherSheet1Name = "Other_Grants_V4"
+  val otherSheet2Name = "Other_Options_V4"
+  val otherSheet3Name = "Other_Acquisition_V4"
+  val otherSheet4Name = "Other_RestrictedSecurities_V4"
+  val otherSheet5Name = "Other_OtherBenefits_V4"
+  val otherSheet6Name = "Other_Convertible_V4"
+  val otherSheet7Name = "Other_Notional_V4"
+  val otherSheet8Name = "Other_Enhancement_V4"
+  val otherSheet9Name = "Other_Sold_V4"
 
 
   val otherSheet1Desc = "Other ERS schemes or arrangements – Grant of securities options, including Restricted Stock Units (RSUs)"
@@ -65,7 +65,7 @@ trait OtherTemplateInfo {
     "4.Employee first name",
     "5.Employee second name (if applicable)",
     "6.Employee last name",
-    "7.National Insurance Number (if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference of employing company",
     "9.Date of grant of option subject to the reportable event yyyy-mm-dd",
     "10.Grantor company name",
@@ -94,7 +94,7 @@ trait OtherTemplateInfo {
     "33.If securities were acquired, Market Value (see note in guidance) of a security on the date of acquisition £ e.g. 10.1234",
     "34.If shares were acquired, are the shares listed on a recognised stock exchange? (yes/no).If yes go to question 37 If no go to next question",
     "35.If shares were not listed on a recognised stock exchange, was valuation agreed with HMRC? (yes/no)",
-    "36.If yes, enter the HMRC reference given",
+    "36.If yes, enter the HMRC valuation reference given",
     "37.If the shares were acquired, total deductible amount excluding any consideration given for the securities £ e.g. 10.1234. Then go to question 40",
     "38.If securities were not acquired, was money or value received on the release, assignment, cancellation or lapse of the option? (yes/no) If yes go to next question If no, no further information required on this event.",
     "39.If yes, amount of money or value received £ e.g. 10.1234"	,
@@ -110,7 +110,7 @@ trait OtherTemplateInfo {
     "4.Employee first name",
     "5.Employee second name (if applicable)",
     "6.Employee last name",
-    "7.National Insurance number (if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference of employing company",
     "9.Name of the company whose securities acquired",
     "10.Company whose securities acquired – Address line 1",
@@ -126,7 +126,7 @@ trait OtherTemplateInfo {
     "20.If the securities are not shares enter ' no' and go to question 24 If the securities are shares, are they part of the largest class of shares in the company? (yes/no)",
     "21.If the securities are shares, are they listed on a recognised stock exchange? (yes/no) If no go to question 22, If yes go to question 24",
     "22.If shares were not listed on a recognised stock exchange, was valuation agreed with HMRC? (yes/no)",
-    "23.If yes, enter the HMRC reference given",
+    "23.If yes, enter the HMRC valuation reference given",
     "24.Number of securities acquired e.g. 100.00",
     "25.Security type. Enter a number from 1 to 3, (follow the link at cell A7 for a list of security types). If restricted go to next question. If convertible go to question 32.If both restricted and convertible enter 1 and answer all questions 26 to 32. If neither restricted nor convertible go to question 29.",
     "26.If restricted, nature of restriction. Enter a number from 1-3, follow the link at cell A7 for a list of restrictions",
@@ -153,14 +153,14 @@ trait OtherTemplateInfo {
     "4.Employee first name",
     "5.Employee second name (if applicable)",
     "6.Employee last name",
-    "7.National Insurance Number (if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference of employing company",
     "9.Date securities originally acquired (yyyy-mm-dd)",
     "10.Number of securities originally acquired e.g. 100.00",
     "11.For disposals or lifting of restrictions, total chargeable amount £ e.g. 10.1234",
     "12.For lifting of restrictions, are the shares listed on a recognised stock exchange? (yes/no)",
     "13.If shares were not listed on a recognised stock exchange, was valuation agreed with HMRC? (yes/no)",
-    "14.If yes, enter the HMRC reference given",
+    "14.If yes, enter the HMRC valuation reference given",
     "15.For variations, date of variation (yyyy-mm-dd)",
     "16.For variations, Actual Market Value (AMV) per security directly before variation £ e.g. 10.1234",
     "17.For variations, Actual Market Value (AMV) per security directly after variation £ e.g. 10.1234",
@@ -176,7 +176,7 @@ trait OtherTemplateInfo {
     "4.Employee first name",
     "5.Employee second name (if applicable)",
     "6.Employee last name",
-    "7.National Insurance number (if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference of employing company",
     "9.Date securities originally acquired (yyyy-mm-dd)",
     "10.Number of securities originally acquired e.g. 100.00",
@@ -192,7 +192,7 @@ trait OtherTemplateInfo {
     "4.Employee first name",
     "5.Employee second name (if applicable)",
     "6.Employee last name",
-    "7.National Insurance number (if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference of employing company",
     "9.Date securities originally acquired (yyyy-mm-dd)",
     "10.Number of securities originally acquired e.g. 100.00",
@@ -210,7 +210,7 @@ trait OtherTemplateInfo {
     "4.Employee first name",
     "5.Employee second name (if applicable)",
     "6.Employee last name",
-    "7.National Insurance number (if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference of employing company",
     "9.Date securities originally acquired (yyyy-mm-dd)",
     "10.Number of securities originally acquired e.g 100.00",
@@ -226,7 +226,7 @@ trait OtherTemplateInfo {
     "4.Employee first name",
     "5.Employee second name (if applicable)",
     "6.Employee last name",
-    "7.National Insurance number (if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference of employing company",
     "9.Date securities originally acquired (yyyy-mm-dd)",
     "10.Number of securities originally acquired e.g. 100.00",
@@ -243,7 +243,7 @@ trait OtherTemplateInfo {
     "4.Employee first name",
     "5.Employee second name (if applicable)",
     "6.Employee last name",
-    "7.National Insurance number (if applicable)",
+    "7.National Insurance number",
     "8.PAYE reference of employing company",
     "9.Number of securities originally acquired e.g. 100.00",
     "10.Amount received on disposal £ e.g. 10.1234",

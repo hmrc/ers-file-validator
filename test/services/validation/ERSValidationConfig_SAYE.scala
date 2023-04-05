@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 
 class ERSValidationConfig_SAYE_SayeGrantedTests extends PlaySpec with ERSValidationSAYEGrantedTestData with ValidationTestRunner {
-  "SAYE Granted V3 scheme config validation" should {
+  "SAYE Granted V4 scheme config validation" should {
 
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-saye-granted-validation-config"))
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
@@ -67,7 +67,7 @@ class ERSValidationConfig_SAYE_SayeRCLTests extends PlaySpec with ERSValidationS
 }
 
 class ERSValidationConfig_SAYE_ExercisedTests extends PlaySpec with ERSValidationSAYEExercisedTestData with ValidationTestRunner {
-  "SAYE Exercised V3 scheme config validation" should {
+  "SAYE Exercised V4 scheme config validation" should {
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-saye-exercised-validation-config"))
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
 

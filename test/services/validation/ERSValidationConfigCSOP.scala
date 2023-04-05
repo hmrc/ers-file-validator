@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ import services.validation.CSOPTestData.{ERSValidationCSOPExercisedTestData, ERS
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 
-class CSOPOptionsGrantedV3ValidationCSOPTest extends PlaySpec with ERSValidationCSOPGrantedTestData with ValidationTestRunner{
+class CSOPOptionsGrantedV4ValidationCSOPTest extends PlaySpec with ERSValidationCSOPGrantedTestData with ValidationTestRunner{
 
   " ERS CSOP Granted Validation tests" should {
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-csop-granted-validation-config"))
