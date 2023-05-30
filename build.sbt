@@ -31,7 +31,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(defaultSettings(): _*)
   .settings(
     targetJvm := "jvm-1.8",
-    scalaVersion := "2.12.16",
+    scalaVersion := "2.13.10",
     libraryDependencies ++= appDependencies,
     Test / parallelExecution := false,
     Test / fork := true,
@@ -43,7 +43,9 @@ lazy val microservice = Project(appName, file("."))
   .settings(PlayKeys.playDefaultPort := 9226)
 
 scalacOptions ++= Seq(
-  "-P:silencer:pathFilters=views;routes"
+  "-Wconf:src=routes/.*:s"
 )
+
+libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
 
 addCommandAlias("scalastyleAll", "all scalastyle test:scalastyle")
