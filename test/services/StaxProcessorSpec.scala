@@ -36,7 +36,7 @@ class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {
       val inputXml = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
       val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))
       processor.hasNext
-      processor.next must equal("CSOP_OptionsGranted_V4")
+      processor.next() must equal("CSOP_OptionsGranted_V4")
     }
 
     "information can be extracted from incoming string" in {
@@ -54,21 +54,21 @@ class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {
       val processor = new StaxProcessor(constructXmlDocument(simpleXml, simpleXml2))
 
       processor.hasNext
-      processor.next
+      processor.next()
       processor.hasNext
-      processor.next must equal("table2")
+      processor.next() must equal("table2")
     }
 
     "return the first row of the table as xml" in {
       val processor = new StaxProcessor(constructXmlDocument(simpleTableWithARow))
       processor.hasNext
-      processor.next
-      processor.next must equal("<table:table-row table:style-name='ro5'><table:table-cell table:style-name='ce6' calcext:value-type='string'><text:p>4.</text:p></table:table-cell></table:table-row>")
+      processor.next()
+      processor.next() must equal("<table:table-row table:style-name='ro5'><table:table-cell table:style-name='ce6' calcext:value-type='string'><text:p>4.</text:p></table:table-cell></table:table-row>")
     }
 
     "return Nothing if xml does not contain table fields and hasNext not been called " in {
       val processor = new StaxProcessor(constructXmlDocument(withoutTableXml))
-      processor.next must equal("--NOT-FOUND--")
+      processor.next() must equal("--NOT-FOUND--")
     }
   }
 }

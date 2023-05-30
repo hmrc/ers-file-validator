@@ -19,6 +19,7 @@ package services
 import models._
 import play.api.Logging
 import utils.ErrorResponseMessages
+import scala.collection.mutable.ListBuffer
 
 import javax.xml.parsers.SAXParserFactory
 import scala.util.Try
@@ -71,7 +72,7 @@ trait DataParser extends Logging {
     val colsRepeated = col.attributes.asAttrMap.get(repeatColumnsAttr)
 
     if (colsRepeated.nonEmpty && colsRepeated.get.toInt < 50) {
-      val cols: scala.collection.mutable.MutableList[String] = scala.collection.mutable.MutableList()
+      val cols: ListBuffer[String] = ListBuffer()
       for (_ <- 1 to colsRepeated.get.toInt) cols += col.text
       cols.toSeq
     }

@@ -23,7 +23,7 @@ import models.upscan.UpscanCallback
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfter
+import org.scalatest.{BeforeAndAfter, EitherValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -41,7 +41,7 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.Application
 
-class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with BeforeAndAfter with GuiceOneAppPerSuite {
+class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with BeforeAndAfter with EitherValues with GuiceOneAppPerSuite {
 
   override lazy implicit val app: Application = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
   implicit def materializer: Materializer = Play.materializer
@@ -81,8 +81,8 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
         .thenReturn(Future.successful(HttpResponse(Status.OK, "Please check for me!")))
       val response = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
       assert(response.isRight)
-      response.right.get.status must equal(Status.OK)
-      response.right.get.body must equal("Please check for me!")
+      response.value.status must equal(Status.OK)
+      response.value.body must equal("Please check for me!")
     }
 
     "return a ERSFileProcessingException when receiving a BadRequestException" in {
@@ -134,8 +134,8 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
         .thenReturn(Future.successful(HttpResponse(Status.OK, "Please check for me!")))
       val response = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
       assert(response.isRight)
-      response.right.get.status must equal(Status.OK)
-      response.right.get.body must equal("Please check for me!")
+      response.value must equal(Status.OK)
+      response.value must equal("Please check for me!")
     }
 
     "return a ERSFileProcessingException when receiving a BadRequestException" in {

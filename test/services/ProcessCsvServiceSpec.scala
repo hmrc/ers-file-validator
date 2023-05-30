@@ -42,13 +42,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 import utils.ErrorResponseMessages
+import org.scalatest.EitherValues
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
-class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with TimeLimits with ScalaFutures {
+class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with TimeLimits with ScalaFutures with EitherValues {
 
   val mockDataGenerator: DataGenerator = mock[DataGenerator]
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
@@ -93,7 +94,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val result = testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
         "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
 
-      result.left.get mustBe ERSFileProcessingException(
+      result.value mustBe ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserFileInvalid}",
         s"${ErrorResponseMessages.dataParserValidationFailure}")
       assert(result.isLeft)
@@ -112,7 +113,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         "CSOP_OptionsGranted_V4.csv", schemeInfo, dataValidator, sheetTest)
 
       assert(result.isRight)
-      result.right.get mustBe List("thisIsARow", "With", "ManyValues")
+      result.value mustBe List("thisIsARow", "With", "ManyValues")
     }
 
     "return throwable if validateRow returned a throwable" in {
@@ -129,7 +130,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
 
       assert(result.isLeft)
-      result.left.get.getMessage mustBe "this validation failed"
+      result.value mustBe "this validation failed"
     }
   }
 
@@ -189,7 +190,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       assert(boolList.head.isLeft)
-      boolList.head.left.get.getMessage mustBe "ers.exceptions.dataParser.configFailure"
+      boolList.head.value mustBe "ers.exceptions.dataParser.configFailure"
       assert(boolList.forall(_.isLeft))
     }
 
@@ -210,7 +211,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       assert(boolList.head.isLeft)
-      boolList.head.left.get.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
+      boolList.head.value mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
       assert(boolList.forall(_.isLeft))
     }
 
@@ -261,7 +262,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       assert(boolList.head.isLeft)
-      boolList.head.left.get.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
+      boolList.head.value mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
       assert(boolList.forall(_.isLeft))
     }
 
@@ -336,10 +337,10 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val result = Await.result(resultFuture, Duration.Inf)
 
       assert(result.head.isRight)
-      result.head.right.get mustBe List(ByteString("0"), ByteString("1"), ByteString("2"), ByteString("3"))
+      result.head.value mustBe List(ByteString("0"), ByteString("1"), ByteString("2"), ByteString("3"))
 
       assert(result(1).isRight)
-      result(1).right.get mustBe List(ByteString("4"), ByteString("5"))
+      result(1).value mustBe List(ByteString("4"), ByteString("5"))
 
       result.length mustBe 2
     }
@@ -369,7 +370,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         .extractSchemeData(schemeInfo, "anEmpRef", Left(new Exception("hello there")))
 
       assert(result.futureValue.isLeft)
-      result.futureValue.left.get.getMessage mustBe "hello there"
+      result.futureValue.value mustBe "hello there"
     }
 
     "return a Left if sendSchemeCsv finds errors" in {
@@ -383,7 +384,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       )
 
       assert(result.isLeft)
-      result.left.get.getMessage mustBe "this was bad"
+      result.value mustBe "this was bad"
     }
 
     "return a Right if sendSchemeCsv is happy" in {
@@ -397,7 +398,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       )
 
       assert(result.isRight)
-      result.right.get mustBe CsvFileLengthInfo(1, 1)
+      result.value mustBe CsvFileLengthInfo(1, 1)
 
     }
   }
@@ -408,7 +409,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         .extractSchemeDataNew(schemeInfo, "anEmpRef", Left(new Exception("hello there")))
 
       assert(result.futureValue.isLeft)
-      result.futureValue.left.get.getMessage mustBe "hello there"
+      result.futureValue.value mustBe "hello there"
     }
 
     "return a Left if sendSchemeCsv finds errors" in {
@@ -422,7 +423,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       )
 
       assert(result.isLeft)
-      result.left.get.getMessage mustBe "this was bad"
+      result.value mustBe "this was bad"
     }
 
     "return a Right if sendSchemeCsv is happy" in {
@@ -437,7 +438,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       )
 
       assert(result.isRight)
-      result.right.get mustBe CsvFileLengthInfo(1, 1)
+      result.value mustBe CsvFileLengthInfo(1, 1)
 
     }
   }
@@ -551,7 +552,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
           Duration.Inf
         )
         assert(result.isRight)
-        result.right.get mustBe 1
+        result.value mustBe 1
       }
       "follow an unhappy path" in {
         val testService = new MockProcessCsvService(
@@ -565,7 +566,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
           Duration.Inf
         )
         assert(result.isLeft)
-        result.left.get.getMessage mustBe "we did not succeed"
+        result.value mustBe "we did not succeed"
       }
     }
 
@@ -579,13 +580,13 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(10)
         val result: Either[Throwable, Int] = Await.result(
           testService.sendSchemeCsv(SchemeData(schemeInfo, "sheetName", None,
-            (1 to 50).map(int => Seq(int.toString)).to[ListBuffer]),
+            (1 to 50).map(int => Seq(int.toString)).to(ListBuffer)),
             "empRef"),
           Duration.Inf
         )
 
         assert(result.isRight)
-        result.right.get mustBe 5
+        result.value  mustBe 5
       }
 
       "follow an unhappy path" in {
@@ -597,13 +598,13 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(10)
         val result: Either[Throwable, Int] = Await.result(
           testService.sendSchemeCsv(SchemeData(schemeInfo, "sheetName", None,
-            (1 to 50).map(int => Seq(int.toString)).to[ListBuffer]),
+            (1 to 50).map(int => Seq(int.toString)).to(ListBuffer)),
             "empRef"),
           Duration.Inf
         )
 
         assert(result.isLeft)
-        result.left.get.getMessage mustBe "this is bad"
+        result.value mustBe "this is bad"
       }
     }
   }

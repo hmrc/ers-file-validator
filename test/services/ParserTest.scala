@@ -21,7 +21,6 @@ import java.io.FileNotFoundException
 import config.ApplicationConfig
 import models.{ERSFileProcessingException, SchemeInfo}
 import org.joda.time.DateTime
-import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -29,12 +28,13 @@ import play.api.mvc.Request
 import services.XMLTestData._
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
+import org.scalatest.{BeforeAndAfter, EitherValues}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.xml._
 
 
-class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfter with TimeLimits {
+class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with TimeLimits {
 
   object TestDataParser extends DataParser
 
@@ -64,20 +64,20 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
 
   "parse row with duplicate column data 1" in {
     val result = TestDataParser.parse(emiAdjustmentsXMLRow1.toString)
-    result.right.get._1.size must equal(17)
+    result.value._1.size must equal(17)
   }
 
   besParserTests.foreach(rec => {
     rec._1 in {
       val result = TestDataParser.parse(rec._2.toString)
-      result.right.get._1.toList.take(rec._3.size) must be(rec._3)
+      result.value._1.toList.take(rec._3.size) must be(rec._3)
     }
   })
 
   "parse row with repeats" in {
     val result = TestDataParser.parse(emiAdjustmentsRepeatXMLRow1.toString)
-    result.right.get._1.size must equal(17)
-    result.right.get._2 must equal(3)
+    result.value._1.size must equal(17)
+    result.value._2 must equal(3)
   }
 
     "display incorrectSheetName exception in identifyAndDefineSheet method" in {

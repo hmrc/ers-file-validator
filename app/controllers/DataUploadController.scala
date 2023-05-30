@@ -104,7 +104,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
               deliverFileProcessingMetrics(startTime)
               Future(InternalServerError)
             case None =>
-              val result: Seq[CsvFileLengthInfo] = oneFileResults.map(_.right.get)
+              val result: Seq[CsvFileLengthInfo] = oneFileResults.map(_.toOption.get)
               val totalRowCount = result.foldLeft(0) ((accum,inputTuple) => accum + inputTuple.fileLength)
               sessionService.storeCallbackData(res.callbackData.head, totalRowCount).map {
                 case callback: Option[UpscanCallback] if callback.isDefined =>
@@ -154,7 +154,7 @@ class DataUploadController @Inject()(sessionService: SessionService,
               deliverFileProcessingMetrics(startTime)
               Future(InternalServerError)
             case None =>
-              val result: Seq[CsvFileLengthInfo] = allFilesResults.map(_.right.get)
+              val result: Seq[CsvFileLengthInfo] = allFilesResults.map(_.toOption.get)
               val totalRowCount = result.foldLeft(0) ((accum,inputTuple) => accum + inputTuple.fileLength)
               sessionService.storeCallbackData(res.callbackData.head, totalRowCount).map {
                 case callback: Option[UpscanCallback] if callback.isDefined =>

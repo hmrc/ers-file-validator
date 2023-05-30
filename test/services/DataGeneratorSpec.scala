@@ -22,7 +22,7 @@ import models.{ERSFileProcessingException, SchemeInfo}
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfter
+import org.scalatest.{BeforeAndAfter, EitherValues}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -37,7 +37,7 @@ import utils.ErrorResponseMessages
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 
-class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter with HeaderData {
+class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with HeaderData {
 
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
@@ -352,7 +352,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
       val result = testService.getSheetCsv("aName", schemeInfo)
       assert(result.isRight)
-      result.right.get mustBe sheetTest
+      result.value mustBe sheetTest
     }
 
     "return a right if sheetname is not found in sheets" in {
@@ -362,7 +362,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
       val result = testService.getSheetCsv("aWrongName", schemeInfo)
       assert(result.isLeft)
-      result.left.get mustBe ERSFileProcessingException(
+      result.value mustBe ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
         s"${ErrorResponseMessages.dataParserUnidentifiableSheetName("aWrongName")}")
 

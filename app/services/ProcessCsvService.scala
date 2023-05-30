@@ -159,7 +159,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       csvFileContents => {
         logger.debug("2.1 result contains: " + csvFileContents)
         logger.debug("No if SchemeData Objects " + csvFileContents.contents.size)
-        sendSchemeCsv(SchemeData(schemeInfo, csvFileContents.sheetName, None, csvFileContents.contents.to[ListBuffer]), empRef).map { issues =>
+        sendSchemeCsv(SchemeData(schemeInfo, csvFileContents.sheetName, None, csvFileContents.contents.to(ListBuffer)), empRef).map { issues =>
           issues.fold(
             throwable => Left(throwable),
             noOfSlices => Right(CsvFileLengthInfo(noOfSlices, csvFileContents.contents.size))
