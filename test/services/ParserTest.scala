@@ -16,8 +16,6 @@
 
 package services
 
-import java.io.FileNotFoundException
-
 import config.ApplicationConfig
 import models.{ERSFileProcessingException, SchemeInfo}
 import org.joda.time.DateTime
@@ -137,7 +135,7 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     }
 
     "Show that scala.xml.XML tries to access file system with malicious payload " in {
-      intercept[FileNotFoundException] {
+      intercept[SAXParseException] {
         XML.loadString(FileSystemReadXxePayload)
       }
     }

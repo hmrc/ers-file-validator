@@ -134,8 +134,8 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
         .thenReturn(Future.successful(HttpResponse(Status.OK, "Please check for me!")))
       val response = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
       assert(response.isRight)
-      response.value must equal(Status.OK)
-      response.value must equal("Please check for me!")
+      response.value.status must equal(Status.OK)
+      response.value.body must equal("Please check for me!")
     }
 
     "return a ERSFileProcessingException when receiving a BadRequestException" in {

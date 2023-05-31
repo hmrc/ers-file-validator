@@ -94,7 +94,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val result = testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
         "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
 
-      result.value mustBe ERSFileProcessingException(
+      result.swap.value mustBe ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserFileInvalid}",
         s"${ErrorResponseMessages.dataParserValidationFailure}")
       assert(result.isLeft)
@@ -130,7 +130,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
 
       assert(result.isLeft)
-      result.value mustBe "this validation failed"
+      result.swap.value.getMessage mustBe "this validation failed"
     }
   }
 
@@ -190,7 +190,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       assert(boolList.head.isLeft)
-      boolList.head.value mustBe "ers.exceptions.dataParser.configFailure"
+      boolList.head.swap.value.getMessage mustBe "ers.exceptions.dataParser.configFailure"
       assert(boolList.forall(_.isLeft))
     }
 
@@ -211,7 +211,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       assert(boolList.head.isLeft)
-      boolList.head.value mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
+      boolList.head.swap.value.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
       assert(boolList.forall(_.isLeft))
     }
 
@@ -262,7 +262,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       assert(boolList.head.isLeft)
-      boolList.head.value mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
+      boolList.head.swap.value.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
       assert(boolList.forall(_.isLeft))
     }
 
@@ -370,7 +370,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         .extractSchemeData(schemeInfo, "anEmpRef", Left(new Exception("hello there")))
 
       assert(result.futureValue.isLeft)
-      result.futureValue.value mustBe "hello there"
+      result.futureValue.swap.value.getMessage mustBe "hello there"
     }
 
     "return a Left if sendSchemeCsv finds errors" in {
@@ -384,7 +384,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       )
 
       assert(result.isLeft)
-      result.value mustBe "this was bad"
+      result.swap.value.getMessage mustBe "this was bad"
     }
 
     "return a Right if sendSchemeCsv is happy" in {
@@ -409,7 +409,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         .extractSchemeDataNew(schemeInfo, "anEmpRef", Left(new Exception("hello there")))
 
       assert(result.futureValue.isLeft)
-      result.futureValue.value mustBe "hello there"
+      result.futureValue.swap.value.getMessage mustBe "hello there"
     }
 
     "return a Left if sendSchemeCsv finds errors" in {
@@ -423,7 +423,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       )
 
       assert(result.isLeft)
-      result.value mustBe "this was bad"
+      result.swap.value.getMessage mustBe "this was bad"
     }
 
     "return a Right if sendSchemeCsv is happy" in {
@@ -566,7 +566,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
           Duration.Inf
         )
         assert(result.isLeft)
-        result.value mustBe "we did not succeed"
+        result.swap.value.getMessage mustBe "we did not succeed"
       }
     }
 
@@ -604,7 +604,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         )
 
         assert(result.isLeft)
-        result.value mustBe "this is bad"
+        result.swap.value.getMessage mustBe "this is bad"
       }
     }
   }

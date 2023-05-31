@@ -355,14 +355,14 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       result.value mustBe sheetTest
     }
 
-    "return a right if sheetname is not found in sheets" in {
+    "return a left if sheetname is not found in sheets" in {
 
       val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
       val testService: DataGenerator = testServiceCreator(Map("anotherName" -> sheetTest))
 
       val result = testService.getSheetCsv("aWrongName", schemeInfo)
       assert(result.isLeft)
-      result.value mustBe ERSFileProcessingException(
+      result.swap.value mustBe ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
         s"${ErrorResponseMessages.dataParserUnidentifiableSheetName("aWrongName")}")
 
