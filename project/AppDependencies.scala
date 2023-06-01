@@ -15,7 +15,7 @@ object AppDependencies {
     "com.typesafe.akka"      %% "akka-protobuf"              % akkaVersion,
     "com.typesafe.akka"      %% "akka-actor-typed"           % akkaVersion,
     "com.typesafe.akka"      %% "akka-serialization-jackson" % akkaVersion,
-    "com.typesafe.akka"      %% "akka-http-spray-json"       % "10.5.2",
+    "com.typesafe.akka"      %% "akka-http-spray-json"       % "10.2.10",
     "org.scala-lang.modules" %% "scala-xml"                  % "2.1.0",
     "uk.gov.hmrc"            %% "bootstrap-backend-play-28"  % bootstrapVersion,
     "uk.gov.hmrc"            %% "domain"                     % "8.3.0-play-28",
