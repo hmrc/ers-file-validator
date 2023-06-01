@@ -4,7 +4,7 @@ import sbt._
 object AppDependencies {
 
   val bootstrapVersion = "7.15.0"
-  val akkaVersion = "2.6.20"
+  val akkaVersion = "2.7.0"
 
   val compile: Seq[ModuleID] = Seq(
     ws,

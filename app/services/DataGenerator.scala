@@ -80,7 +80,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
           validator = setValidator(sheetName)
         }
         case _ =>
-          for (i <- 1 to rowData.right.get._2) {
+          for (i <- 1 to rowData.toOption.get._2) {
             rowNum match {
               case count if count < 9 => {
                 logger.debug("GetData: incRowNum if count < 9: " + count + " RowNum: " + rowNum)
@@ -88,11 +88,11 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
               }
               case 9 => {
                 logger.debug("GetData: incRowNum if  9: " + rowNum + "sheetColSize: " + sheetColSize)
-                sheetColSize = validateHeaderRow(rowData.right.get._1, sheetName)
+                sheetColSize = validateHeaderRow(rowData.toOption.get._1, sheetName)
                 incRowNum()
               }
               case _ => {
-                val foundData = rowData.right.get._1
+                val foundData = rowData.toOption.get._1
 
                 val data = constructColumnData(foundData, sheetColSize)
 
