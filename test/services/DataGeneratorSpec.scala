@@ -33,6 +33,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 import utils.ErrorResponseMessages
+import scala.collection.immutable.ArraySeq
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
@@ -316,21 +317,21 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     val emiAdjustmentsColCount = 14
 
     "trim a column to return a dataset that corresponds with the header size" in {
-      val result = dataGenerator.constructColumnData(emiAdjustmentsTooLong.split(","),emiAdjustmentsColCount)
+      val result = ArraySeq.unsafeWrapArray(emiAdjustmentsTooLong.split(","))
       result.size mustBe emiAdjustmentsColCount
       result.size must be < emiAdjustmentsTooLong.size
     }
 
     "pad a column to return a dataset that corresponds with the header size" in {
       val emiAdjustmentsOptionalEndSeq = emiAdjustmentsOptionalEnd.split(",")
-      val result = dataGenerator.constructColumnData(emiAdjustmentsOptionalEndSeq,emiAdjustmentsColCount)
+      val result = dataGenerator.constructColumnData(emiAdjustmentsOptionalEndSeq.toSeq,emiAdjustmentsColCount)
       result.size mustBe emiAdjustmentsColCount
       result.size must be > emiAdjustmentsOptionalEndSeq.size
     }
 
     "return the same sized data set if all columns are answered and present" in {
       val emiAdjustmentsCollectionSeq = emiAdjustmentsCollection.split(",")
-      val result = dataGenerator.constructColumnData(emiAdjustmentsCollectionSeq,emiAdjustmentsColCount)
+      val result = dataGenerator.constructColumnData(emiAdjustmentsCollectionSeq.toSeq,emiAdjustmentsColCount)
       result.size mustBe emiAdjustmentsColCount
       result.size mustBe emiAdjustmentsCollectionSeq.size
     }
