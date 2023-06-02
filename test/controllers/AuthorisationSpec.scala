@@ -64,11 +64,11 @@ class AuthorisationSpec extends AnyWordSpecLike with Matchers with OptionValues 
     val defaultActionBuilder = app.injector.instanceOf(classOf[DefaultActionBuilder])
 
 
-    def testAuthorisedAction(empRef: String): Action[AnyContent] = authorisedAction(empRef) { implicit request =>
+    def testAuthorisedAction(empRef: String): Action[AnyContent] = authorisedAction(empRef) { request =>
       Future.successful(Ok("Successful"))
     }
 
-    def testAuthorisedActionWithBody(empRef: String): Action[JsValue] = authorisedActionWithBody(empRef) { implicit request =>
+    def testAuthorisedActionWithBody(empRef: String): Action[JsValue] = authorisedActionWithBody(empRef) { request =>
       Future.successful(Ok("Successful"))
     }
   }

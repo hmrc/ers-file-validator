@@ -103,7 +103,9 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
                 s"${ErrorResponseMessages.ersCheckCsvFileNoData(sheetName + ".csv")}",
                 s"${ErrorResponseMessages.ersCheckCsvFileNoData()}"))
               case Some(lastRowValidation) => lastRowValidation match {
-                case Right(_) => Right(CsvFileContents(sheetName, sequenceOfEithers.map(_.right.get)))
+                case Right(_) =>
+                  val contents = sequenceOfEithers.collect { case Right(value) => value }
+                  Right(CsvFileContents(sheetName, contents))
                 case Left(exception) => Left(exception)
               }
             }
@@ -159,7 +161,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       csvFileContents => {
         logger.debug("2.1 result contains: " + csvFileContents)
         logger.debug("No if SchemeData Objects " + csvFileContents.contents.size)
-        sendSchemeCsv(SchemeData(schemeInfo, csvFileContents.sheetName, None, csvFileContents.contents.to[ListBuffer]), empRef).map { issues =>
+        sendSchemeCsv(SchemeData(schemeInfo, csvFileContents.sheetName, None, csvFileContents.contents.to(ListBuffer)), empRef).map { issues =>
           issues.fold(
             throwable => Left(throwable),
             noOfSlices => Right(CsvFileLengthInfo(noOfSlices, csvFileContents.contents.size))

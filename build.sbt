@@ -1,9 +1,9 @@
-import uk.gov.hmrc._
-import DefaultBuildSettings._
+import uk.gov.hmrc.*
+import DefaultBuildSettings.*
 import play.sbt.PlayImport.PlayKeys
 import play.sbt.routes.RoutesKeys.{InjectedRoutesGenerator, routesGenerator}
-import sbt.Keys._
-import sbt._
+import sbt.Keys.*
+import sbt.*
 import scoverage.ScoverageKeys
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
@@ -25,13 +25,12 @@ lazy val scoverageSettings = {
 }
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(plugins: _*)
-  .settings(scoverageSettings: _*)
-  .settings(scalaSettings: _*)
-  .settings(defaultSettings(): _*)
+  .enablePlugins(plugins *)
+  .settings(scoverageSettings *)
+  .settings(scalaSettings *)
+  .settings(defaultSettings() *)
   .settings(
-    targetJvm := "jvm-1.8",
-    scalaVersion := "2.12.16",
+    scalaVersion := "2.13.10",
     libraryDependencies ++= appDependencies,
     Test / parallelExecution := false,
     Test / fork := true,
@@ -43,7 +42,9 @@ lazy val microservice = Project(appName, file("."))
   .settings(PlayKeys.playDefaultPort := 9226)
 
 scalacOptions ++= Seq(
-  "-P:silencer:pathFilters=views;routes"
+  "-Wconf:src=routes/.*:s"
 )
+
+libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
 
 addCommandAlias("scalastyleAll", "all scalastyle test:scalastyle")

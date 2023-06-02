@@ -72,7 +72,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
       mockAuthorisedActionWithBody(empRef: String)(body: AsyncRequestJson)
 
-    val mockSource: Source[HttpResponse, NotUsed] = Source.fromIterator(() => List(HttpResponse(StatusCodes.OK)).toIterator)
+    val mockSource: Source[HttpResponse, NotUsed] = Source.fromIterator(() => List(HttpResponse(StatusCodes.OK)).iterator)
 
     override private[controllers] def streamFile(downloadUrl: String): Source[HttpResponse, _] = mockSource
   }

@@ -22,7 +22,7 @@ import models.{ERSFileProcessingException, SchemeInfo}
 import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfter
+import org.scalatest.{BeforeAndAfter, EitherValues}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -33,11 +33,12 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 import utils.ErrorResponseMessages
+import scala.collection.immutable.ArraySeq
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 
-class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter with HeaderData {
+class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with HeaderData {
 
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
@@ -316,21 +317,21 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     val emiAdjustmentsColCount = 14
 
     "trim a column to return a dataset that corresponds with the header size" in {
-      val result = dataGenerator.constructColumnData(emiAdjustmentsTooLong.split(","),emiAdjustmentsColCount)
+      val result = ArraySeq.unsafeWrapArray(emiAdjustmentsTooLong.split(","))
       result.size mustBe emiAdjustmentsColCount
       result.size must be < emiAdjustmentsTooLong.size
     }
 
     "pad a column to return a dataset that corresponds with the header size" in {
       val emiAdjustmentsOptionalEndSeq = emiAdjustmentsOptionalEnd.split(",")
-      val result = dataGenerator.constructColumnData(emiAdjustmentsOptionalEndSeq,emiAdjustmentsColCount)
+      val result = dataGenerator.constructColumnData(emiAdjustmentsOptionalEndSeq.toSeq,emiAdjustmentsColCount)
       result.size mustBe emiAdjustmentsColCount
       result.size must be > emiAdjustmentsOptionalEndSeq.size
     }
 
     "return the same sized data set if all columns are answered and present" in {
       val emiAdjustmentsCollectionSeq = emiAdjustmentsCollection.split(",")
-      val result = dataGenerator.constructColumnData(emiAdjustmentsCollectionSeq,emiAdjustmentsColCount)
+      val result = dataGenerator.constructColumnData(emiAdjustmentsCollectionSeq.toSeq,emiAdjustmentsColCount)
       result.size mustBe emiAdjustmentsColCount
       result.size mustBe emiAdjustmentsCollectionSeq.size
     }
@@ -352,17 +353,17 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
       val result = testService.getSheetCsv("aName", schemeInfo)
       assert(result.isRight)
-      result.right.get mustBe sheetTest
+      result.value mustBe sheetTest
     }
 
-    "return a right if sheetname is not found in sheets" in {
+    "return a left if sheetname is not found in sheets" in {
 
       val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
       val testService: DataGenerator = testServiceCreator(Map("anotherName" -> sheetTest))
 
       val result = testService.getSheetCsv("aWrongName", schemeInfo)
       assert(result.isLeft)
-      result.left.get mustBe ERSFileProcessingException(
+      result.swap.value mustBe ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
         s"${ErrorResponseMessages.dataParserUnidentifiableSheetName("aWrongName")}")
 

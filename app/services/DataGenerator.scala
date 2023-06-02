@@ -68,36 +68,32 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       val row = iterator.next()
       val rowData = parse(row)
       logger.debug(" parsed data ---> " + rowData + " -- cursor --> " + rowNum)
-      rowData.isLeft match {
-        case true => {
-          checkForMissingHeaders(rowNum)
-          sheetName = identifyAndDefineSheet(rowData.left.get)
-          logger.debug("Sheetname = " + sheetName + "******")
-          logger.debug("SCHEME TYPE = " + schemeInfo.schemeType + "******")
-          schemeData += SchemeData(schemeInfo, sheetName, None, ListBuffer())
-          logger.debug("SchemeData = " + schemeData.size + "******")
-          rowNum = 1
-          validator = setValidator(sheetName)
-        }
-        case _ =>
-          for (i <- 1 to rowData.right.get._2) {
+      if (rowData.isLeft) {
+        checkForMissingHeaders(rowNum)
+        sheetName = identifyAndDefineSheet(rowData.swap.getOrElse(""))
+        logger.debug("Sheetname = " + sheetName + "******")
+        logger.debug("SCHEME TYPE = " + schemeInfo.schemeType + "******")
+        schemeData += SchemeData(schemeInfo, sheetName, None, ListBuffer())
+        logger.debug("SchemeData = " + schemeData.size + "******")
+        rowNum = 1
+        validator = setValidator(sheetName)
+      } else {
+        rowData.map { rd =>
+          (1 to rd._2).foreach { _ =>
             rowNum match {
-              case count if count < 9 => {
-                logger.debug("GetData: incRowNum if count < 9: " + count + " RowNum: " + rowNum)
+              case count if count < 9 =>
+                logger.debug("[DataGenerator][getErrors] GetData: incRowNum if count < 9: " + count + " RowNum: " + rowNum)
                 incRowNum()
-              }
-              case 9 => {
-                logger.debug("GetData: incRowNum if  9: " + rowNum + "sheetColSize: " + sheetColSize)
-                sheetColSize = validateHeaderRow(rowData.right.get._1, sheetName)
+              case 9 =>
+                logger.debug("[DataGenerator][getErrors] GetData: incRowNum if  9: " + rowNum + "sheetColSize: " + sheetColSize)
+                logger.debug("[DataGenerator][getErrors] sheetName--->" + sheetName)
+                sheetColSize = validateHeaderRow(rd._1, sheetName)
                 incRowNum()
-              }
-              case _ => {
-                val foundData = rowData.right.get._1
-
+              case _ =>
+                val foundData = rd._1
                 val data = constructColumnData(foundData, sheetColSize)
-
-                if (!isBlankRow(data)) {
-                  schemeData.last.data += generateRowData(data, rowNum, validator) //(schemeInfo,sheetName)
+                if (!isBlankRow(data.toSeq)) {
+                  schemeData.last.data += generateRowData(data, rowNum, validator)
                 }
                 incRowNum()
               }
@@ -169,8 +165,6 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       data
     } else {
       auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
-      // Adjusting this log until this investigation is complete https://jira.tools.tax.service.gov.uk/browse/DDCE-3208
-      //logger.warn(s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
       logger.warn(ErrorResponseMessages.dataParserIncorrectSchemeType())
       throw ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSchemeType()}",
