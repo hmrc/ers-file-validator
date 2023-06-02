@@ -23,14 +23,13 @@ object AppDependencies {
     "uk.gov.hmrc"            %% "tabular-data-validator"     % "1.7.0"
   )
   val test: Seq[ModuleID] = Seq(
-    "com.typesafe.akka"     %% "akka-testkit"             % akkaVersion,
-    "com.vladsch.flexmark"  %  "flexmark-all"             % "0.64.8",
-    "org.jsoup"             %  "jsoup"                    % "1.16.1",
-    "org.scalatestplus"     %% "mockito-3-4"              % "3.2.10.0",
-    "uk.gov.hmrc"           %% "bootstrap-test-play-28"   % bootstrapVersion,
-    "org.scalatest" %% "scalatest" % "3.2.16",
-    "org.scalatestplus" %% "mockito-4-11" % "3.2.16.0",
-    "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0"
+    "com.typesafe.akka"       %% "akka-testkit"             % akkaVersion,
+    "com.vladsch.flexmark"    %  "flexmark-all"             % "0.64.8",
+    "org.jsoup"               %  "jsoup"                    % "1.16.1",
+    "org.scalatestplus"       %% "mockito-3-4"              % "3.2.10.0",
+    "uk.gov.hmrc"             %% "bootstrap-test-play-28"   % bootstrapVersion,
+    "org.scalatest"           %% "scalatest"                % "3.2.16",
+    "org.scalatestplus.play"  %% "scalatestplus-play"       % "5.1.0"
   ).map(_ % "test")
 
   val all: Seq[ModuleID] = compile ++ test
