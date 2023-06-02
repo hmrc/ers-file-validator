@@ -26,6 +26,7 @@ lazy val scoverageSettings = {
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(plugins *)
+  .disablePlugins(JUnitXmlReportPlugin)
   .settings(scoverageSettings *)
   .settings(scalaSettings *)
   .settings(defaultSettings() *)
