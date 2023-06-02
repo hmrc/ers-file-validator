@@ -103,7 +103,9 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
                 s"${ErrorResponseMessages.ersCheckCsvFileNoData(sheetName + ".csv")}",
                 s"${ErrorResponseMessages.ersCheckCsvFileNoData()}"))
               case Some(lastRowValidation) => lastRowValidation match {
-                case Right(_) => Right(CsvFileContents(sheetName, sequenceOfEithers.map(_.toOption.get)))
+                case Right(_) =>
+                  val contents = sequenceOfEithers.collect { case Right(value) => value }
+                  Right(CsvFileContents(sheetName, contents))
                 case Left(exception) => Left(exception)
               }
             }
