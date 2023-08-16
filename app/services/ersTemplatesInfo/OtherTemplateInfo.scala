@@ -97,7 +97,7 @@ trait OtherTemplateInfo {
     "36.If yes, enter the HMRC valuation reference given",
     "37.If the shares were acquired, total deductible amount excluding any consideration given for the securities £ e.g. 10.1234. Then go to question 40",
     "38.If securities were not acquired, was money or value received on the release, assignment, cancellation or lapse of the option? (yes/no) If yes go to next question If no, no further information required on this event.",
-    "39.If yes, amount of money or value received £ e.g. 10.1234"	,
+    "39.If yes, amount of money or value received £ e.g. 10.1234",
     "40.Was a NICs election or agreement operated? (yes/no)",
     "41.Was PAYE operated? (yes/no)",
     "42.Was any adjustment made for amounts subject to apportionment for residence or duties outside the UK (yes/no)"

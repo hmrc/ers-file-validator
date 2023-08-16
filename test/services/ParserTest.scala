@@ -50,7 +50,7 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     schemeType = "EMI"
   )
 
-  implicit val schemeName = schemeInfo.schemeName
+  implicit val schemeName: String = schemeInfo.schemeName
   implicit val hc: HeaderCarrier = mock[HeaderCarrier]
   implicit val request: Request[_] = mock[Request[_]]
 

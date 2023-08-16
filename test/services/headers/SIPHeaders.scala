@@ -33,15 +33,15 @@ trait SIPHeaders {
     "5.If matching shares, what is the ratio of matching shares to partnership shares?Enter ratio for example 2:1; 2/1",
     "6.Unrestricted market value (UMV) per share on acquisition or award£e.g. 10.1234",
     "7.Total number of shares acquired or awardede.g. 100.00",
-    "8.Total value of shares acquired or awarded£e.g. 10.1234"	,
+    "8.Total value of shares acquired or awarded£e.g. 10.1234",
     "9.Total number of employees whose award of free shares during the year exceeded the limit of £3,600",
     "10.Total number of employees whose award of free shares during the year was at or below the limit of £3,600",
-    "11.Total number of employees whose award of partnership shares during the year exceeded the limit of £1,800"	,
-    "12.Total number of employees whose award of partnership shares during the year was at or below the limit of £1,800"	,
+    "11.Total number of employees whose award of partnership shares during the year exceeded the limit of £1,800",
+    "12.Total number of employees whose award of partnership shares during the year was at or below the limit of £1,800",
     "13.Total number of employees whose award of matching shares during the year exceeded the limit of £3,600",
-    "14.Total number of employees whose award of matching shares during the year was at or below the limit of £3,600"	,
-    "15.Are the shares listed on a recognised stock exchange?(yes/no)"	,
-    "16.If no, was the market value agreed with HMRC?(yes/no)"	,
+    "14.Total number of employees whose award of matching shares during the year was at or below the limit of £3,600",
+    "15.Are the shares listed on a recognised stock exchange?(yes/no)",
+    "16.If no, was the market value agreed with HMRC?(yes/no)",
    "17.If yes, enter the HMRC valuation reference given"
 
     )
