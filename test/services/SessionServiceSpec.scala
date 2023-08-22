@@ -24,11 +24,12 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
+import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.cache.client.CacheMap
-import scala.language.postfixOps
 
+import scala.language.postfixOps
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
@@ -37,8 +38,8 @@ class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
   val mockSessionCache: ERSFileValidatorSessionCache = mock[ERSFileValidatorSessionCache]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   val sessionService = new SessionService(mockSessionCache, ec)
-  implicit val request = FakeRequest()
-  val hc = HeaderCarrier()
+  implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+  val hc: HeaderCarrier = HeaderCarrier()
 
   "storeCallbackData" must {
     "successfully store attachments callback post data" in {
