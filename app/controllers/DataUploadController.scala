@@ -63,12 +63,12 @@ class DataUploadController @Inject()(sessionService: SessionService,
               Accepted(e.message)
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)
-              logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred: ${er.getMessage}")
+              logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data.")
               InternalServerError
           }
         },
         invalid = e => {
-          logger.error(e.toString())
+          logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data.")
           deliverFileProcessingMetrics(startTime)
           Future.successful(BadRequest(e.toString))
         }
