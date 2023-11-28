@@ -5,6 +5,7 @@ object AppDependencies {
 
   val bootstrapVersion = "7.22.0"
   val akkaVersion = "2.6.21" //Current 'bobby rule' not to upgrade past 2.6.21
+  val mongoVersion     = "1.3.0"
 
   val compile: Seq[ModuleID] = Seq(
     ws,
@@ -19,8 +20,9 @@ object AppDependencies {
     "org.scala-lang.modules" %% "scala-xml"                  % "2.2.0",
     "uk.gov.hmrc"            %% "bootstrap-backend-play-28"  % bootstrapVersion,
     "uk.gov.hmrc"            %% "domain"                     % "8.3.0-play-28",
-    "uk.gov.hmrc"            %% "http-caching-client"        % "10.0.0-play-28",
-    "uk.gov.hmrc"            %% "tabular-data-validator"     % "1.8.0"
+    "uk.gov.hmrc"            %% "tabular-data-validator"     % "1.8.0",
+    "commons-codec"           % "commons-codec"              % "1.15",
+    "uk.gov.hmrc.mongo"      %% "hmrc-mongo-play-28"         % mongoVersion
   )
 
   val test: Seq[ModuleID] = Seq(

@@ -16,7 +16,7 @@
 
 package services
 
-import config.ERSFileValidatorSessionCache
+import repository.ERSFileValidatorSessionRepository
 import models.upscan.UpscanCallback
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
@@ -24,10 +24,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.libs.json._
-import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.{AnyContent, AnyContentAsEmpty}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.cache.client.CacheMap
+import models.cache.CacheMap
+import uk.gov.hmrc.mongo.cache.DataKey
 
 import scala.language.postfixOps
 import scala.concurrent.duration._
@@ -35,11 +36,12 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 
 class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
-  val mockSessionCache: ERSFileValidatorSessionCache = mock[ERSFileValidatorSessionCache]
+  val mockSessionCache: ERSFileValidatorSessionRepository = mock[ERSFileValidatorSessionRepository]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  val sessionService = new SessionService(mockSessionCache, ec)
+  val sessionService = new SessionCacheService(mockSessionCache, ec)
   implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   val hc: HeaderCarrier = HeaderCarrier()
+  val CALLBACK_DATA_KEY = "callback_data_key"
 
   "storeCallbackData" must {
     "successfully store attachments callback post data" in {
@@ -51,7 +53,7 @@ class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
         (any[Writes[UpscanCallback]], any[HeaderCarrier], any()))
         .thenReturn(Future.successful(CacheMap("sessionValue", Map(sessionService.CALLBACK_DATA_KEY -> json))))
 
-      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(hc), 10 seconds)
+      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(FakeRequest[AnyContent]()), 10 seconds)
 
       result.get.length must be(Some(1000L))
       result.get.noOfRows must be (Some(1000))
@@ -65,7 +67,7 @@ class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
         (any[Writes[UpscanCallback]], any[HeaderCarrier], any()))
         .thenReturn(Future.failed(new Exception("")))
 
-      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(hc), 10 seconds)
+      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(FakeRequest[AnyContent]), 10 seconds)
       result mustBe None
     }
   }
