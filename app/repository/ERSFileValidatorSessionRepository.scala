@@ -21,14 +21,13 @@ import models.cache.CacheMap
 import play.api.libs.json.Writes
 import play.api.mvc.Request
 import uk.gov.hmrc.http.SessionKeys
+import uk.gov.hmrc.mongo.cache.{DataKey, SessionCacheRepository}
 import uk.gov.hmrc.mongo.{MongoComponent, TimestampSupport}
 
-import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.mongo.cache.{DataKey, SessionCacheRepository}
-
 import java.util.concurrent.TimeUnit
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ERSFileValidatorSessionRepository @Inject()(mongoComponent: MongoComponent,
@@ -43,16 +42,9 @@ class ERSFileValidatorSessionRepository @Inject()(mongoComponent: MongoComponent
 )(ec) {
 
   def putInSession[T: Writes](dataKey: DataKey[T], data: T)
-                             (implicit request: Request[Any], ec: ExecutionContext): Future[CacheMap] = {
+                             (implicit request: Request[_], ec: ExecutionContext): Future[CacheMap] = {
     cacheRepo
       .put[T](request)(dataKey, data)
       .map(res => CacheMap(res.id, res.data.value.toMap))
   }
-
-  def getAllFromSession(implicit request: Request[_]): Future[Option[CacheMap]] =
-    cacheRepo.findById(request).map(_.map(res => CacheMap(res.id, res.data.value.toMap)))
-
-  def clearSession(implicit request: Request[_]): Future[Unit] =
-    cacheRepo.deleteEntity(request)
-
 }

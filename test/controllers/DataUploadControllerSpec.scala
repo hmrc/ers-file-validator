@@ -265,5 +265,14 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       responses.head shouldBe HttpResponse(StatusCodes.OK)
 
     }
+
+    "process streamFile" in {
+      val result: Future[Seq[HttpResponse]] = secondDataUploadController.streamFile("http://www.test.com").runWith(Sink.seq)
+
+      val responses = Await.result(result, Duration.Inf)
+      responses.length shouldBe 1
+      responses.head shouldBe HttpResponse(StatusCodes.OK)
+
+    }
   }
 }

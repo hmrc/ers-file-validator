@@ -8,6 +8,7 @@ import scoverage.ScoverageKeys
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 
+lazy val IntegrationTest = config("it") extend Test
 
 val appName: String = "ers-file-validator"
 
@@ -30,7 +31,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(scalaSettings *)
   .settings(defaultSettings() *)
   .settings(
-    scalaVersion := "2.13.11",
+    scalaVersion := "2.13.12",
     resolvers += "HMRC-open-artefacts-maven2" at "https://open.artefacts.tax.service.gov.uk/maven2",
     libraryDependencies ++= AppDependencies(),
     Test / parallelExecution := false,
@@ -41,9 +42,20 @@ lazy val microservice = Project(appName, file("."))
   .settings(resolvers += Resolver.jcenterRepo)
   .settings(majorVersion := 1)
   .settings(PlayKeys.playDefaultPort := 9226)
+  .configs(IntegrationTest)
+  .settings(inConfig(IntegrationTest)(itSettings))
 
-scalacOptions ++= Seq(
+
+    scalacOptions ++= Seq(
   "-Wconf:src=routes/.*:s"
+)
+
+lazy val itSettings = integrationTestSettings() ++ Seq(
+  unmanagedSourceDirectories   := Seq(
+    baseDirectory.value / "it"
+  ),
+  parallelExecution            := false,
+  fork                         := true
 )
 
 libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
