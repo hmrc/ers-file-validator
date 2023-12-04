@@ -59,6 +59,5 @@ lazy val itSettings = integrationTestSettings() ++ Seq(
 )
 
 libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
-libraryDependencies += guice
 
 addCommandAlias("scalastyleAll", "all scalastyle Test/scalastyle")
