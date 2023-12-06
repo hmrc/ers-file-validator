@@ -16,7 +16,7 @@
 
 package services
 
-import models.cache.CacheMap
+//import models.cache.CacheMap
 import models.upscan.UpscanCallback
 import org.mockito.ArgumentMatchers.{any, anyString}
 import org.mockito.Mockito._
@@ -27,15 +27,18 @@ import play.api.libs.json._
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import repository.ERSFileValidatorSessionRepository
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.mongo.cache.DataKey
+import uk.gov.hmrc.http.{HeaderCarrier, SessionKeys}
+import uk.gov.hmrc.mongo.cache.{CacheItem, DataKey}
 
+import java.time.Instant
+import java.util.UUID
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.language.postfixOps
 
 class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
+  val sessionPair: (String, String) = SessionKeys.sessionId -> UUID.randomUUID.toString
   val mockSessionCache: ERSFileValidatorSessionRepository = mock[ERSFileValidatorSessionRepository]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   val sessionService = new SessionCacheService(mockSessionCache, ec)
@@ -48,9 +51,9 @@ class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       val postData: UpscanCallback = UpscanCallback("thefilename", "downloadUrl", Some(1000L))
 
       val json = Json.toJson[UpscanCallback](postData)
-      when(mockSessionCache.putInSession(DataKey(anyString()), any())
+      when(mockSessionCache.putSession(DataKey(anyString()), any())
       (any(), any(), any()))
-        .thenReturn(Future.successful(CacheMap("sessionValue", Map(sessionService.CALLBACK_DATA_KEY -> json))))
+        .thenReturn(Future.successful(sessionPair))
 
       val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(request), 10 seconds)
 
@@ -61,7 +64,7 @@ class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
     "return a None when cache can't be returned" in {
       val postData: UpscanCallback = UpscanCallback("thefilename", "downloadUrl", Some(1000L))
 
-      when(mockSessionCache.putInSession
+      when(mockSessionCache.putSession
       (DataKey(anyString()), any())
         (any(), any(), any()))
         .thenReturn(Future.failed(new Exception("")))

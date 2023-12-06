@@ -17,9 +17,9 @@
 package repository
 
 import config.ApplicationConfig
-import models.cache.CacheMap
-import play.api.libs.json.Writes
-import play.api.mvc.Request
+//import models.cache.CacheMap
+//import play.api.libs.json.Writes
+//import play.api.mvc.Request
 import uk.gov.hmrc.http.SessionKeys
 import uk.gov.hmrc.mongo.cache.{DataKey, SessionCacheRepository}
 import uk.gov.hmrc.mongo.{MongoComponent, TimestampSupport}
@@ -41,10 +41,10 @@ class ERSFileValidatorSessionRepository @Inject()(mongoComponent: MongoComponent
   sessionIdKey = SessionKeys.sessionId
 )(ec) {
 
-  def putInSession[T: Writes](dataKey: DataKey[T], data: T)
-                             (implicit request: Request[_], ec: ExecutionContext): Future[CacheMap] = {
-    cacheRepo
-      .put[T](request)(dataKey, data)
-      .map(res => CacheMap(res.id, res.data.value.toMap))
-  }
+//  def putInSession[T: Writes](dataKey: DataKey[T], data: T)
+//                             (implicit request: Request[_], ec: ExecutionContext): Future[CacheMap] = {
+//    cacheRepo
+//      .put[T](request)(dataKey, data)
+//      .map(res => CacheMap(res.id, res.data.value.toMap))
+//  }
 }
