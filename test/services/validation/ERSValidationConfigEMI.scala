@@ -17,6 +17,8 @@
 package services.validation
 
 import com.typesafe.config.ConfigFactory
+import org.scalatest.Assertion
+import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatestplus.play.PlaySpec
 import services.validation.EMITestData._
 import uk.gov.hmrc.services.validation.DataValidator
@@ -83,8 +85,14 @@ class EMIReplacedV4ValidationTest extends PlaySpec with ERSValidationEMIReplaced
   }
 
 }
-class EMIRLCV4ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData with ValidationTestRunner{
+class EMIRLCV4ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData with ValidationTestRunner {
 
+  val containError:ValidationError => Matcher[Seq[ValidationError]] = (expectedError: ValidationError) =>
+      new Matcher[Seq[ValidationError]] {
+    override def apply(errors: Seq[ValidationError]): MatchResult = MatchResult(errors contains expectedError,
+      "%s wasn't found in %s".format(expectedError, errors),
+      "%s was unexpectedly found in %s".format(expectedError, errors))
+  }
 
   "ERS EMI RLC Validation Test" should {
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-emi-rlc-validation-config"))
@@ -108,6 +116,13 @@ class EMIRLCV4ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData w
       resOpt.get must contain
         ValidationError(cellK, "mandatoryK", "K01", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it).")
     }
+    "when Column J is answered yes, column L is a mandatory field" in {
+      val cellL = Cell("L", rowNumber, "")
+      val cellJ = Cell("J", rowNumber, "yes")
+      val resOpt: Option[List[ValidationError]] = validator.validateRow(Row(1, Seq(cellJ, cellL)))
+      assert(resOpt.isDefined)
+      resOpt.get must containError(ValidationError(cellL, "mandatoryL", "L01", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))
+    }
     "when Column K is answered, column L is a mandatory field" in {
       val cellL = Cell("L", rowNumber, "")
       val cellK = Cell("K", rowNumber, "10.1234")
@@ -118,6 +133,7 @@ class EMIRLCV4ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData w
         ValidationError(cellL, "mandatoryL", "L01", "Enter 'yes' or 'no'.")
     }
   }
+
 }
 
 class EMINonTaxableV4ValidationTest extends PlaySpec with ERSValidationEMINonTaxableTestData with ValidationTestRunner{
