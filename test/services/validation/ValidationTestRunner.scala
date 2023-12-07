@@ -39,7 +39,7 @@ trait ValidationTestRunner extends PlaySpec{
   }
 
   def runTests(validator:DataValidator, descriptions: List[String], testDatas:List[Cell], expectedResults:List[Option[List[ValidationErrorData]]]) = {
-      for (x <- 0 until descriptions.length) {
+      for (x <- descriptions.indices) {
         descriptions(x) in {
           validator.validateCell(testDatas(x)) mustBe resultBuilder(testDatas(x), expectedResults(x))
         }

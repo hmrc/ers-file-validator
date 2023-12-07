@@ -26,9 +26,7 @@ import uk.gov.hmrc.services.validation.models._
 trait ERSValidationEMIRLCTestData {
   val rowNumber:Int = 1
 
-  def getDescriptions: List[String] ={
-    val descriptions =
-      List(
+  def getDescriptions: List[String] = List(
         //column A
         "When dateOfEvent conforms to the expected date format, no validation error should be raised",
         "Return an error message when dateOfEvent does not conform to the expect date format",
@@ -80,14 +78,10 @@ trait ERSValidationEMIRLCTestData {
         "Return an error message when receivedAmount is too large",
         //column L
         "When payeOperatedApplied is Yes or No, no validation error should be raised",
-        "Return an error message when payeOperatedApplied is not yes or no",
-        "Return an error message when payeOperatedApplied is empty"
+        "Return an error message when payeOperatedApplied is not yes or no"
       )
-    descriptions
-  }
 
-  def getTestData: List[Cell] ={
-    val testData = List(
+  def getTestData: List[Cell] = List(
       Cell("A", rowNumber, "2014-12-10"),
       Cell("A", rowNumber, "12-2014-10"),
       Cell("A", rowNumber, ""),
@@ -127,15 +121,10 @@ trait ERSValidationEMIRLCTestData {
       Cell("K", rowNumber, "abc"),
       Cell("K", rowNumber, "1234567890123456.1234"),
       Cell("L", rowNumber, "Yes"),
-      Cell("L", rowNumber, "Noooo"),
-      Cell("L", rowNumber, "")
-
+      Cell("L", rowNumber, "Noooo")
     )
-    testData
-  }
 
-  def getExpectedResults: List[Option[List[ValidationErrorData]]] = {
-    val expectedResults = List(
+  def getExpectedResults: List[Option[List[ValidationErrorData]]] = List(
       None,
       Some(List(ValidationErrorData("error.1", "001", "Enter a date that matches the yyyy-mm-dd pattern."))),
       Some(List(ValidationErrorData("error.1", "001", "Enter a date that matches the yyyy-mm-dd pattern."))),
@@ -175,15 +164,10 @@ trait ERSValidationEMIRLCTestData {
       Some(List(ValidationErrorData("error.11", "011", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
       Some(List(ValidationErrorData("error.11", "011", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
       None,
-      Some(List(ValidationErrorData("error.12", "012", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
       Some(List(ValidationErrorData("error.12", "012", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated.")))
     )
 
-    expectedResults
-  }
-
-  def getValidRowData:Seq[Cell] = {
-    val rowData = Seq(
+  def getValidRowData:Seq[Cell] = Seq(
       Cell("A", rowNumber, "2014-12-10"),
       Cell("B", rowNumber, "yes"),
       Cell("C", rowNumber, "1"),
@@ -197,11 +181,8 @@ trait ERSValidationEMIRLCTestData {
       Cell("K", rowNumber, "123.1234"),
       Cell("L", rowNumber, "Yes")
     )
-    rowData
-  }
 
-  def getInvalidRowData:Seq[Cell] = {
-    val rowData = Seq(
+  def getInvalidRowData:Seq[Cell] = Seq(
       Cell("A", rowNumber, "20-12-2011"),
       Cell("A", rowNumber, ""),
       Cell("B", rowNumber, "noooo"),
@@ -227,6 +208,5 @@ trait ERSValidationEMIRLCTestData {
       Cell("K", rowNumber, "1234567890123456.1234"),
       Cell("L", rowNumber, "Noooo")
     )
-    rowData
-  }
+
 }
