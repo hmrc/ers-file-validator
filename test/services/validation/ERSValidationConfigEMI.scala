@@ -113,15 +113,6 @@ class EMIRLCV4ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData w
       assert(resOpt.isDefined)
       resOpt.get must containError(ValidationError(cellL, "mandatoryL", "L01", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))
     }
-    "when Column K is answered, column L is a mandatory field" in {
-      val cellL = Cell("L", rowNumber, "")
-      val cellK = Cell("K", rowNumber, "10.1234")
-      val row = Row(1, Seq(cellL, cellK))
-      val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      assert(resOpt.isDefined)
-      resOpt.get must containError(
-        ValidationError(cellL, "mandatoryL", "L01", "Enter 'yes' or 'no'."))
-    }
   }
 
 }
