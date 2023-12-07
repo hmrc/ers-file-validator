@@ -5,7 +5,7 @@ ThisBuild / libraryDependencySchemes ++= Seq(
   "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 )
 
-addSbtPlugin("uk.gov.hmrc"          % "sbt-auto-build"      % "3.15.0") // 3.10.0 seems to try to use `xmax-classfile-name` option, which scalac doesn't seem to accept
+addSbtPlugin("uk.gov.hmrc"          % "sbt-auto-build"      % "3.15.0")
 addSbtPlugin("com.github.gseitz"    % "sbt-release"         % "1.0.10")
 addSbtPlugin("com.typesafe.play"    % "sbt-plugin"          % "2.9.0")
 addSbtPlugin("org.scoverage"        % "sbt-scoverage"       % "2.0.9")

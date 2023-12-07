@@ -34,7 +34,7 @@ class SessionCacheService @Inject()(sessionCache: ERSFileValidatorSessionReposit
   def storeCallbackData(data: UpscanCallback, totalRows: Int)(implicit request: Request[_]): Future[Option[UpscanCallback]] = {
     val callbackData = data.copy(noOfRows = Some(totalRows))
 
-    sessionCache.putInSession[UpscanCallback](DataKey(CALLBACK_DATA_KEY), callbackData).map { _ =>
+    sessionCache.putSession[UpscanCallback](DataKey(CALLBACK_DATA_KEY), callbackData).map { _ =>
       Some(callbackData)
     }.recover {
       case e: Throwable =>

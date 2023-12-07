@@ -30,7 +30,6 @@ import uk.gov.hmrc.mongo.cache.DataKey
 import uk.gov.hmrc.mongo.{MongoComponent, TimestampSupport}
 
 import scala.concurrent.ExecutionContext
-import scala.language.postfixOps
 
   class ERSFileValidatorSessionRepositorySpec extends PlaySpec with ScalaFutures with MockitoSugar with GuiceOneServerPerSuite {
 
@@ -46,11 +45,13 @@ import scala.language.postfixOps
     "ERSFileValidatorSessionRepository" must {
       "store data" in {
         val dataKey = DataKey[UpscanCallback]("callback_data_key")
-        val upscanCallback = UpscanCallback("", "")
-        val expectedResult = Map("callback_data_key" -> Json.parse("""{"name":"","downloadUrl":"","_type":"UploadedSuccessfully"}"""))
-        val result = sessionRepository.putInSession(dataKey, upscanCallback)
-        await(result).id mustBe "sessionId"
-        await(result).data mustBe expectedResult
+        val upscanCallback = UpscanCallback("someName", "someUrl")
+        val expectedResult = Json.parse(
+        """{"name":"someName","downloadUrl":"someUrl","_type":"UploadedSuccessfully"}""").as[UpscanCallback]
+        await(sessionRepository.putSession(dataKey, upscanCallback))
+
+        val result = await((sessionRepository.getFromSession(dataKey)))
+        result.value mustBe expectedResult
       }
     }
   }

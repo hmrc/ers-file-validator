@@ -17,17 +17,14 @@
 package repository
 
 import config.ApplicationConfig
-import models.cache.CacheMap
-import play.api.libs.json.Writes
-import play.api.mvc.Request
 import uk.gov.hmrc.http.SessionKeys
-import uk.gov.hmrc.mongo.cache.{DataKey, SessionCacheRepository}
+import uk.gov.hmrc.mongo.cache.SessionCacheRepository
 import uk.gov.hmrc.mongo.{MongoComponent, TimestampSupport}
 
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ERSFileValidatorSessionRepository @Inject()(mongoComponent: MongoComponent,
@@ -40,11 +37,4 @@ class ERSFileValidatorSessionRepository @Inject()(mongoComponent: MongoComponent
   timestampSupport = timestampSupport,
   sessionIdKey = SessionKeys.sessionId
 )(ec) {
-
-  def putInSession[T: Writes](dataKey: DataKey[T], data: T)
-                             (implicit request: Request[_], ec: ExecutionContext): Future[CacheMap] = {
-    cacheRepo
-      .put[T](request)(dataKey, data)
-      .map(res => CacheMap(res.id, res.data.value.toMap))
-  }
 }
