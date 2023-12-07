@@ -35,8 +35,7 @@ class SIPAwardsV4ValidationTest extends PlaySpec with ERSValidationSIPAwardsTest
       val row = Row(1,Seq(cellD,cellC))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellD,"mandatoryD","D01","Enter 'yes' or 'no'.")
+      resOpt.get must containError(ValidationError(cellD,"mandatoryD","D01","Enter 'yes' or 'no'."))
     }
 
     "when awards Column C is answered 1, column E is a mandatory field" in {
@@ -45,8 +44,7 @@ class SIPAwardsV4ValidationTest extends PlaySpec with ERSValidationSIPAwardsTest
       val row = Row(1, Seq(cellE, cellC))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellE, "mandatoryE", "E01", "Enter the ratio of the matching shares (numbers must be separated by a ':' or '/', for example, 2:1 or 2/1).")
+      resOpt.get must containError(ValidationError(cellE, "mandatoryE", "E01", "Enter the ratio of the matching shares (numbers must be separated by a ':' or '/', for example, 2:1 or 2/1)."))
     }
 
     "when awards Column O is answered NO, column P is a mandatory field" in {
@@ -55,8 +53,7 @@ class SIPAwardsV4ValidationTest extends PlaySpec with ERSValidationSIPAwardsTest
       val row = Row(1, Seq(cellP, cellO))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no'.")
+      resOpt.get must containError(ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no'."))
     }
 
     "when awards Column P is answered YES, column Q is a mandatory field" in {
@@ -65,8 +62,7 @@ class SIPAwardsV4ValidationTest extends PlaySpec with ERSValidationSIPAwardsTest
       val row = Row(1, Seq(cellQ, cellP))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellQ, "mandatoryQ", "Q01", "Enter the HMRC reference (must be less than 11 characters).")
+      resOpt.get must containError(ValidationError(cellQ, "mandatoryQ", "Q01", "Enter the HMRC reference (must be less than 11 characters)."))
     }
 
 
