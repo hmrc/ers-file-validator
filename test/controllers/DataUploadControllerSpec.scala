@@ -39,7 +39,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, DefaultActionBuilder, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import services.{ProcessCsvService, ProcessOdsService, SessionService}
+import services.{ProcessCsvService, ProcessOdsService, SessionCacheService}
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 
 import scala.collection.mutable.ListBuffer
@@ -53,7 +53,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
   with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with GuiceOneAppPerSuite with WithMockedAuthActions with ScalaFutures {
 
   val empRef: String = "1234/ABCD"
-  val mockSessionService: SessionService = mock[SessionService]
+  val mockSessionService: SessionCacheService = mock[SessionCacheService]
   val mockProcessOdsService: ProcessOdsService = mock[ProcessOdsService]
   val mockProcessCsvService: ProcessCsvService = mock[ProcessCsvService]
   val mockAuthConnector: DefaultAuthConnector = mock[DefaultAuthConnector]
@@ -205,6 +205,15 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
 
   "Calling streamFile" should {
     "process the response" in {
+      val result: Future[Seq[HttpResponse]] = secondDataUploadController.streamFile("http://www.test.com").runWith(Sink.seq)
+
+      val responses = Await.result(result, Duration.Inf)
+      responses.length shouldBe 1
+      responses.head shouldBe HttpResponse(StatusCodes.OK)
+
+    }
+
+    "process streamFile" in {
       val result: Future[Seq[HttpResponse]] = secondDataUploadController.streamFile("http://www.test.com").runWith(Sink.seq)
 
       val responses = Await.result(result, Duration.Inf)

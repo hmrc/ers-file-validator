@@ -16,24 +16,25 @@
 
 package services
 
-import config.ERSFileValidatorSessionCache
 import models.upscan.UpscanCallback
 import play.api.Logging
-import uk.gov.hmrc.http.HeaderCarrier
+import play.api.mvc.Request
+import repository.ERSFileValidatorSessionRepository
+import uk.gov.hmrc.mongo.cache.DataKey
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SessionService @Inject()(sessionCache: ERSFileValidatorSessionCache,
-                               implicit val ec: ExecutionContext) extends Logging {
+class SessionCacheService @Inject()(sessionCache: ERSFileValidatorSessionRepository,
+                                    implicit val ec: ExecutionContext) extends Logging {
 
   val CALLBACK_DATA_KEY = "callback_data_key"
 
-  def storeCallbackData(data: UpscanCallback, totalRows: Int)(implicit hc: HeaderCarrier): Future[Option[UpscanCallback]] = {
+  def storeCallbackData(data: UpscanCallback, totalRows: Int)(implicit request: Request[_]): Future[Option[UpscanCallback]] = {
     val callbackData = data.copy(noOfRows = Some(totalRows))
 
-    sessionCache.cache[UpscanCallback](CALLBACK_DATA_KEY, callbackData).map { _ =>
+    sessionCache.putSession[UpscanCallback](DataKey(CALLBACK_DATA_KEY), callbackData).map { _ =>
       Some(callbackData)
     }.recover {
       case e: Throwable =>

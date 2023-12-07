@@ -38,7 +38,7 @@ import scala.concurrent.{Future, ExecutionContext}
 class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
                                   auditEvents: AuditEvents,
                                   ersConnector: ERSFileValidatorConnector,
-                                  sessionService: SessionService,
+                                  sessionService: SessionCacheService,
                                   appConfig: ApplicationConfig,
                                   implicit val ec: ExecutionContext) extends Metrics with Logging {
 
