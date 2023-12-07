@@ -37,8 +37,7 @@ class EMIAdjustmentsV4ValidationTest extends PlaySpec with ERSValidationEMIAdjus
       val row = Row(1,Seq(cellB,cellA))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellB,"mandatoryB","B01","Enter 'yes' or 'no'.")
+      resOpt.get must containError(ValidationError(cellB,"mandatoryB","B01","Enter 'yes' or 'no'."))
     }
 
     "when Column B is answered yes, column C is a mandatory field" in {
@@ -47,8 +46,7 @@ class EMIAdjustmentsV4ValidationTest extends PlaySpec with ERSValidationEMIAdjus
       val row = Row(1,Seq(cellC,cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellC,"mandatoryC","C01","Enter 'yes' or 'no'.")
+      resOpt.get must containError(ValidationError(cellC,"mandatoryC","C01","Enter 'yes' or 'no'."))
     }
 
     "when Column C is answered yes, column D is a mandatory field" in {
@@ -57,8 +55,7 @@ class EMIAdjustmentsV4ValidationTest extends PlaySpec with ERSValidationEMIAdjus
       val row = Row(1,Seq(cellD,cellC))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellD,"mandatoryD","D01","Enter '1', '2', '3', '4', '5', '6', '7' or '8'.")
+      resOpt.get must containError(ValidationError(cellD,"mandatoryD","D01","Enter '1', '2', '3', '4', '5', '6', '7' or '8'."))
     }
 
     "when a valid row of data is provided, no ValidationErrors should be raised" in {
@@ -87,13 +84,6 @@ class EMIReplacedV4ValidationTest extends PlaySpec with ERSValidationEMIReplaced
 }
 class EMIRLCV4ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData with ValidationTestRunner {
 
-  val containError:ValidationError => Matcher[Seq[ValidationError]] = (expectedError: ValidationError) =>
-      new Matcher[Seq[ValidationError]] {
-    override def apply(errors: Seq[ValidationError]): MatchResult = MatchResult(errors contains expectedError,
-      "%s wasn't found in %s".format(expectedError, errors),
-      "%s was unexpectedly found in %s".format(expectedError, errors))
-  }
-
   "ERS EMI RLC Validation Test" should {
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-emi-rlc-validation-config"))
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
@@ -104,8 +94,8 @@ class EMIRLCV4ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData w
       val row = Row(1, Seq(cellC, cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellC, "mandatoryC", "C01", "Enter '1', '2', '3', '4', '5', '6', '7' or '8'.")
+      resOpt.get must containError(
+        ValidationError(cellC, "mandatoryC", "C01", "Enter '1', '2', '3', '4', '5', '6', '7' or '8'."))
     }
     "when Column J is answered yes, column K is a mandatory field" in {
       val cellK = Cell("K", rowNumber, "")
@@ -113,8 +103,8 @@ class EMIRLCV4ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData w
       val row = Row(1, Seq(cellK, cellJ))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellK, "mandatoryK", "K01", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it).")
+      resOpt.get must containError(
+        ValidationError(cellK, "mandatoryK", "K01", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))
     }
     "when Column J is answered yes, column L is a mandatory field" in {
       val cellL = Cell("L", rowNumber, "")
@@ -129,8 +119,8 @@ class EMIRLCV4ValidationTest extends PlaySpec with ERSValidationEMIRLCTestData w
       val row = Row(1, Seq(cellL, cellK))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellL, "mandatoryL", "L01", "Enter 'yes' or 'no'.")
+      resOpt.get must containError(
+        ValidationError(cellL, "mandatoryL", "L01", "Enter 'yes' or 'no'."))
     }
   }
 
@@ -149,8 +139,7 @@ class EMINonTaxableV4ValidationTest extends PlaySpec with ERSValidationEMINonTax
       val row = Row(1,Seq(cellL,cellK))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellL,"mandatoryL","L01","Enter 'yes' or 'no'.")
+      resOpt.get must containError(ValidationError(cellL,"mandatoryL","L01","Enter 'yes' or 'no'."))
     }
 
     "when Column L is answered yes, column M is a mandatory field" in {
@@ -159,8 +148,7 @@ class EMINonTaxableV4ValidationTest extends PlaySpec with ERSValidationEMINonTax
       val row = Row(1,Seq(cellM,cellL))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellM,"mandatoryM","M01","Enter the HMRC reference (must be less than 11 characters).")
+      resOpt.get must containError(ValidationError(cellM,"mandatoryM","M01","Enter the HMRC reference (must be less than 11 characters)."))
     }
 
     "when a valid row of data is provided, no ValidationErrors should be raised" in {
@@ -193,8 +181,7 @@ class EMITaxableV4ValidationTest extends PlaySpec with ERSValidationEMITaxableTe
       val row = Row(1,Seq(cellC,cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellC,"mandatoryC","C01","Enter '1', '2', '3', '4', '5', '6', '7' or '8'.")
+      resOpt.get must containError(ValidationError(cellC,"mandatoryC","C01","Enter '1', '2', '3', '4', '5', '6', '7' or '8'."))
     }
 
     "when Column O is answered yes, column P is a mandatory field" in {
@@ -203,8 +190,7 @@ class EMITaxableV4ValidationTest extends PlaySpec with ERSValidationEMITaxableTe
       val row = Row(1,Seq(cellP,cellO))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellP,"mandatoryP","P01","Enter 'yes' or 'no'.")
+      resOpt.get must containError(ValidationError(cellP,"mandatoryP","P01","Enter 'yes' or 'no'."))
     }
 
     "when Column P is answered yes, column Q is a mandatory field" in {
@@ -213,8 +199,7 @@ class EMITaxableV4ValidationTest extends PlaySpec with ERSValidationEMITaxableTe
       val row = Row(1,Seq(cellQ,cellP))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellQ,"mandatoryQ","Q01","Enter the HMRC reference (must be less than 11 characters).")
+      resOpt.get must containError(ValidationError(cellQ,"mandatoryQ","Q01","Enter the HMRC reference (must be less than 11 characters)."))
     }
 
     "when a valid row of data is provided, no ValidationErrors should be raised" in {

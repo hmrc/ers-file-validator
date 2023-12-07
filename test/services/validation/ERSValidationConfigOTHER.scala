@@ -303,8 +303,7 @@ class OTHERNotionalV4ValidationTest extends PlaySpec with ERSValidationOTHERNoti
       val row = Row(1, Seq(cellC, cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number).")
+      resOpt.get must containError(ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number)."))
     }
   }
 
@@ -367,8 +366,7 @@ class OTHERSoldV4ValidationTest extends PlaySpec with ERSValidationOTHERSoldTest
       val row = Row(1, Seq(cellC, cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must contain
-        ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number).")
+      resOpt.get must containError(ValidationError(cellC, "mandatoryC", "C01", "Enter the scheme reference number (it should be an 8 digit number)."))
     }
   }
 
