@@ -59,4 +59,6 @@ lazy val itSettings = integrationTestSettings() ++ Seq(
 
 libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
 
+dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.12.7" // Scala module 2.12.7 requires Jackson Databind version >= 2.12.0 and < 2.13.0
+
 addCommandAlias("scalastyleAll", "all scalastyle Test/scalastyle")
