@@ -43,7 +43,7 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 
 class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter {
 
-  val mockSessionService: SessionCacheService = mock[SessionCacheService]
+  val mockSessionService: SessionService = mock[SessionService]
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
   val mockDataGenerator: DataGenerator = mock[DataGenerator]
   val mockHeaderCarrier: HeaderCarrier = mock[HeaderCarrier]
@@ -130,7 +130,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
-    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(Some(callbackData)))
+    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any[HeaderCarrier])).thenReturn(Future.successful(Some(callbackData)))
     fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
     verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier],any[Request[_]])
   }
@@ -147,7 +147,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
-    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(None))
+    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any[HeaderCarrier])).thenReturn(Future.successful(None))
 
     try {
       Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo , request), Duration(5, SECONDS))
@@ -172,7 +172,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]]))
       .thenReturn(Future.successful(Left(new RuntimeException("Runtime error"))))
-    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any[Request[_]])).thenReturn(Future.successful(Some(callbackData)))
+    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any[HeaderCarrier])).thenReturn(Future.successful(Some(callbackData)))
 
     try {
       Await.result(fileProcessingService.sendSchemeData(SchemeData(schemeInfo, "", None, listBuffer), ""), Duration(5, SECONDS))

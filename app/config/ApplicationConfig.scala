@@ -26,8 +26,6 @@ class ApplicationConfig @Inject()(config: ServicesConfig) {
 
   private def loadConfig(key: String) = config.getString(key)
 
-  lazy val appName: String = config.getString("appName")
-
   lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
   lazy val analyticsHost: String = config.getString("google-analytics.host")
   lazy val analyticsToken: String = config.getString("govuk-tax.google-analytics.token")
@@ -39,5 +37,4 @@ class ApplicationConfig @Inject()(config: ServicesConfig) {
   lazy val submissionsUrl: String = config.baseUrl("ers-submissions")
   lazy val validationChunkSize: Int = config.getInt("validationChunkSize")
   lazy val uploadCsvSizeLimit: Int = config.getInt("csv.uploadSizeLimit")
-  lazy val mongoTTLInSeconds: Int = config.getInt("mongodb.timeToLiveInSeconds")
 }

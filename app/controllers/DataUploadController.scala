@@ -27,7 +27,7 @@ import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
 import play.api.Logging
 import play.api.libs.json.JsValue
 import play.api.mvc._
-import services.{ProcessCsvService, ProcessOdsService, SessionCacheService}
+import services.{ProcessCsvService, ProcessOdsService, SessionService}
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -36,7 +36,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class DataUploadController @Inject()(sessionService: SessionCacheService,
+class DataUploadController @Inject()(sessionService: SessionService,
                                      processOdsService: ProcessOdsService,
                                      processCsvService: ProcessCsvService,
                                      val authConnector: DefaultAuthConnector,
