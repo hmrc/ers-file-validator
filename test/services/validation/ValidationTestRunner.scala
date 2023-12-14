@@ -17,12 +17,12 @@
 package services.validation
 
 import models.ValidationErrorData
+import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatestplus.play.PlaySpec
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 
-trait ValidationTestRunner extends PlaySpec{
-
+trait ValidationTestRunner extends PlaySpec {
 
   def populateValidationError(expRes: ValidationErrorData)(implicit cell: Cell) = {
     ValidationError(cell, expRes.id, expRes.errorId, expRes.errorMsg)
@@ -39,10 +39,22 @@ trait ValidationTestRunner extends PlaySpec{
   }
 
   def runTests(validator:DataValidator, descriptions: List[String], testDatas:List[Cell], expectedResults:List[Option[List[ValidationErrorData]]]) = {
-      for (x <- 0 until descriptions.length) {
+      for (x <- descriptions.indices) {
         descriptions(x) in {
           validator.validateCell(testDatas(x)) mustBe resultBuilder(testDatas(x), expectedResults(x))
         }
       }
   }
+
+  /**
+   * Function that produces a Matcher to ascertain whether the given ValidationError appears in a sequence of
+   * ValidationErrors encountered during a test.
+   */
+  val containError: ValidationError => Matcher[Seq[ValidationError]] = (expectedError: ValidationError) =>
+    new Matcher[Seq[ValidationError]] {
+      override def apply(errors: Seq[ValidationError]): MatchResult = MatchResult(errors contains expectedError,
+        "%s wasn't found in %s".format(expectedError, errors),
+        "%s was unexpectedly found in %s".format(expectedError, errors))
+    }
+
 }

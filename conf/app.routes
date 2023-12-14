@@ -2,6 +2,4 @@
 
 POST        /:empRef/process-file               controllers.DataUploadController.processFileDataFromFrontend(empRef:String)
 
-POST        /:empRef/process-csv-file           controllers.DataUploadController.processCsvFileDataFromFrontend(empRef:String)
-
 POST        /v2/:empRef/process-csv-file        controllers.DataUploadController.processCsvFileDataFromFrontendV2(empRef:String)
