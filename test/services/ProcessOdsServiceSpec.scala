@@ -25,17 +25,16 @@ import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.ScalaFutures
+import org.scalatest.exceptions.TestFailedException
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Request
 import services.audit.AuditEvents
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
+
 import java.io.{FileInputStream, FileOutputStream}
 import java.nio.file.Files
 import java.util.zip.{ZipEntry, ZipOutputStream}
-
-import org.scalatest.exceptions.TestFailedException
-
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.{Duration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
@@ -85,6 +84,8 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
 
       override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
     }
+
+    when(hc.sessionId).thenReturn(Some(SessionId("sessionId")))
 
     "yield a list of scheme data from file data" in {
       val listBuffer = ListBuffer(

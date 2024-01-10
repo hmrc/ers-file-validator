@@ -24,15 +24,15 @@ import models._
 import models.upscan.UpscanCallback
 import play.api.Logging
 import play.api.mvc.Request
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
 import utils.{ErrorResponseMessages, ValidationUtils}
+
 import java.io.InputStream
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
-
 import javax.inject.{Inject, Singleton}
-
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
@@ -61,7 +61,8 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
           res + sendScheme(el, empRef)
         }
       }
-      sessionService.storeCallbackData(callbackData, totalRows).map {
+      val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
+      sessionService.storeCallbackData(callbackData, totalRows)(RequestWithUpdatedSession(request, sessionId)).map {
         case Some(_) => {
           logger.warn(s"Total rows for schemeRef ${schemeInfo.schemeRef}: $totalRows")
           auditEvents.totalRows(totalRows, schemeInfo)

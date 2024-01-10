@@ -16,7 +16,7 @@
 
 package services
 
-import models.upscan.UpscanCallback
+import models.upscan.{NotStarted, UploadStatus, UpscanCallback}
 import play.api.Logging
 import play.api.mvc.Request
 import repository.ERSFileValidatorSessionRepository
@@ -42,4 +42,13 @@ class SessionCacheService @Inject()(sessionCache: ERSFileValidatorSessionReposit
       None
     }
   }
+
+  def createCallbackRecord(implicit request: Request[_]): Future[(String, String)] =
+    sessionCache.putSession[UploadStatus](DataKey(CALLBACK_DATA_KEY), NotStarted)
+
+  def getCallbackRecord(implicit request: Request[_]): Future[Option[UploadStatus]] =
+    sessionCache.getFromSession[UploadStatus](DataKey(CALLBACK_DATA_KEY))
+
+  def updateCallbackRecord(uploadStatus: UploadStatus)(implicit request: Request[_]): Future[(String, String)] =
+    sessionCache.putSession[UploadStatus](DataKey(CALLBACK_DATA_KEY), uploadStatus)
 }

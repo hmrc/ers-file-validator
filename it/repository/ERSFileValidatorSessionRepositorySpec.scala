@@ -50,7 +50,7 @@ import scala.concurrent.ExecutionContext
         """{"name":"someName","downloadUrl":"someUrl","_type":"UploadedSuccessfully"}""").as[UpscanCallback]
         await(sessionRepository.putSession(dataKey, upscanCallback))
 
-        val result = await((sessionRepository.getFromSession(dataKey)))
+        val result = await(sessionRepository.getFromSession(dataKey))
         result.value mustBe expectedResult
       }
     }

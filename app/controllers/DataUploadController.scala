@@ -28,9 +28,11 @@ import play.api.Logging
 import play.api.libs.json.JsValue
 import play.api.mvc._
 import services.{ProcessCsvService, ProcessOdsService, SessionCacheService}
+import uk.gov.hmrc.http.SessionId
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -112,7 +114,8 @@ class DataUploadController @Inject()(sessionService: SessionCacheService,
                   case _ => None
                 }
                 val totalRowCount = result.foldLeft(0)((accum, inputTuple) => accum + inputTuple.fileLength)
-                sessionService.storeCallbackData(res.callbackData.head, totalRowCount).map {
+                val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
+                sessionService.storeCallbackData(res.callbackData.head, totalRowCount)(RequestWithUpdatedSession(request, sessionId)).map {
                   case callback: Option[UpscanCallback] if callback.isDefined =>
                     val numberOfSlices = result.map(_.noOfSlices).sum
                     logger.info("[DataUploadController][processCsvFileDataFromFrontendV2] File validated successfully")

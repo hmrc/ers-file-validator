@@ -17,8 +17,6 @@
 package services.validation
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.Assertion
-import org.scalatest.matchers.{MatchResult, Matcher}
 import org.scalatestplus.play.PlaySpec
 import services.validation.EMITestData._
 import uk.gov.hmrc.services.validation.DataValidator
