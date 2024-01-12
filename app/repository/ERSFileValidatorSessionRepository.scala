@@ -36,5 +36,4 @@ class ERSFileValidatorSessionRepository @Inject()(mongoComponent: MongoComponent
   ttl = Duration(appConfig.mongoTTLInSeconds, TimeUnit.SECONDS),
   timestampSupport = timestampSupport,
   sessionIdKey = SessionKeys.sessionId
-)(ec) {
-}
+)(ec)
