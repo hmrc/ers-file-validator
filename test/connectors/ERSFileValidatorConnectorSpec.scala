@@ -20,7 +20,6 @@ import akka.stream.Materializer
 import config.ApplicationConfig
 import models._
 import models.upscan.UpscanCallback
-import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfter, EitherValues}
@@ -41,6 +40,8 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.Application
 
+import java.time.ZonedDateTime
+
 class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with BeforeAndAfter with EitherValues with GuiceOneAppPerSuite {
 
   override lazy implicit val app: Application = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
@@ -59,7 +60,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
   val data: ListBuffer[Seq[String]] = ListBuffer[Seq[String]](Seq("abc"))
   val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11000001231275",
-    timestamp = DateTime.now,
+    timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
     taxYear = "2014/F15",
     schemeName = "MyScheme",

@@ -26,7 +26,6 @@ import fixtures.WithMockedAuthActions
 import metrics.Metrics
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
-import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
@@ -48,6 +47,8 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.Application
 import org.scalatest.wordspec.AnyWordSpecLike
+
+import java.time.ZonedDateTime
 
 class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadControllerSpec"))
   with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with GuiceOneAppPerSuite with WithMockedAuthActions with ScalaFutures {
@@ -79,7 +80,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
 
   val schemeInfo: SchemeInfo = SchemeInfo (
     schemeRef = "XA11000001231275",
-    timestamp = DateTime.now,
+    timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
     taxYear = "2014/F15",
     schemeName = "MyScheme",

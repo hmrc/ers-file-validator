@@ -19,7 +19,6 @@ package services
 import com.typesafe.config.ConfigFactory
 import config.ApplicationConfig
 import models.{ERSFileProcessingException, SchemeInfo}
-import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfter, EitherValues}
@@ -33,8 +32,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 import utils.ErrorResponseMessages
-import scala.collection.immutable.ArraySeq
 
+import java.time.ZonedDateTime
+import scala.collection.immutable.ArraySeq
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 
@@ -47,7 +47,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
-    timestamp = DateTime.now,
+    timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
     taxYear = "2014/F15",
     schemeName = "MyScheme",
@@ -149,24 +149,24 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   "setValidator" should {
     "return a DataValidator if the given sheet name is valid" in {
-      assert(dataGenerator.setValidator("EMI40_Adjustments_V4")(SchemeInfo("", DateTime.now(), "" ,"" ,"", ""), hc, request).isInstanceOf[DataValidator])
+      assert(dataGenerator.setValidator("EMI40_Adjustments_V4")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request).isInstanceOf[DataValidator])
     }
 
     "throw an exception if the given sheet name is not valid" in {
-      an[ERSFileProcessingException] mustBe thrownBy (dataGenerator.setValidator("Invalid")(SchemeInfo("", DateTime.now(), "" ,"" ,"", ""), hc, request))
+      an[ERSFileProcessingException] mustBe thrownBy (dataGenerator.setValidator("Invalid")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request))
     }
   }
 
   "getValidatorAndSheetInfo" should {
     "return a Right with a DataValidator if the given sheet name is valid" in {
-      dataGenerator.getValidatorAndSheetInfo("EMI40_Adjustments_V4", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
+      dataGenerator.getValidatorAndSheetInfo("EMI40_Adjustments_V4", SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", "")) match {
         case Left(_) => fail("Did not return validator")
         case Right(_) => succeed
       }
     }
 
     "return a left with an exception if the given sheet name is not valid" in {
-      dataGenerator.getValidatorAndSheetInfo("Invalid", SchemeInfo("", DateTime.now(), "" ,"" ,"", "")) match {
+      dataGenerator.getValidatorAndSheetInfo("Invalid", SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", "")) match {
         case Left(_) => succeed
         case Right(_) => fail("Did not return expected exception")
       }
@@ -187,7 +187,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     "return an error when scheme types do not match" in {
       val schemeInfo2: SchemeInfo = SchemeInfo(
         schemeRef = "XA11999991234567",
-        timestamp = DateTime.now,
+        timestamp = ZonedDateTime.now,
         schemeId = "123PA12345678",
         taxYear = "2014/F15",
         schemeName = "MyScheme",
@@ -246,7 +246,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     "get an exception if ods file has less than 9 rows and doesn't have header data" in {
       val schemeInfo: SchemeInfo = SchemeInfo (
         schemeRef = "XA11000001231275",
-        timestamp = DateTime.now,
+        timestamp = ZonedDateTime.now,
         schemeId = "123PA12345678",
         taxYear = "2014/F15",
         schemeName = "MyScheme",
@@ -261,7 +261,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     "get an exception if ods file has more than 1 sheet but 1 of the sheets has less than 9 rows and doesn't have header data" in {
       val schemeInfo: SchemeInfo = SchemeInfo (
         schemeRef = "XA11000001231275",
-        timestamp = DateTime.now,
+        timestamp = ZonedDateTime.now,
         schemeId = "123PA12345678",
         taxYear = "2014/F15",
         schemeName = "MyScheme",
@@ -276,7 +276,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     "get an exception if ods file doesn't contain any data" in {
       val schemeInfo: SchemeInfo = SchemeInfo (
         schemeRef = "XA11000001231275",
-        timestamp = DateTime.now,
+        timestamp = ZonedDateTime.now,
         schemeId = "123PA12345678",
         taxYear = "2014/F15",
         schemeName = "MyScheme",

@@ -20,7 +20,6 @@ import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
 import models._
 import models.upscan.UpscanCallback
-import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
@@ -34,6 +33,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
 
 import java.io.{FileInputStream, FileOutputStream}
 import java.nio.file.Files
+import java.time.ZonedDateTime
 import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.{Duration, SECONDS}
@@ -55,7 +55,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
 
   val schemeInfo: SchemeInfo = SchemeInfo (
     schemeRef = "XA11999991234567",
-    timestamp = DateTime.now,
+    timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
     taxYear = "2014/F15",
     schemeName = "MyScheme",

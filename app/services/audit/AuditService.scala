@@ -16,13 +16,14 @@
 
 package services.audit
 
-import org.joda.time.DateTime
 import play.api.mvc.{Request, Session}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.model.DataEvent
+
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.play.audit.DefaultAuditConnector
 
+import java.time.ZonedDateTime
 import scala.concurrent.ExecutionContext
 
 @Singleton
@@ -46,6 +47,6 @@ class AuditService @Inject()(auditConnector: DefaultAuditConnector,
       hc.otherHeaders.toMap ++
       Map("dateTime" ->  getDateTime.toString)
 
-  protected def getDateTime = new DateTime
+  protected def getDateTime = ZonedDateTime.now()
 
 }
