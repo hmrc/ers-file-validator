@@ -10,7 +10,6 @@ object AppDependencies {
   val compile: Seq[ModuleID] = Seq(
     ws,
     "com.lightbend.akka"     %% "akka-stream-alpakka-csv"    % "4.0.0",
-    "com.typesafe.play"      %% "play-json-joda"             % "2.10.3",
     "com.typesafe.akka"      %% "akka-stream"                % akkaVersion,
     "com.typesafe.akka"      %% "akka-slf4j"                 % akkaVersion,
     "com.typesafe.akka"      %% "akka-protobuf"              % akkaVersion,

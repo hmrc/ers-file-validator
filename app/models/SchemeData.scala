@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,13 @@
 package models
 
 import models.upscan.UpscanCallback
-import org.joda.time.DateTime
-import play.api.libs.json.JodaWrites._
+
+import java.time.{Instant, ZoneId, ZonedDateTime}
 import play.api.libs.json._
 
+import java.time.format.DateTimeFormatter
 import scala.collection.mutable.ListBuffer
+import scala.util.control.Exception.nonFatalCatch
 
 case class SchemeData (schemeInfo: SchemeInfo, sheetName: String, numberOfParts: Option[Int], data: ListBuffer[Seq[String]])
 
@@ -38,20 +40,23 @@ object SubmissionsSchemeData {
   implicit val formatSubmissionsSchemeData: OFormat[SubmissionsSchemeData] = Json.format[SubmissionsSchemeData]
 }
 
-case class SchemeInfo (
-                       schemeRef:String,
-                       timestamp: DateTime = DateTime.now,
+case class SchemeInfo (schemeRef:String,
+                       timestamp: ZonedDateTime = ZonedDateTime.now,
                        schemeId: String,
                        taxYear: String,
                        schemeName: String,
-                       schemeType: String
-                     )
+                       schemeType: String)
 
 object SchemeInfo {
 
-  implicit val dateFormatDefault: Format[DateTime] = new Format[DateTime] {
-    override def reads(json: JsValue): JsResult[DateTime] = JodaReads.DefaultJodaDateTimeReads.reads(json)
-    override def writes(o: DateTime): JsValue = JodaDateTimeNumberWrites.writes(o)
+  implicit val dateFormatDefault: Format[ZonedDateTime] = new Format[ZonedDateTime] {
+
+    override def reads(json: JsValue): JsResult[ZonedDateTime] = json match {
+      case JsNumber(d) => JsSuccess(ZonedDateTime.ofInstant(Instant.ofEpochMilli(d.toLong), ZoneId.of("UTC")))
+      case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
+    }
+
+    override def writes(o: ZonedDateTime): JsValue = JsNumber(o.toInstant.toEpochMilli)
   }
 
   implicit val formatSchemeInfo: OFormat[SchemeInfo] = Json.format[SchemeInfo]
