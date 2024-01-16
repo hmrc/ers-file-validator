@@ -28,7 +28,6 @@ import connectors.ERSFileValidatorConnector
 import helpers.MockProcessCsvService
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
-import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
 import org.scalatest.OptionValues
@@ -44,6 +43,7 @@ import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 import utils.ErrorResponseMessages
 import org.scalatest.EitherValues
 
+import java.time.ZonedDateTime
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
@@ -65,7 +65,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
   val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
-    timestamp = DateTime.now,
+    timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
     taxYear = "2014/F15",
     schemeName = "MyScheme",

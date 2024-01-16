@@ -18,7 +18,6 @@ package services
 
 import config.ApplicationConfig
 import models.{ERSFileProcessingException, SchemeInfo}
-import org.joda.time.DateTime
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -28,6 +27,7 @@ import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
 import org.scalatest.{BeforeAndAfter, EitherValues}
 
+import java.time.ZonedDateTime
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.xml._
 
@@ -43,7 +43,7 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
 
   implicit val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
-    timestamp = DateTime.now,
+    timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
     taxYear = "2014/F15",
     schemeName = "MyScheme",

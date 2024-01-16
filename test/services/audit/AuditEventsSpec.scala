@@ -18,7 +18,6 @@ package services
 
 import models.{SchemeData, SchemeInfo}
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito.{times, verify}
 import org.scalatest.matchers.should.Matchers
@@ -32,12 +31,14 @@ import uk.gov.hmrc.services.validation.models._
 import scala.collection.mutable.ListBuffer
 import org.scalatest.wordspec.AnyWordSpecLike
 
+import java.time.ZonedDateTime
+
 class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
 
   implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   implicit var hc: HeaderCarrier = new HeaderCarrier()
   val mockAuditService: AuditService = mock[AuditService]
-  val dateTime = new DateTime
+  val dateTime = ZonedDateTime.now()
   val schemeInfo = new SchemeInfo("schemeRef",dateTime,"schemeID","taxYear","schemeName","schemeType")
   val schemeData = new SchemeData(schemeInfo,"sheetName", None, ListBuffer(Seq("")))
 

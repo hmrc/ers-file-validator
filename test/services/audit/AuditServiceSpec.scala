@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package services
+package services.audit
 
-import org.joda.time.DateTime
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
-import services.audit.AuditService
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 import uk.gov.hmrc.play.audit.model.DataEvent
@@ -31,6 +29,8 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import org.scalatest.wordspec.AnyWordSpecLike
 import uk.gov.hmrc.play.audit.DefaultAuditConnector
+
+import java.time.ZonedDateTime
 
 class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
 
@@ -41,10 +41,10 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
     implicit val hc: HeaderCarrier = new HeaderCarrier
 
     implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-    val dateTime = new DateTime
+    val dateTime = ZonedDateTime.now()
     val mockAuditConnector = mock[DefaultAuditConnector]
     val auditService = new AuditService(mockAuditConnector, ec) {
-      override protected def getDateTime: DateTime = dateTime
+      override protected def getDateTime: ZonedDateTime = dateTime
     }
     val details: Map[String, String] = Map("details1" -> "randomDetail")
 
