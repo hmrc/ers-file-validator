@@ -21,7 +21,7 @@ import metrics.Metrics
 import models.{ERSFileProcessingException, SchemeData, SchemeInfo}
 import play.api.Logging
 import play.api.mvc.Request
-import services.ERSTemplatesInfo.ersSheets
+import services.ERSTemplatesInfo.{ersSheetsWithCsopV4, ersSheetsWithCsopV5}
 import services.audit.AuditEvents
 import services.validation.ErsValidator
 import uk.gov.hmrc.http.HeaderCarrier
@@ -37,11 +37,11 @@ import scala.util.{Failure, Success, Try}
 
 @Singleton
 class DataGenerator @Inject()(auditEvents: AuditEvents,
-                              config: ApplicationConfig)(
+                              applicationConfig: ApplicationConfig)(
   implicit val ec: ExecutionContext) extends DataParser with Metrics with Logging {
 
-  val defaultChunkSize: Int = 10000
-  private[services] val ersSheetsClone: Map[String, SheetInfo] = ersSheets
+  private[services] def ersSheetsConf(schemeInfo: SchemeInfo): Map[String, SheetInfo] =
+    if (applicationConfig.csopV5Enabled && csopV5required(schemeInfo)) ersSheetsWithCsopV5 else ersSheetsWithCsopV4
 
   @throws(classOf[ERSFileProcessingException])
   def getErrors(iterator: Iterator[String])(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): ListBuffer[SchemeData] = {
@@ -64,7 +64,6 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     }
 
     while (iterator.hasNext) {
-
       val row = iterator.next()
       val rowData = parse(row)
       logger.debug(" parsed data ---> " + rowData + " -- cursor --> " + rowNum)
@@ -92,7 +91,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
               case _ =>
                 val foundData = rd._1
                 val data = constructColumnData(foundData, sheetColSize)
-                if (!isBlankRow(data.toSeq)) {
+                if (!isBlankRow(data)) {
                   schemeData.last.data += generateRowData(data, rowNum, validator)
                 }
                 incRowNum()
@@ -115,24 +114,21 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
   def setValidator(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): DataValidator = {
     try {
-      ERSValidationConfigs.getValidator(ersSheets(sheetName).configFileName)
+      ERSValidationConfigs.getValidator(ersSheetsConf(schemeInfo)(sheetName).configFileName)
     } catch {
-      case e: Exception => {
+      case e: Exception =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-        // Adjusting this log until this investigation is complete https://jira.tools.tax.service.gov.uk/browse/DDCE-3208
-        //logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
         logger.error("setValidator has thrown an exception. Exception message: " + e.getMessage)
         throw ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserConfigFailure}",
           "Could not set the validator ")
-      }
     }
   }
 
   def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
     implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, SheetInfo] = {
     logger.debug(s"[DataGenerator][getSheetCsv] Looking for sheetName: $sheetName")
-    ersSheetsClone.get(sheetName) match {
+    ersSheetsConf(schemeInfo).get(sheetName) match {
       case Some(sheetInfo) => Right(sheetInfo)
       case _ =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
@@ -145,7 +141,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
   def getValidatorAndSheetInfo(sheetName: String, schemeInfo: SchemeInfo)(
     implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, (DataValidator, SheetInfo)] = {
-    (Try(ERSValidationConfigs.getValidator(ersSheets(sheetName).configFileName)), getSheetCsv(sheetName, schemeInfo)) match {
+    (Try(ERSValidationConfigs.getValidator(ersSheetsConf(schemeInfo)(sheetName).configFileName)), getSheetCsv(sheetName, schemeInfo)) match {
       case (Success(validator), Right(value)) => Right((validator, value))
       case (Failure(e), _) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
@@ -173,8 +169,8 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   }
 
   def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): SheetInfo = {
-    logger.debug(s"Looking for sheetName: ${sheetName}")
-    ersSheets.getOrElse(sheetName, {
+    logger.debug(s"Looking for sheetName: $sheetName")
+    ersSheetsConf(schemeInfo).getOrElse(sheetName, {
       auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
       logger.warn("[DataGenerator][getSheet] Couldn't identify SheetName")
       throw ERSFileProcessingException(
@@ -238,5 +234,10 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   def deliverDataIteratorMetrics(startTime: Long): Unit =
     metrics.dataIteratorTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
+  @throws[IllegalArgumentException]
+  private def csopV5required(schemeInfo: SchemeInfo): Boolean = {
+    Try(schemeInfo.taxYear.split("/")(0).toInt >= 2023)
+      .getOrElse(throw new IllegalArgumentException(s"Invalid tax year format or conversion error: ${schemeInfo.taxYear}, expected format YYYY/YY"))
+  }
 }
 

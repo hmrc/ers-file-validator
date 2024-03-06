@@ -37,5 +37,4 @@ object ErsValidator extends Logging {
 
   def getCells(rowData: Seq[String], rowNumber: Int) =
     (rowData zip colNames).map { case (cellValue, col) => Cell(col, rowNumber, cellValue) }
-
 }

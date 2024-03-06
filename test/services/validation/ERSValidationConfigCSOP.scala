@@ -22,13 +22,14 @@ import services.validation.CSOPTestData.{ERSValidationCSOPExercisedTestData, ERS
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
 
-class CSOPOptionsGrantedV4ValidationCSOPTest extends PlaySpec with ERSValidationCSOPGrantedTestData with ValidationTestRunner{
+class CSOPOptionsGrantedValidationCSOPTest extends PlaySpec with ERSValidationCSOPGrantedTestData with ValidationTestRunner{
 
-  " ERS CSOP Granted Validation tests" should {
-    val validator = new DataValidator(ConfigFactory.load.getConfig("ers-csop-granted-validation-config"))
-    runTests(validator, getDescriptions, getTestData, getExpectedResults)
+  for(config <- List("ers-csop-granted-validation-config", "ers-csop-granted-validation-config-v5"))
+    s"ERS CSOP Granted Validation tests with config = $config" should {
+      val validator = new DataValidator(ConfigFactory.load.getConfig(config))
+      runTests(validator, getDescriptions, getTestData, getExpectedResults)
 
-    "when sharesListedOnSE is answered no, mvAgreedHMRC is a mandatory field" in {
+      "when sharesListedOnSE is answered no, mvAgreedHMRC is a mandatory field" in {
       val cellG = Cell("G", rowNumber, "")
       val cellF = Cell("F", rowNumber, "no")
       val row = Row(1,Seq(cellG,cellF))
@@ -37,7 +38,7 @@ class CSOPOptionsGrantedV4ValidationCSOPTest extends PlaySpec with ERSValidation
       resOpt.get must containError(ValidationError(cellG,"mandatoryG","G01","Enter 'yes' or 'no'."))
     }
 
-    "when sharesListedOnSE is answered yes, hmrcRef is a mandatory field" in {
+      "when sharesListedOnSE is answered yes, hmrcRef is a mandatory field" in {
       val cellH = Cell("H", rowNumber, "")
       val cellG = Cell("G", rowNumber, "yes")
       val row = Row(1,Seq(cellH,cellG))
@@ -46,21 +47,18 @@ class CSOPOptionsGrantedV4ValidationCSOPTest extends PlaySpec with ERSValidation
       resOpt.get must containError(ValidationError(cellH,"mandatoryH","G02","Enter the HMRC reference (must be less than 11 characters)."))
     }
 
-    "when a valid row of data is provided, no ValidationErrors should be raised" in {
+      "when a valid row of data is provided, no ValidationErrors should be raised" in {
       val row = Row(1,getValidRowData)
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       resOpt mustBe None
     }
 
-    "when a invalid row of data is provided, a list of ValidationErrors should be raised" in {
+      "when a invalid row of data is provided, a list of ValidationErrors should be raised" in {
       val row = Row(1,getInvalidRowData)
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       resOpt.get.size mustBe 7
     }
-
   }
-
-
 }
 
 class CSOPOptionsRCLTest extends PlaySpec with ERSValidationCSOPRCLTestData with ValidationTestRunner{
@@ -77,15 +75,12 @@ class CSOPOptionsRCLTest extends PlaySpec with ERSValidationCSOPRCLTestData with
       assert(resOpt.isDefined)
       resOpt.get must containError(ValidationError(cellC,"mandatoryC","C01","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))
     }
-
   }
-
 }
 
 class CSOPOptionsExercisedTest extends PlaySpec with ERSValidationCSOPExercisedTestData with ValidationTestRunner{
 
   "ERS CROP Options Exercised Validation Test" should {
-
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-csop-exercised-validation"))
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
 
@@ -106,7 +101,5 @@ class CSOPOptionsExercisedTest extends PlaySpec with ERSValidationCSOPExercisedT
       assert(resOpt.isDefined)
       resOpt.get must containError(ValidationError(cellR,"mandatoryR","R01","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))
     }
-
   }
-
 }

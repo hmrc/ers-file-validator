@@ -22,7 +22,7 @@ import services.validation.OTHERTestData._
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 
-class OTHERGrantsV4ValidationTest extends PlaySpec with ERSValidationOTHERGrantsTestData with ValidationTestRunner {
+class OTHERGrantsValidationTest extends PlaySpec with ERSValidationOTHERGrantsTestData with ValidationTestRunner {
 
   val validator = new DataValidator(ConfigFactory.load.getConfig("ers-other-grants-validation-config"))
 
