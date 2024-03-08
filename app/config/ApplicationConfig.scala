@@ -40,4 +40,5 @@ class ApplicationConfig @Inject()(config: ServicesConfig) {
   lazy val validationChunkSize: Int = config.getInt("validationChunkSize")
   lazy val uploadCsvSizeLimit: Int = config.getInt("csv.uploadSizeLimit")
   lazy val mongoTTLInSeconds: Int = config.getInt("mongodb.timeToLiveInSeconds")
+  lazy val csopV5Enabled: Boolean = config.getConfBool("features.csop-v5.enabled", defBool = false)
 }

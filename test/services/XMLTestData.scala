@@ -51,6 +51,7 @@ object XMLTestData extends BESIntegrationTestData with HeaderData{
 
 
   besParserTests +=(("Stream CSOP Options Granted Header", csopXMLHeaderSheet1, csopHeaderSheet1Data))
+  besParserTests +=(("Stream CSOP Options Granted V5 Header", csopXMLHeaderSheet1V5, csopHeaderSheet1DataV5))
   besParserTests +=(("Stream CSOP Options RCL Header", csopXMLHeaderSheet2,csopHeaderSheet2Data))
   besParserTests +=(("Stream CSOP Options Exercised Header", csopXMLHeaderSheet3,csopHeaderSheet3Data))
   besParserTests +=(("Stream EMI Adjustments Header", emiXMLHeaderSheet1, emiHeaderSheet1Data))
@@ -73,10 +74,11 @@ object XMLTestData extends BESIntegrationTestData with HeaderData{
   besParserTests +=(("Stream SIP Awards Header", sipXMLHeaderSheet1, sipHeaderSheet1Data))
   besParserTests +=(("Stream SIP Out Header", sipXMLHeaderSheet2, sipHeaderSheet2Data))
 
-
-
   staxIntegrationTests += (("stream EMI xml Row " , emiXML, emiXMLRow1))
-  staxIntegrationTests += (("stream CSOP xml Row ",csopXML,  csopXMLRow1))
+  staxIntegrationTests += (("stream CSOP Granted xml Row ", csopOptionsGrantedXML,  csopOptionsGrantedXMLRow1))
+  staxIntegrationTests += (("stream CSOP Granted V5 xml Row ", csopOptionsGrantedXMLV5,  csopOptionsGrantedXMLRow1))
+  staxIntegrationTests += (("stream CSOP Exercised xml Row ", csopOptionsExercisedXML,  csopOptionsExercisedXMLRow1))
+  staxIntegrationTests += (("stream CSOP RLC xml Row ", csopOptionsRCLXML,  csopOptionsRCLXMLRow1))
   staxIntegrationTests += (("stream SIP Awards xml Row", sipAwardsXML, sipAwardsXMLRow1))
   staxIntegrationTests += (("stream SIP Out xml Row", sipOutXML, sipOutXMLRow1))
   staxIntegrationTests += (("stream SAYE Granted xml Row", sayeGrantedXML, sayeGrantedXMLRow1))

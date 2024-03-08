@@ -158,5 +158,4 @@ trait ERSValidationCSOPGrantedTestData {
     )
     rowData
   }
-
 }

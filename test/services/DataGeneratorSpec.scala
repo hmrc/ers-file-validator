@@ -43,7 +43,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  val dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig)
+  def dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig)
 
   val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
@@ -80,6 +80,24 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
     "validate CSOP_OptionsExercised_V4 headerRow as valid" in {
       dataGenerator.validateHeaderRow(csopHeaderSheet3Data, "CSOP_OptionsExercised_V4")(schemeInfo, hc, request) must be(20)
+    }
+
+    "validate CSOP_OptionsGranted_V5 headerRow as valid" in {
+      when(mockAppConfig.csopV5Enabled).thenReturn(true)
+
+      dataGenerator.validateHeaderRow(csopHeaderSheet1DataV5, "CSOP_OptionsGranted_V5")(schemeInfo.copy(taxYear = "2023/24"), hc, request) must be(9)
+    }
+
+    "validate CSOP_OptionsRCL_V5 headerRow as valid" in {
+      when(mockAppConfig.csopV5Enabled).thenReturn(true)
+
+      dataGenerator.validateHeaderRow(csopHeaderSheet2Data, "CSOP_OptionsRCL_V5")(schemeInfo.copy(taxYear = "2023/24"), hc, request) must be(9)
+    }
+
+    "validate CSOP_OptionsExercised_V5 headerRow as valid" in {
+      when(mockAppConfig.csopV5Enabled).thenReturn(true)
+
+      dataGenerator.validateHeaderRow(csopHeaderSheet3Data, "CSOP_OptionsExercised_V5")(schemeInfo.copy(taxYear = "2023/24"), hc, request) must be(20)
     }
 
     "validate SIP_Awards_V4 headerRow as valid" in {
@@ -149,7 +167,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   "setValidator" should {
     "return a DataValidator if the given sheet name is valid" in {
-      assert(dataGenerator.setValidator("EMI40_Adjustments_V4")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request).isInstanceOf[DataValidator])
+      assert(dataGenerator.setValidator("EMI40_Adjustments_V4")(SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", ""), hc, request).isInstanceOf[DataValidator])
     }
 
     "throw an exception if the given sheet name is not valid" in {
@@ -159,14 +177,14 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   "getValidatorAndSheetInfo" should {
     "return a Right with a DataValidator if the given sheet name is valid" in {
-      dataGenerator.getValidatorAndSheetInfo("EMI40_Adjustments_V4", SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", "")) match {
+      dataGenerator.getValidatorAndSheetInfo("EMI40_Adjustments_V4", SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", "")) match {
         case Left(_) => fail("Did not return validator")
         case Right(_) => succeed
       }
     }
 
     "return a left with an exception if the given sheet name is not valid" in {
-      dataGenerator.getValidatorAndSheetInfo("Invalid", SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", "")) match {
+      dataGenerator.getValidatorAndSheetInfo("Invalid", SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", "")) match {
         case Left(_) => succeed
         case Right(_) => fail("Did not return expected exception")
       }
@@ -175,7 +193,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   "identifyAndDefineSheet" should {
     "identify and define the sheet with correct scheme type" in {
-      dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfo, hc, request) mustBe ("EMI40_Adjustments_V4")
+      dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfo, hc, request) mustBe "EMI40_Adjustments_V4"
     }
 
     "return an error when sheet name is invalid" in {
@@ -342,7 +360,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     def testServiceCreator(sheets: Map[String, SheetInfo]) = new DataGenerator(
       mockAuditEvents, mockAppConfig
     ) {
-      override val ersSheetsClone: Map[String, SheetInfo] = sheets
+      override def ersSheetsConf(schemeInfo: SchemeInfo): Map[String, SheetInfo] = sheets
     }
 
     when(mockAuditEvents.fileProcessingErrorAudit(any(), any(), any())(any(), any())).thenReturn(true)

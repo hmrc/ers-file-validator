@@ -39,6 +39,13 @@ class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {
       processor.next() must equal("CSOP_OptionsGranted_V4")
     }
 
+    "say that the table name is CSOP_OptionsGranted_V5" in {
+      val inputXml = xmlHeader + documentHeader + simpleXmlV5.toString() + documentHeaderClosingTag
+      val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))
+      processor.hasNext
+      processor.next() must equal("CSOP_OptionsGranted_V5")
+    }
+
     "information can be extracted from incoming string" in {
       val inputXml = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
       val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))

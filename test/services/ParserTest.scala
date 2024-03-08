@@ -18,6 +18,7 @@ package services
 
 import config.ApplicationConfig
 import models.{ERSFileProcessingException, SchemeInfo}
+import org.mockito.Mockito.when
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -39,7 +40,9 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  val dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig)
+  def dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig)
+
+  when(mockAppConfig.csopV5Enabled).thenReturn(true)
 
   implicit val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",

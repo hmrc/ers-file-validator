@@ -22,7 +22,7 @@ import services.validation.SAYETestData.{ERSValidationSAYEExercisedTestData, ERS
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 
-class ERSValidationConfig_SAYE_SayeGrantedTests extends PlaySpec with ERSValidationSAYEGrantedTestData with ValidationTestRunner {
+class ERSValidationConfigSAYEGrantedTests extends PlaySpec with ERSValidationSAYEGrantedTestData with ValidationTestRunner {
   "SAYE Granted V4 scheme config validation" should {
 
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-saye-granted-validation-config"))

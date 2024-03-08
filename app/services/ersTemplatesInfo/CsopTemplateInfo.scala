@@ -24,9 +24,13 @@ trait CsopTemplateInfo {
   val csopSheet2Name =  "CSOP_OptionsRCL_V4"
   val csopSheet3Name = "CSOP_OptionsExercised_V4"
 
+  val csopSheet1NameV5 = "CSOP_OptionsGranted_V5"
+  val csopSheet2NameV5 =  "CSOP_OptionsRCL_V5"
+  val csopSheet3NameV5 = "CSOP_OptionsExercised_V5"
 
   val csopSheet1title = "CSOP scheme template – Options granted"
   val csopSheet1ValConfig = "ers-csop-granted-validation-config"
+  val csopSheet1ValConfigV5 = "ers-csop-granted-validation-config-v5"
   val csopSheet2Title = "CSOP scheme template – Options released (including exchanges) cancelled or lapsed in year"
   val csopSheet2ValConfig = "ers-csop-rcl-validation"
   val csopSheet3Title ="CSOP scheme template – Options and replacement options exercised"
@@ -42,7 +46,18 @@ trait CsopTemplateInfo {
     "7.If no, was the market value agreed with HMRC?(yes/no)",
     "8.If yes, enter the HMRC valuation reference given",
     "9.Using the UMV at the time of each relevant grant, does any employee hold unexercised CSOP options over shares totalling more than £30k, including this grant?(yes/no)"
-  )//.map(_.replaceAll(csopHeaderFormat,""))
+  )
+
+  val csopOptionsGrantedHeaderRowV5 = List("1.Date of grant(yyyy-mm-dd)",
+    "2.Number of employees granted options",
+    "3.Over how many shares in total were CSOP options grantede.g. 100.00",
+    "4.Unrestricted market value (UMV) of each share used to determine option exercise price£e.g. 10.1234",
+    "5.Option exercise price per share£e.g. 10.1234",
+    "6.Are the shares under the CSOP option listed on a recognised stock exchange?(yes/no)",
+    "7.If no, was the market value agreed with HMRC?(yes/no)",
+    "8.If yes, enter the HMRC valuation reference given",
+    "9.Using the UMV at the time of each relevant grant, does any employee hold unexercised CSOP options over shares totalling more than £60k, including this grant?(yes/no)"
+  )
 
   val csopOptionsRCLHeaderRow =  List("1.Date of event(yyyy-mm-dd)",
     "2.Was money or value received by the option holder or anyone else when the option was released, exchanged, cancelled or lapsed? (yes/no) If yes go to question 3, otherwise no further information is needed for this event.",
@@ -52,7 +67,7 @@ trait CsopTemplateInfo {
     "6.Employee last name",
     "7.National Insurance number",
     "8.PAYE reference of employing company",
-    "9.Was PAYE operated?(yes/no)")//.map(_.replaceAll(csopHeaderFormat,""))
+    "9.Was PAYE operated?(yes/no)")
 
   val csopOptionsExercisedHeaderRow =
     List("1.Date of event(yyyy-mm-dd)",
@@ -75,6 +90,6 @@ trait CsopTemplateInfo {
       "18.If yes, deductible amountￂﾣe.g. 10.1234",
       "19.Has a National Insurance Contributions election or agreement been operated?(yes/no)",
       "20.Were all shares resulting from the exercise sold? (yes/no). Answer yes if they were either sold on the same day as the exercise in connection with the exercise or sale instructions were given for all shares to be sold on exercise"
-    )//.map(_.replaceAll(csopHeaderFormat,""))
+    )
 
 }

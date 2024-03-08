@@ -22,7 +22,7 @@ import services.validation.SIPTestData.{ERSValidationSIPAwardsTestData, ERSValid
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 
-class SIPAwardsV4ValidationTest extends PlaySpec with ERSValidationSIPAwardsTestData with ValidationTestRunner{
+class SIPAwardsValidationTest extends PlaySpec with ERSValidationSIPAwardsTestData with ValidationTestRunner{
 
   val validator = new DataValidator(ConfigFactory.load.getConfig("ers-sip-awards-validation-config"))
 

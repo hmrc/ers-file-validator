@@ -28,7 +28,6 @@ import models.upscan.UpscanCsvFileData
 import models._
 import play.api.Logging
 import play.api.mvc.Request
-import services.ERSTemplatesInfo.ersSheets
 import services.FlowOps.eitherFromFunction
 import services.audit.AuditEvents
 import services.validation.ErsValidator.getCells
@@ -51,7 +50,6 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
                                    actorSystem: ActorSystem) extends Logging {
 
   private val uploadCsvSizeLimit: Int = appConfig.uploadCsvSizeLimit
-  private[services] val ersSheetsClone: Map[String, SheetInfo] = ersSheets
 
   def extractEntityData(response: HttpResponse): Source[ByteString, _] =
     response match {

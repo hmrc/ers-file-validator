@@ -17,13 +17,10 @@
 package models
 
 import models.upscan.UpscanCallback
-
-import java.time.{Instant, ZoneId, ZonedDateTime}
 import play.api.libs.json._
 
-import java.time.format.DateTimeFormatter
+import java.time.{Instant, ZoneId, ZonedDateTime}
 import scala.collection.mutable.ListBuffer
-import scala.util.control.Exception.nonFatalCatch
 
 case class SchemeData (schemeInfo: SchemeInfo, sheetName: String, numberOfParts: Option[Int], data: ListBuffer[Seq[String]])
 

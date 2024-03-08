@@ -23,7 +23,7 @@ import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 
 
-class EMIAdjustmentsV4ValidationTest extends PlaySpec with ERSValidationEMIAdjustmentsTestData with ValidationTestRunner {
+class EMIAdjustmentsValidationTest extends PlaySpec with ERSValidationEMIAdjustmentsTestData with ValidationTestRunner {
 
   "ERS Validation tests for EMI Adjustments" should {
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
