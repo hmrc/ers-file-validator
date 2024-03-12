@@ -31,7 +31,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(scalaSettings *)
   .settings(defaultSettings() *)
   .settings(
-    scalaVersion := "2.13.12",
+    scalaVersion := "2.13.13",
     libraryDependencies ++= AppDependencies(),
     Test / parallelExecution := false,
     Test / fork := true,
@@ -44,9 +44,8 @@ lazy val microservice = Project(appName, file("."))
   .configs(IntegrationTest)
   .settings(inConfig(IntegrationTest)(itSettings))
 
-
     scalacOptions ++= Seq(
-  "-Wconf:src=routes/.*:s"
+      "-Wconf:cat=unused-imports&src=routes/.*:s"
 )
 
 lazy val itSettings = integrationTestSettings() ++ Seq(
@@ -56,8 +55,6 @@ lazy val itSettings = integrationTestSettings() ++ Seq(
   parallelExecution            := false,
   fork                         := true
 )
-
-libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
 
 dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.12.7" // Scala module 2.12.7 requires Jackson Databind version >= 2.12.0 and < 2.13.0
 
