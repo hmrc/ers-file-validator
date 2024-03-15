@@ -5,7 +5,7 @@ object AppDependencies {
 
   val bootstrapVersion  = "8.5.0"
   val pekkoVersion      = "1.0.2"
-  val mongoVersion      = "1.7.0"
+  val mongoVersion      = "1.8.0"
 
   val compile: Seq[ModuleID] = Seq(
     ws,

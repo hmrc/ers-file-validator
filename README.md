@@ -8,7 +8,7 @@ and sending to protected.
 ### Running the service
 Service Manager: `sm2 --start ERS_RETURNS_ALL`
 
-You can use the `./run_all_tests` script to quickly run the unit and integration tests, along with scalastyle and a dependency check, for this repo
+You can use the `./run_all_tests.sh` script to quickly run the unit and integration tests, along with scalastyle and a dependency check, for this repo
 
 ##### License
 
