@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package repository
+package test.repository
 
 import config.ApplicationConfig
 import models.upscan.UpscanCallback
@@ -26,6 +26,7 @@ import play.api.libs.json._
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import repository.ERSFileValidatorSessionRepository
 import uk.gov.hmrc.mongo.cache.DataKey
 import uk.gov.hmrc.mongo.{MongoComponent, TimestampSupport}
 
