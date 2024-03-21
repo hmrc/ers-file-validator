@@ -16,7 +16,7 @@
 
 package connectors
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import config.ApplicationConfig
 import models._
 import models.upscan.UpscanCallback

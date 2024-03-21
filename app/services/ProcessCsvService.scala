@@ -16,12 +16,12 @@
 
 package services
 
-import akka.NotUsed
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.HttpResponse
-import akka.stream.alpakka.csv.scaladsl.CsvParsing
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.stream.connectors.csv.scaladsl.CsvParsing
+import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
+import org.apache.pekko.util.ByteString
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
 import models.upscan.UpscanCsvFileData
@@ -53,7 +53,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 
   def extractEntityData(response: HttpResponse): Source[ByteString, _] =
     response match {
-      case HttpResponse(akka.http.scaladsl.model.StatusCodes.OK, _, entity, _) => entity.withSizeLimit(uploadCsvSizeLimit).dataBytes
+      case HttpResponse(org.apache.pekko.http.scaladsl.model.StatusCodes.OK, _, entity, _) => entity.withSizeLimit(uploadCsvSizeLimit).dataBytes
       case notOkResponse =>
         logger.error(
           s"[ProcessCsvService][extractEntityData] Illegal response from Upscan: ${notOkResponse.status.intValue}, " +

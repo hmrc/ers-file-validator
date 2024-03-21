@@ -16,10 +16,10 @@
 
 package helpers
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.HttpResponse
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
 import models.{SchemeData, SchemeInfo, SubmissionsSchemeData}

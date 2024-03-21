@@ -16,7 +16,7 @@
 
 package controllers
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import controllers.auth.Authorisation
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._

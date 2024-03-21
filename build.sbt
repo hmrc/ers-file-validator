@@ -12,6 +12,9 @@ lazy val IntegrationTest = config("it") extend Test
 
 val appName: String = "ers-file-validator"
 
+ThisBuild / majorVersion := 1
+ThisBuild / scalaVersion := "2.13.13"
+
 lazy val plugins: Seq[Plugins] = Seq(play.sbt.PlayScala, SbtDistributablesPlugin)
 
 lazy val scoverageSettings = {
@@ -31,7 +34,6 @@ lazy val microservice = Project(appName, file("."))
   .settings(scalaSettings *)
   .settings(defaultSettings() *)
   .settings(
-    scalaVersion := "2.13.12",
     libraryDependencies ++= AppDependencies(),
     Test / parallelExecution := false,
     Test / fork := true,
@@ -39,26 +41,16 @@ lazy val microservice = Project(appName, file("."))
     routesGenerator := InjectedRoutesGenerator
   )
   .settings(resolvers += Resolver.jcenterRepo)
-  .settings(majorVersion := 1)
   .settings(PlayKeys.playDefaultPort := 9226)
-  .configs(IntegrationTest)
-  .settings(inConfig(IntegrationTest)(itSettings))
-
 
     scalacOptions ++= Seq(
-  "-Wconf:src=routes/.*:s"
+      "-Wconf:cat=unused-imports&src=routes/.*:s"
 )
 
-lazy val itSettings = integrationTestSettings() ++ Seq(
-  unmanagedSourceDirectories   := Seq(
-    baseDirectory.value / "it"
-  ),
-  parallelExecution            := false,
-  fork                         := true
-)
-
-libraryDependencySchemes ++= Seq("org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always)
-
-dependencyOverrides += "com.fasterxml.jackson.core" % "jackson-databind" % "2.12.7" // Scala module 2.12.7 requires Jackson Databind version >= 2.12.0 and < 2.13.0
+lazy val it = project
+  .enablePlugins(PlayScala)
+  .dependsOn(microservice % "test->test")
+  .settings(DefaultBuildSettings.itSettings())
+  .settings(Test / fork := true)
 
 addCommandAlias("scalastyleAll", "all scalastyle Test/scalastyle")

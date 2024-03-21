@@ -16,12 +16,12 @@
 
 package services
 
-import akka.NotUsed
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.stream.scaladsl.{Sink, Source}
-import akka.testkit.TestKit
-import akka.util.ByteString
+import org.apache.pekko.NotUsed
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
+import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.testkit.TestKit
+import org.apache.pekko.util.ByteString
 import com.typesafe.config.{Config, ConfigFactory}
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
