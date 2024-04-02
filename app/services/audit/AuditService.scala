@@ -24,6 +24,7 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.play.audit.DefaultAuditConnector
 
 import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import scala.concurrent.ExecutionContext
 
 @Singleton
@@ -45,8 +46,9 @@ class AuditService @Inject()(auditConnector: DefaultAuditConnector,
   private def generateTags(session: Session, hc: HeaderCarrier): Map[String, String] =
     hc.otherHeaders.toMap ++
       hc.otherHeaders.toMap ++
-      Map("dateTime" ->  getDateTime.toString)
+      Map(
+        "dateTime" ->  getDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"))
+      )
 
-  protected def getDateTime = ZonedDateTime.now()
-
+  protected def getDateTime: ZonedDateTime = ZonedDateTime.now()
 }
