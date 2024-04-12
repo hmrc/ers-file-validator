@@ -47,7 +47,7 @@ class AuditService @Inject()(auditConnector: DefaultAuditConnector,
     hc.otherHeaders.toMap ++
       hc.otherHeaders.toMap ++
       Map(
-        "dateTime" ->  getDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ"))
+        "dateTime" ->  getDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
       )
 
   protected def getDateTime: ZonedDateTime = ZonedDateTime.now()
