@@ -61,11 +61,11 @@ class DataUploadController @Inject()(sessionService: SessionCacheService,
           }.recover {
             case e: ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
-              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException: ${e.getMessage}")
+              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException: ${e.getMessage}, context: ${e.context} schemeRef: ${schemeInfo.schemeRef}")
               Accepted(e.message)
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)
-              logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data.")
+              logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data. schemeRef: ${schemeInfo.schemeRef}")
               InternalServerError
           }
         },
@@ -99,11 +99,11 @@ class DataUploadController @Inject()(sessionService: SessionCacheService,
           Future.sequence(extractedSchemeData).flatMap { allFilesResults =>
             allFilesResults.collectFirst {
               case Left(throwable: ERSFileProcessingException) =>
-                logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] ERS file processing exception: ${throwable.message}")
+                logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] ERS file processing exception: ${throwable.message}, schemeRef: ${schemeInfo.schemeRef}")
                 deliverFileProcessingMetrics(startTime)
                 Future.successful(Accepted(throwable.message))
               case Left(throwable) =>
-                logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] Unknown exception: ${throwable.getMessage}, full exception: $throwable")
+                logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] Unknown exception: ${throwable.getMessage}, full exception: $throwable, schemeRef: ${schemeInfo.schemeRef}")
                 deliverFileProcessingMetrics(startTime)
                 Future.successful(InternalServerError)
             } match {
@@ -118,12 +118,12 @@ class DataUploadController @Inject()(sessionService: SessionCacheService,
                 sessionService.storeCallbackData(res.callbackData.head, totalRowCount)(RequestWithUpdatedSession(request, sessionId)).map {
                   case callback: Option[UpscanCallback] if callback.isDefined =>
                     val numberOfSlices = result.map(_.noOfSlices).sum
-                    logger.info("[DataUploadController][processCsvFileDataFromFrontendV2] File validated successfully")
+                    logger.info("[DataUploadController][processCsvFileDataFromFrontendV2] File validated successfully, schemeRef: ${schemeInfo.schemeRef}")
                     Ok(numberOfSlices.toString)
                   case _ =>
                     logger.error(
                       s"[DataUploadController][processCsvFileDataFromFrontendV2] csv storeCallbackData failed" +
-                        s" while storing data, timestamp: ${java.time.LocalTime.now()}.")
+                        s" while storing data, schemeRef: ${schemeInfo.schemeRef}, timestamp: ${java.time.LocalTime.now()}.")
                     deliverFileProcessingMetrics(startTime)
                     Accepted("csv callback data storage in sessioncache failed")
                 }
