@@ -70,10 +70,10 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       if (rowData.isLeft) {
         checkForMissingHeaders(rowNum)
         sheetName = identifyAndDefineSheet(rowData.swap.getOrElse(""))
-        logger.debug("Sheetname = " + sheetName + "******")
-        logger.debug("SCHEME TYPE = " + schemeInfo.schemeType + "******")
+        logger.info(s"Sheetname = $sheetName (schemeRef: ${schemeInfo.schemeRef}) ******")
+        logger.info(s"SCHEME TYPE = ${schemeInfo.schemeType} (schemeRef: ${schemeInfo.schemeRef}) ******")
         schemeData += SchemeData(schemeInfo, sheetName, None, ListBuffer())
-        logger.debug("SchemeData = " + schemeData.size + "******")
+        logger.info(s"SchemeData = ${schemeData.size} (schemeRef: ${schemeInfo.schemeRef}) ******")
         rowNum = 1
         validator = setValidator(sheetName)
       } else {
@@ -169,7 +169,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   }
 
   def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): SheetInfo = {
-    logger.debug(s"Looking for sheetName: $sheetName")
+    logger.info(s"Looking for sheetName: $sheetName (schemeRef: ${schemeInfo.schemeRef})")
     ersSheetsConf(schemeInfo).getOrElse(sheetName, {
       auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
       logger.warn("[DataGenerator][getSheet] Couldn't identify SheetName")
