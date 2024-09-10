@@ -18,7 +18,6 @@ package utils
 
 object ErrorResponseMessages {
 
-
   val fileProcessingServiceFailedStream = "Failed to stream the data from file"
   val fileProcessingServiceBulkEntity = "Exception bulk entity streaming"
   val fileValidatorConnectorFailedSendingData = "Failed sending data"
@@ -30,7 +29,7 @@ object ErrorResponseMessages {
   val dataParserFileParsingError = "Error while Parsing File"
   val dataParserParsingOfFileData = "Parsing of File Data"
   val dataParserIncorrectSheetName = "Incorrect ERS Template - Sheet Name isn't as expected"
-  def dataParserIncorrectSchemeType(data: String = "") = s"Incorrect ERS Template - Scheme Type isn't as expected $data"
+  def dataParserIncorrectSchemeType(data: String = "") = s"Incorrect ERS Template - Scheme Type isn't as expected, expected: $data"
   def dataParserUnidentifiableSheetName(sheetName: String = "") = s"Couldn't identify SheetName $sheetName"
   val dataParserIncorrectHeader = "Incorrect ERS Template - Header doesn't match"
   val dataParserHeadersDontMatch = "Header doesn't match"
@@ -40,6 +39,5 @@ object ErrorResponseMessages {
   val dataParserNoData = """The file that you chose doesn’t have any data after row 9. The reportable events data must start in cell A10.<br/><a href="https://www.gov.uk/government/collections/employment-related-securities">Use the ERS guidance documents</a> to help you create error-free files."""
   def ersCheckCsvFileNoData(sheetName: String = "") = "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload " +
     s"$sheetName as part of your annual return."
-
 
 }

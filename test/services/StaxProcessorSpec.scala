@@ -24,6 +24,11 @@ import scala.xml.Elem
 
 class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {
 
+  def constructXmlDocument(elements : Elem*) : InputStream = {
+    val inputXml = xmlHeader + documentHeader + elements.foldLeft("")(_ + _.toString) + documentHeaderClosingTag
+    new ByteArrayInputStream(inputXml.getBytes("utf-8"))
+  }
+
   "StaxProcessor" must {
 
     "return true for has next" in {
@@ -35,14 +40,12 @@ class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {
     "say that the table name is CSOP_OptionsGranted_V4" in {
       val inputXml = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
       val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))
-      processor.hasNext
       processor.next() must equal("CSOP_OptionsGranted_V4")
     }
 
     "say that the table name is CSOP_OptionsGranted_V5" in {
       val inputXml = xmlHeader + documentHeader + simpleXmlV5.toString() + documentHeaderClosingTag
       val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))
-      processor.hasNext
       processor.next() must equal("CSOP_OptionsGranted_V5")
     }
 
@@ -52,23 +55,14 @@ class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {
       processor.getName("<['urn:oasis:names:tc:opendocument:xmlns:table:1.0']:table:table table:name='EMI40_Adjustments_V4' table:style-name='ta1'>") must equal("EMI40_Adjustments_V4")
     }
 
-    def constructXmlDocument(elements : Elem*) : InputStream = {
-      val inputXml = xmlHeader + documentHeader + elements.foldLeft("")(_ + _.toString) + documentHeaderClosingTag
-      new ByteArrayInputStream(inputXml.getBytes("utf-8"))
-    }
-
     "return the expected two table names" in {
       val processor = new StaxProcessor(constructXmlDocument(simpleXml, simpleXml2))
-
-      processor.hasNext
       processor.next()
-      processor.hasNext
       processor.next() must equal("table2")
     }
 
     "return the first row of the table as xml" in {
       val processor = new StaxProcessor(constructXmlDocument(simpleTableWithARow))
-      processor.hasNext
       processor.next()
       processor.next() must equal("<table:table-row table:style-name='ro5'><table:table-cell table:style-name='ce6' calcext:value-type='string'><text:p>4.</text:p></table:table-cell></table:table-row>")
     }

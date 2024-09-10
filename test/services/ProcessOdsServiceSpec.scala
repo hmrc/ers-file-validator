@@ -62,8 +62,8 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     schemeType = "EMI"
   )
 
-  def createListBuffer(schemeInfo: SchemeInfo, sheetName: String, listBuffer: ListBuffer[Seq[String]]): ListBuffer[SchemeData] = {
-    ListBuffer(SchemeData(schemeInfo, sheetName, None, listBuffer))
+  def createSchemeDataSeq(schemeInfo: SchemeInfo, sheetName: String, listBuffer: ListBuffer[Seq[String]]): Seq[SchemeData] = {
+    Seq(SchemeData(schemeInfo, sheetName, None, listBuffer))
   }
 
   val callbackData: UpscanCallback = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)
@@ -91,7 +91,9 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
       val listBuffer = ListBuffer(
         Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
       )
-      when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
+
+      when(mockDataGenerator.getErrors(any())(any(),any(),any()))
+        .thenReturn(createSchemeDataSeq(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
       when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
       when(mockSessionService.storeCallbackData(any(),any())(any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
@@ -128,7 +130,8 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
       Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544"),
       Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
     )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
+    when(mockDataGenerator.getErrors(any())(any(),any(),any()))
+      .thenReturn(createSchemeDataSeq(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
     when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(Some(callbackData)))
@@ -145,7 +148,8 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     val listBuffer = ListBuffer(
       Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
     )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
+    when(mockDataGenerator.getErrors(any())(any(),any(),any()))
+      .thenReturn(createSchemeDataSeq(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
     when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(None))
@@ -169,7 +173,8 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     val listBuffer = ListBuffer(
       Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
     )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
+    when(mockDataGenerator.getErrors(any())(any(),any(),any()))
+      .thenReturn(createSchemeDataSeq(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]]))
       .thenReturn(Future.successful(Left(new RuntimeException("Runtime error"))))

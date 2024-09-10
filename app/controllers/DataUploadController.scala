@@ -61,7 +61,7 @@ class DataUploadController @Inject()(sessionService: SessionCacheService,
           }.recover {
             case e: ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
-              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException: ${e.getMessage}, context: ${e.context} schemeRef: ${schemeInfo.schemeRef}")
+              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException: ${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
               Accepted(e.message)
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)

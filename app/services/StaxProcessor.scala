@@ -16,10 +16,12 @@
 
 package services
 
+import services.StaxProcessor.notFoundString
+
 import java.io.InputStream
 import javax.xml.stream.events.XMLEvent
 import javax.xml.stream.{XMLEventReader, XMLInputFactory}
-import scala.util.control.Breaks._
+import scala.annotation.tailrec
 
 class StaxProcessor(inputStream: InputStream) extends Iterator[String] {
 
@@ -29,70 +31,68 @@ class StaxProcessor(inputStream: InputStream) extends Iterator[String] {
   xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false)
   xif.setProperty(XMLInputFactory.IS_VALIDATING, false)
 
-  val eventReader: XMLEventReader = xif.createXMLEventReader(inputStream)
+  private val eventReader: XMLEventReader = xif.createXMLEventReader(inputStream)
 
-  override def hasNext: Boolean = {
-    while (eventReader.hasNext) {
-      val xmlevent = eventReader.peek()
-      if (xmlevent.isStartElement) {
-        val name = xmlevent.asStartElement().getName.getLocalPart
-        if (name == "table:table" || name == "table:table-row") {
-          return true
-        }
-        else {
-          eventReader.nextEvent()
-        }
-      } else {
-        eventReader.nextEvent()
-      }
+  private val tableXmlElements: Seq[String] = Seq("table:table", "table:table-row")
+
+  @tailrec
+  private def checkForTableRow(xmlEvent: XMLEvent): Option[XMLEvent] = {
+    if (xmlEvent.isStartElement && tableXmlElements
+      .contains(xmlEvent.asStartElement().getName.getLocalPart)) {
+      Some(xmlEvent)
     }
-    false
-  }
-
-  override def next(): String = {
-    val nextValue = eventReader.nextEvent()
-    if(nextValue.isStartElement) {
-      if (nextValue.asStartElement().getName.getLocalPart == "table:table-row")
-      {
-        val a = getStringToEndElement("table:table-row")
-        val b = nextValue.toString
-        b + a
+    else {
+      if (eventReader.hasNext) {
+        checkForTableRow(eventReader.nextEvent())
       }
       else {
-        getName(nextValue.toString)
+        None
+      }
+    }
+  }
+
+  override def hasNext: Boolean = eventReader.hasNext
+
+  override def next(): String = {
+    val nextValue: Option[XMLEvent] = checkForTableRow(eventReader.nextEvent())
+    nextValue match {
+      case Some(xmlElement: XMLEvent) =>
+        if (xmlElement.asStartElement().getName.getLocalPart == "table:table-row") {
+          getStringToEndElement(Seq(xmlElement), "table:table-row").mkString
+        }
+        else {
+          getName(xmlElement.toString)
+        }
+      case None => notFoundString
+    }
+  }
+
+  def getName(message: String) : String = {
+    val sheetNameRegEx = "(table:name=)\\'(\\w+)\\'".r
+    sheetNameRegEx.findFirstMatchIn(message).map(_ group 2).getOrElse(notFoundString)
+  }
+
+  def foundelement(event: XMLEvent, elementName: String): Boolean =
+    event.isEndElement && event.asEndElement().getName.getLocalPart == elementName
+
+  @tailrec
+  private def getStringToEndElement(xmlElements: Seq[XMLEvent], endElement: String): Seq[XMLEvent] = {
+    if (eventReader.hasNext){
+      val nextEvent = eventReader.nextEvent()
+      val updatedXmlElements: Seq[XMLEvent] = xmlElements.appended(nextEvent)
+      if (foundelement(nextEvent, endElement)){
+        updatedXmlElements
+      }
+      else {
+        getStringToEndElement(updatedXmlElements, endElement)
       }
     }
     else {
-      "--NOT-FOUND--"
+      Seq.empty[XMLEvent]
     }
   }
+}
 
-  def getName(message : String) : String = {
-    val sheetNameRegEx = "(table:name=)\\'(\\w+)\\'".r
-    sheetNameRegEx.findFirstMatchIn(message).map(_ group 2).getOrElse("--NOT-FOUND--")
-  }
-
-  def getStringToEndElement(endelement: String): String =
-  {
-    val buffer: StringBuilder = new StringBuilder
-
-    def foundelement(  event: XMLEvent,elementName: String): Boolean = {
-      if(event.isEndElement) {
-        event.asEndElement().getName.getLocalPart == elementName
-      }
-      else {
-        false
-      }
-    }
-    breakable {
-    while(eventReader.hasNext) {
-        val thenextEvent = eventReader.nextEvent()
-        buffer.append(thenextEvent.toString)
-        if (foundelement(thenextEvent, endelement)) {
-          break()
-        }
-      }
-    }
-    buffer.toString
-  }
+object StaxProcessor{
+  val notFoundString: String = "--NOT-FOUND--"
 }

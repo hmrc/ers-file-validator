@@ -22,6 +22,7 @@ import models.{ERSFileProcessingException, SchemeData, SchemeInfo}
 import play.api.Logging
 import play.api.mvc.Request
 import services.ERSTemplatesInfo.{ersSheetsWithCsopV4, ersSheetsWithCsopV5}
+import services.StaxProcessor.notFoundString
 import services.audit.AuditEvents
 import services.validation.ErsValidator
 import uk.gov.hmrc.http.HeaderCarrier
@@ -31,9 +32,11 @@ import utils.ErrorResponseMessages
 
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
+import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
+import com.typesafe.config.ConfigException
 
 @Singleton
 class DataGenerator @Inject()(auditEvents: AuditEvents,
@@ -43,85 +46,119 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   private[services] def ersSheetsConf(schemeInfo: SchemeInfo): Map[String, SheetInfo] =
     if (applicationConfig.csopV5Enabled && csopV5required(schemeInfo)) ersSheetsWithCsopV5 else ersSheetsWithCsopV4
 
-  @throws(classOf[ERSFileProcessingException])
-  def getErrors(iterator: Iterator[String])(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): ListBuffer[SchemeData] = {
-    var rowNum = 0
-    implicit var sheetName: String = ""
-    var sheetColSize = 0
-    val schemeData: ListBuffer[SchemeData] = ListBuffer()
-    var validator: DataValidator = ERSValidationConfigs.defValidator
+  case class SchemeDataWithValidatorAndSheetColSize(
+                                                    listOfSchemeData: Seq[SchemeData] = Seq.empty[SchemeData],
+                                                    validator: DataValidator = ERSValidationConfigs.defValidator,
+                                                    sheetColSize: Int = 0
+                                                    )
 
-    def incRowNum() = rowNum = rowNum + 1
-
-    val startTime = System.currentTimeMillis()
-
-    def checkForMissingHeaders(rowNum: Int) = {
-      if (rowNum > 0 && rowNum < 9) {
-        throw ERSFileProcessingException(
-          s"${ErrorResponseMessages.dataParserIncorrectHeader}",
-          s"${ErrorResponseMessages.dataParserIncorrectHeader}")
+  def processRow(rowNum: Int,
+                 rowData: (Seq[String], Int),
+                 schemeDataWithValidator: SchemeDataWithValidatorAndSheetColSize
+                )(implicit sheetName: String, schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): SchemeDataWithValidatorAndSheetColSize = {
+    if (rowNum == 9){
+      logger.debug("[DataGenerator][getErrors] GetData: incRowNum if  9: " + rowNum + "sheetColSize: " + schemeDataWithValidator.sheetColSize)
+      logger.debug("[DataGenerator][getErrors] sheetName--->" + sheetName)
+      schemeDataWithValidator.copy(sheetColSize = validateHeaderRow(rowData._1, sheetName))
+    }
+    else if (rowNum > 9) {
+      val data: Seq[String] = constructColumnData(rowData._1, schemeDataWithValidator.sheetColSize)
+      if (!isBlankRow(data)) {
+        val generatedRowData = generateRowData(data, rowNum, schemeDataWithValidator.validator)
+        val generatedDataWithRepeats: Seq[Seq[String]] = List.fill(rowData._2)(generatedRowData)
+        val updatedData: ListBuffer[Seq[String]] = schemeDataWithValidator.listOfSchemeData.last.data ++ generatedDataWithRepeats
+        val updatedLastSchemeData: SchemeData = schemeDataWithValidator.listOfSchemeData.last.copy(data = updatedData)
+        schemeDataWithValidator.copy(listOfSchemeData = schemeDataWithValidator.listOfSchemeData.dropRight(1).appended(updatedLastSchemeData))
+      }
+      else {
+        schemeDataWithValidator
       }
     }
+    else {
+      logger.debug("[DataGenerator][processRow] RowNum: " + rowNum)
+      schemeDataWithValidator
+    }
+  }
 
-    while (iterator.hasNext) {
-      val row = iterator.next()
-      val rowData = parse(row)
-      logger.debug(" parsed data ---> " + rowData + " -- cursor --> " + rowNum)
-      if (rowData.isLeft) {
-        checkForMissingHeaders(rowNum)
-        sheetName = identifyAndDefineSheet(rowData.swap.getOrElse(""))
-        logger.info(s"Sheetname = $sheetName (schemeRef: ${schemeInfo.schemeRef}) ******")
-        logger.info(s"SCHEME TYPE = ${schemeInfo.schemeType} (schemeRef: ${schemeInfo.schemeRef}) ******")
-        schemeData += SchemeData(schemeInfo, sheetName, None, ListBuffer())
-        logger.info(s"SchemeData = ${schemeData.size} (schemeRef: ${schemeInfo.schemeRef}) ******")
-        rowNum = 1
-        validator = setValidator(sheetName)
-      } else {
-        rowData.map { rd =>
-          (1 to rd._2).foreach { _ =>
-            rowNum match {
-              case count if count < 9 =>
-                logger.debug("[DataGenerator][getErrors] GetData: incRowNum if count < 9: " + count + " RowNum: " + rowNum)
-                incRowNum()
-              case 9 =>
-                logger.debug("[DataGenerator][getErrors] GetData: incRowNum if  9: " + rowNum + "sheetColSize: " + sheetColSize)
-                logger.debug("[DataGenerator][getErrors] sheetName--->" + sheetName)
-                sheetColSize = validateHeaderRow(rd._1, sheetName)
-                incRowNum()
-              case _ =>
-                val foundData = rd._1
-                val data = constructColumnData(foundData, sheetColSize)
-                if (!isBlankRow(data)) {
-                  schemeData.last.data += generateRowData(data, rowNum, validator)
-                }
-                incRowNum()
-              }
-            }
+  private def checkForMissingHeaders(rowNum: Int): Unit = {
+    if (rowNum > 0 && rowNum < 9) {
+      throw ERSFileProcessingException(
+        s"${ErrorResponseMessages.dataParserIncorrectHeader}",
+        s"${ErrorResponseMessages.dataParserIncorrectHeader}")
+    }
+  }
+
+  @tailrec
+  private def processNextRow(staxProcessor: Iterator[String],
+                             rowNum: Int = 0,
+                             schemeDataWithValidator: SchemeDataWithValidatorAndSheetColSize
+                    )(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Seq[SchemeData] = {
+    val listSchemeData: Seq[SchemeData] = schemeDataWithValidator.listOfSchemeData
+    if (staxProcessor.hasNext) {
+      val nextRowOfData: Either[String, (Seq[String], Int)] = parse(staxProcessor.next())
+      nextRowOfData match {
+        case Left(parsedData: String) =>
+          checkForMissingHeaders(rowNum)
+          if (parsedData == notFoundString){
+            listSchemeData
           }
+          else {
+            val sheetName = identifyAndDefineSheet(nextRowOfData.swap.getOrElse(""))
+            logger.info(s"Sheetname = $sheetName (schemeRef: ${schemeInfo.schemeRef}) ******")
+            logger.info(s"SCHEME TYPE = ${schemeInfo.schemeType} (schemeRef: ${schemeInfo.schemeRef}) ******")
+            val updatedSchemeData: SchemeData = SchemeData(schemeInfo, sheetName, None, ListBuffer())
+            val updatedSchemeDataWithValidator = schemeDataWithValidator.copy(
+              listOfSchemeData = schemeDataWithValidator.listOfSchemeData :+ updatedSchemeData,
+              validator = setValidator(sheetName)
+            )
+            logger.info(s"SchemeData = ${updatedSchemeDataWithValidator.listOfSchemeData.size} (schemeRef: ${schemeInfo.schemeRef}) ******")
+            processNextRow(staxProcessor, 1, updatedSchemeDataWithValidator)
+          }
+        case Right(passedRowData: (Seq[String], Int)) =>
+          implicit val sheetName: String = listSchemeData.lastOption.map(_.sheetName).getOrElse("")
+          val processedOtherRows: SchemeDataWithValidatorAndSheetColSize = processRow(rowNum, passedRowData, schemeDataWithValidator)
+          processNextRow(staxProcessor, rowNum + 1, processedOtherRows)
       }
     }
+    else {
+      checkForMissingHeaders(rowNum)
+      listSchemeData
+    }
+  }
 
-    checkForMissingHeaders(rowNum)
-    if (schemeData.foldLeft(0)((sum, obj) => sum + obj.data.size) == 0) {
+  @throws(classOf[ERSFileProcessingException])
+  def getErrors(staxProcessor: Iterator[String])
+               (implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Seq[SchemeData] = {
+    val startTime = System.currentTimeMillis()
+    val processedSchemeData: Seq[SchemeData] =
+      processNextRow(staxProcessor, 0, SchemeDataWithValidatorAndSheetColSize())
+    if (processedSchemeData.foldLeft(0)((sum, obj) => sum + obj.data.size) == 0) {
       throw ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserNoData}",
         s"${ErrorResponseMessages.dataParserNoData}")
     }
     deliverDataIteratorMetrics(startTime)
-    logger.debug("The SchemeData that GetData finally returns: " + schemeData)
-    schemeData
+    logger.debug("The SchemeData that GetData finally returns: " + processedSchemeData)
+    processedSchemeData
   }
 
   def setValidator(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): DataValidator = {
+    val setValidatorERSFileProcessingException: ERSFileProcessingException = ERSFileProcessingException(
+      s"${ErrorResponseMessages.dataParserConfigFailure}",
+      "Could not set the validator "
+    )
     try {
       ERSValidationConfigs.getValidator(ersSheetsConf(schemeInfo)(sheetName).configFileName)
     } catch {
+      case _: ConfigException.Missing =>
+        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
+        logger.error(s"setValidator has thrown an exception, sheet name: $sheetName does match any for scheme type")
+        throw setValidatorERSFileProcessingException
       case e: Exception =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-        logger.error("setValidator has thrown an exception. Exception message: " + e.getMessage)
-        throw ERSFileProcessingException(
-          s"${ErrorResponseMessages.dataParserConfigFailure}",
-          "Could not set the validator ")
+        logger.error(s"setValidator has thrown an exception, sheet name: $sheetName but scheme type: ${schemeInfo.schemeType} specified." +
+          s" Exception message: " + e.getMessage)
+        throw setValidatorERSFileProcessingException
     }
   }
 
@@ -156,15 +193,16 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   def identifyAndDefineSheet(data: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): String = {
     logger.debug("5.1  case 0 identifyAndDefineSheet  ")
     val res = getSheet(data)
-    if (res.schemeType.toLowerCase == schemeInfo.schemeType.toLowerCase) {
+    val schemeInfoSchemeType = schemeInfo.schemeType.toLowerCase
+    if (res.schemeType.toLowerCase == schemeInfoSchemeType) {
       logger.debug("****5.1.1  data contains data:  *****" + data)
       data
     } else {
       auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
       logger.warn(ErrorResponseMessages.dataParserIncorrectSchemeType())
       throw ERSFileProcessingException(
-        s"${ErrorResponseMessages.dataParserIncorrectSchemeType()}",
-        s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
+        s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+        s"${ErrorResponseMessages.dataParserIncorrectSchemeType(schemeInfoSchemeType)}")
     }
   }
 
@@ -179,7 +217,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     })
   }
 
-  def validateHeaderRow(rowData: Seq[String], sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]) = {
+  def validateHeaderRow(rowData: Seq[String], sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Int = {
     val headerFormat = "[^a-zA-Z0-9]"
 
     val header = getSheet(sheetName)(schemeInfo, hc, request).headerRow.map(_.replaceAll(headerFormat, ""))
