@@ -16,7 +16,7 @@
 
 package services
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import services.ersTemplatesInfo._
 import uk.gov.hmrc.services.validation.DataValidator
 
@@ -80,7 +80,7 @@ object ERSValidationConfigs {
 
   val defValidator = new DataValidator(getConfig(ERSTemplatesInfo.emiSheet1ValConfig))
 
-  def getValidator(configName:String) = new DataValidator(getConfig(configName))
+  def getValidator(configName: String): DataValidator = new DataValidator(getConfig(configName))
 
-  def getConfig(sheetConfig:String) = ConfigFactory.load.getConfig(sheetConfig) //load new config per sheet on iteration
+  def getConfig(sheetConfig: String): Config = ConfigFactory.load.getConfig(sheetConfig) //load new config per sheet on iteration
 }

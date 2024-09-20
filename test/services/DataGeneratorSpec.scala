@@ -70,108 +70,73 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo), argEq("csopHeaderSheet1Data"), argEq("Could not set the validator"))(any(), any())
     }
 
-    "validate CSOP_OptionsGranted_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(csopHeaderSheet1Data, "CSOP_OptionsGranted_V4")(schemeInfo, hc, request) must be(9)
-    }
-
-    "validate CSOP_OptionsRCL_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(csopHeaderSheet2Data, "CSOP_OptionsRCL_V4")(schemeInfo, hc, request) must be(9)
-    }
-
-    "validate CSOP_OptionsExercised_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(csopHeaderSheet3Data, "CSOP_OptionsExercised_V4")(schemeInfo, hc, request) must be(20)
-    }
-
-    "validate CSOP_OptionsGranted_V5 headerRow as valid" in {
-      when(mockAppConfig.csopV5Enabled).thenReturn(true)
-
-      dataGenerator.validateHeaderRow(csopHeaderSheet1DataV5, "CSOP_OptionsGranted_V5")(schemeInfo.copy(taxYear = "2023/24"), hc, request) must be(9)
-    }
-
-    "validate CSOP_OptionsRCL_V5 headerRow as valid" in {
-      when(mockAppConfig.csopV5Enabled).thenReturn(true)
-
-      dataGenerator.validateHeaderRow(csopHeaderSheet2Data, "CSOP_OptionsRCL_V5")(schemeInfo.copy(taxYear = "2023/24"), hc, request) must be(9)
-    }
-
-    "validate CSOP_OptionsExercised_V5 headerRow as valid" in {
-      when(mockAppConfig.csopV5Enabled).thenReturn(true)
-
-      dataGenerator.validateHeaderRow(csopHeaderSheet3Data, "CSOP_OptionsExercised_V5")(schemeInfo.copy(taxYear = "2023/24"), hc, request) must be(20)
-    }
-
-    "validate SIP_Awards_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(sipHeaderSheet1Data, "SIP_Awards_V4")(schemeInfo, hc, request) must be(17)
-    }
-
-    "validate SIP_Out_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(sipHeaderSheet2Data, "SIP_Out_V4")(schemeInfo, hc, request) must be(17)
-    }
-
-    "validate EMI40_Adjustments_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(emiHeaderSheet1Data, "EMI40_Adjustments_V4")(schemeInfo, hc, request) must be(14)
-    }
-
-    "validate EMI40_Replaced_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(emiHeaderSheet2Data, "EMI40_Replaced_V4")(schemeInfo, hc, request) must be(17)
-    }
-
-    "validate EMI40_RLC_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(emiHeaderSheet3Data, "EMI40_RLC_V4")(schemeInfo, hc, request) must be(12)
-    }
-
-    "validate EMI40_NonTaxable_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(emiHeaderSheet4Data, "EMI40_NonTaxable_V4")(schemeInfo, hc, request) must be(15)
-    }
-
-    "validate EMI40_Taxable_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(emiHeaderSheet5Data, "EMI40_Taxable_V4")(schemeInfo, hc, request) must be(20)
-    }
-
-    "validate Other_Grants_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet1Data, "Other_Grants_V4")(schemeInfo, hc, request) must be(4)
-    }
-
-    "validate Other_Options_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet2Data, "Other_Options_V4")(schemeInfo, hc, request) must be(42)
-    }
-
-    "validate Other_Acquisition_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet3Data, "Other_Acquisition_V4")(schemeInfo, hc, request) must be(40)
-    }
-
-    "validate Other_RestrictedSecurities_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet4Data, "Other_RestrictedSecurities_V4")(schemeInfo, hc, request) must be(20)
-    }
-
-    "validate Other_OtherBenefits_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet5Data, "Other_OtherBenefits_V4")(schemeInfo, hc, request) must be(13)
-    }
-
-    "validate Other_Convertible_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet6Data, "Other_Convertible_V4")(schemeInfo, hc, request) must be(15)
-    }
-
-    "validate Other_Notional_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet7Data, "Other_Notional_V4")(schemeInfo, hc, request) must be(13)
-    }
-
-    "validate Other_Enhancement_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet8Data, "Other_Enhancement_V4")(schemeInfo, hc, request) must be(14)
-    }
-
-    "validate Other_Sold_V4 headerRow as valid" in {
-      dataGenerator.validateHeaderRow(otherHeaderSheet9Data, "Other_Sold_V4")(schemeInfo, hc, request) must be(14)
+    // FIXME: Potentially add validator tests for SAYE header
+    Seq(
+      // V4 CSOP schemes
+      ("CSOP_OptionsGranted_V4", csopHeaderSheet1Data, 9, false),
+      ("CSOP_OptionsRCL_V4", csopHeaderSheet2Data, 9, false),
+      ("CSOP_OptionsExercised_V4", csopHeaderSheet3Data, 20, false),
+      // V5 CSOP schemes
+      ("CSOP_OptionsGranted_V5", csopHeaderSheet1DataV5, 9, true),
+      ("CSOP_OptionsRCL_V5", csopHeaderSheet2Data, 9, true),
+      ("CSOP_OptionsExercised_V5", csopHeaderSheet3Data, 20, true),
+      // SIP schemes
+      ("SIP_Awards_V4", sipHeaderSheet1Data, 17, false),
+      ("SIP_Out_V4", sipHeaderSheet2Data, 17, false),
+      // EMI schemes
+      ("EMI40_Adjustments_V4", emiHeaderSheet1Data, 14, false),
+      ("EMI40_Replaced_V4", emiHeaderSheet2Data, 17, false),
+      ("EMI40_RLC_V4", emiHeaderSheet3Data, 12, false),
+      ("EMI40_NonTaxable_V4", emiHeaderSheet4Data, 15, false),
+      ("EMI40_Taxable_V4", emiHeaderSheet5Data, 20, false),
+      // OTHER schemes
+      ("Other_Grants_V4", otherHeaderSheet1Data, 4, false),
+      ("Other_Options_V4", otherHeaderSheet2Data, 42, false),
+      ("Other_Acquisition_V4", otherHeaderSheet3Data, 40, false),
+      ("Other_RestrictedSecurities_V4", otherHeaderSheet4Data, 20, false),
+      ("Other_OtherBenefits_V4", otherHeaderSheet5Data, 13, false),
+      ("Other_Convertible_V4", otherHeaderSheet6Data, 15, false),
+      ("Other_Notional_V4", otherHeaderSheet7Data, 13, false),
+      ("Other_Enhancement_V4", otherHeaderSheet8Data, 14, false),
+      ("Other_Sold_V4", otherHeaderSheet9Data, 14, false),
+    ).foreach{
+      case (schemeName, headerData, headerSize, v5Scheme) =>
+        s"validate $schemeName headerRow as valid" in {
+          when(mockAppConfig.csopV5Enabled).thenReturn(v5Scheme)
+          val schemeInfoCorrectVersion = if (v5Scheme){
+            schemeInfo.copy(taxYear = "2023/24")
+          }
+          else {
+            schemeInfo
+          }
+          dataGenerator.validateHeaderRow(headerData, schemeName)(schemeInfoCorrectVersion, hc, request) must be(headerSize)
+        }
     }
   }
 
   "setValidator" should {
     "return a DataValidator if the given sheet name is valid" in {
-      assert(dataGenerator.setValidator("EMI40_Adjustments_V4")(SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", ""), hc, request).isInstanceOf[DataValidator])
+      val maybeDataValidator: Either[ERSFileProcessingException, DataValidator] =
+        dataGenerator.getValidator("EMI40_Adjustments_V4")(SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", ""), hc, request)
+      assert(maybeDataValidator.isRight)
     }
 
     "throw an exception if the given sheet name is not valid" in {
-      an[ERSFileProcessingException] mustBe thrownBy (dataGenerator.setValidator("Invalid")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request))
+      dataGenerator.getValidator("Invalid")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request)
+        .left
+        .map { (exception: ERSFileProcessingException) =>
+          assert(exception.message === "Failed to find the config file")
+          assert(exception.context === "Sheet name: Invalid does not match any for scheme types.")
+      }
+    }
+
+    "throw an exception if the given sheet name maps to a config file which does not exist" in {
+      dataGenerator.getValidator("CSOP_OptionsGranted_V4")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request)
+        .left
+        .map { (exception: ERSFileProcessingException) =>
+          assert(exception.message === "Failed to find the config file")
+          assert(exception.context === "Could not set the validator due to a missing config.")
+        }
     }
   }
 
@@ -196,11 +161,24 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfo, hc, request) mustBe "EMI40_Adjustments_V4"
     }
 
-    "return an error when sheet name is invalid" in {
-      val result = Try(dataGenerator.identifyAndDefineSheet("EMI40_Adjustments")(schemeInfo, hc, request))
-      result.isFailure must be(true)
-      verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo), argEq("EMI40_Adjustments"), argEq("Could not set the validator"))(any(), any())
+    "return an error indicating the sheet name indicating the sheet name isn't as expected" in {
+      val result: ERSFileProcessingException =
+        intercept[ERSFileProcessingException](dataGenerator.identifyAndDefineSheet("EMI40_Adjustments")(schemeInfo, hc, request))
+      assert(result.message === "Incorrect ERS Template - Sheet Name isn't as expected")
+      assert(result.context === "Couldn't identify SheetName EMI40_Adjustments")
+      verify(mockAuditEvents, times(1))
+        .fileProcessingErrorAudit(argEq(schemeInfo), argEq("EMI40_Adjustments"), argEq("Could not set the validator"))(any(), any())
     }
+
+  "return an error indicating the sheet type is not as expected" in {
+    val schemeInfoWithWrongSchemeType: SchemeInfo = schemeInfo.copy(schemeType = "CSOP")
+    val result: ERSFileProcessingException =
+      intercept[ERSFileProcessingException](dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfoWithWrongSchemeType, hc, request))
+    assert(result.message === "Incorrect ERS Template - Sheet Name isn't as expected")
+    assert(result.context === "Incorrect ERS Template - Scheme Type isn't as expected, expected: CSOP parsed: EMI")
+    verify(mockAuditEvents, times(1))
+      .fileProcessingErrorAudit(argEq(schemeInfoWithWrongSchemeType), argEq("EMI40_Adjustments_V4"), argEq("emi is not equal to csop"))(any(), any())
+  }
 
     "return an error when scheme types do not match" in {
       val schemeInfo2: SchemeInfo = SchemeInfo(
