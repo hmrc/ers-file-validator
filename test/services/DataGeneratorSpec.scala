@@ -165,7 +165,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       val result: ERSFileProcessingException =
         intercept[ERSFileProcessingException](dataGenerator.identifyAndDefineSheet("EMI40_Adjustments")(schemeInfo, hc, request))
       assert(result.message === "Incorrect ERS Template - Sheet Name isn't as expected")
-      assert(result.context === "Couldn't identify SheetName EMI40_Adjustments")
+      assert(result.context === "Couldn't find config for given SheetName, sheet name may be incorrect")
       verify(mockAuditEvents, times(1))
         .fileProcessingErrorAudit(argEq(schemeInfo), argEq("EMI40_Adjustments"), argEq("Could not set the validator"))(any(), any())
     }
@@ -361,7 +361,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       assert(result.isLeft)
       result.swap.value mustBe ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-        s"${ErrorResponseMessages.dataParserUnidentifiableSheetName("aWrongName")}")
+        s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")
 
     }
   }

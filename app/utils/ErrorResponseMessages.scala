@@ -37,7 +37,7 @@ object ErrorResponseMessages {
         "Incorrect ERS Template - Scheme Type isn't as expected"
     }
   }
-  def dataParserUnidentifiableSheetName(sheetName: String = "") = s"Couldn't identify SheetName $sheetName"
+  val dataParserUnidentifiableSheetNameContext = "Couldn't find config for given SheetName, sheet name may be incorrect"
   val dataParserIncorrectHeader = "Incorrect ERS Template - Header doesn't match"
   val dataParserHeadersDontMatch = "Header doesn't match"
   val dataParserFileInvalid = "File Invalid, formatting errors present"

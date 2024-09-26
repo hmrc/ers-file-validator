@@ -142,7 +142,6 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
   def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
     implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, SheetInfo] = {
-    logger.debug(s"[DataGenerator][getSheetCsv] Looking for sheetName: $sheetName")
     ersSheetsConf(schemeInfo).get(sheetName) match {
       case Some(sheetInfo) => Right(sheetInfo)
       case _ =>
@@ -150,7 +149,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
         Left(ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-          s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}"))
+          s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
     }
   }
 
@@ -190,13 +189,12 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   }
 
   def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): SheetInfo = {
-    logger.info(s"Looking for sheetName: $sheetName (schemeRef: ${schemeInfo.schemeRef})")
     ersSheetsConf(schemeInfo).getOrElse(sheetName, {
       auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
       logger.warn("[DataGenerator][getSheet] Couldn't identify SheetName")
       throw ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-        s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
+        s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")
     })
   }
 
