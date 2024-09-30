@@ -27,7 +27,7 @@ import javax.inject.{Inject, Singleton}
 @Singleton
 class AuditEvents @Inject()(auditService: AuditService) {
 
-  def eventMap(schemeInfo: SchemeInfo, sheetName : String): Map[String, String] ={
+  def eventMap(schemeInfo: SchemeInfo, sheetName: String): Map[String, String] = {
     Map(
       "schemeRef" -> schemeInfo.schemeRef,
       "schemeType" -> schemeInfo.schemeType,
@@ -38,7 +38,8 @@ class AuditEvents @Inject()(auditService: AuditService) {
       "timestamp" -> schemeInfo.timestamp.toString)
   }
 
-  def auditRunTimeError(exception : Throwable, contextInfo : String, schemeInfo: SchemeInfo, sheetName : String) (implicit hc: HeaderCarrier,request: Request[_]) : Unit = {
+  def auditRunTimeError(exception: Throwable, contextInfo: String, schemeInfo: SchemeInfo, sheetName: String)
+                       (implicit hc: HeaderCarrier,request: Request[_]) : Unit = {
     auditService.sendEvent("ERSRunTimeError",Map(
       "ErrorMessage" -> exception.getMessage,
       "Context" -> contextInfo,
@@ -47,17 +48,18 @@ class AuditEvents @Inject()(auditService: AuditService) {
     ))
   }
 
-  def fileValidatorAudit(schemeInfo: SchemeInfo, sheetName : String)(implicit hc: HeaderCarrier,request: Request[_]): Boolean = {
+  def fileValidatorAudit(schemeInfo: SchemeInfo, sheetName: String)(implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
     auditService.sendEvent("ERSFileValidatorAudit", eventMap(schemeInfo, sheetName))
     true
   }
 
-  def fileProcessingErrorAudit(schemeInfo: SchemeInfo, sheetName : String,errorMsg:String)(implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
+  def fileProcessingErrorAudit(schemeInfo: SchemeInfo, sheetName: String, errorMsg: String)(implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
     auditService.sendEvent("ERSFileProcessingError", eventMap(schemeInfo, sheetName) ++ Map("ErrorMessage" -> errorMsg))
     true
   }
 
-  def validationErrorAudit(validationErrors:List[ValidationError],schemeInfo: SchemeInfo, sheetName : String)(implicit hc: HeaderCarrier, request: Request[_]) = {
+  def validationErrorAudit(validationErrors:List[ValidationError], schemeInfo: SchemeInfo, sheetName: String)
+                          (implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
     auditService.sendEvent("ERSValidationError",Map(
         "Column" -> validationErrors.head.cell.column,
         "Row" -> validationErrors.head.cell.row.toString,
@@ -67,7 +69,7 @@ class AuditEvents @Inject()(auditService: AuditService) {
     true
   }
 
-  def totalRows(totalRows : Int,schemeInfo: SchemeInfo)(implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
+  def totalRows(totalRows: Int, schemeInfo: SchemeInfo)(implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
 
     auditService.sendEvent("ERStotalRowCount", Map(
       "rows" -> totalRows.toString,

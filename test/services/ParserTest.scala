@@ -91,7 +91,7 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
         }
       }
 
-      exceptionMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected, Couldn't identify SheetName EMI40_Taxable"
+      exceptionMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected, Couldn't find config for given SheetName, sheet name may be incorrect"
     }
 
     "display incorrectHeader exception in validateHeaderRow method" in {

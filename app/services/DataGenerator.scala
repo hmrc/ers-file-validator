@@ -34,6 +34,7 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
+import com.typesafe.config.ConfigException
 
 @Singleton
 class DataGenerator @Inject()(auditEvents: AuditEvents,
@@ -75,7 +76,10 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         schemeData += SchemeData(schemeInfo, sheetName, None, ListBuffer())
         logger.info(s"SchemeData = ${schemeData.size} (schemeRef: ${schemeInfo.schemeRef}) ******")
         rowNum = 1
-        validator = setValidator(sheetName)
+        validator = getValidator(sheetName) match {
+          case Left(exception: ERSFileProcessingException) => throw exception
+          case Right(value: DataValidator) => value
+        }
       } else {
         rowData.map { rd =>
           (1 to rd._2).foreach { _ =>
@@ -112,22 +116,32 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     schemeData
   }
 
-  def setValidator(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): DataValidator = {
-    try {
-      ERSValidationConfigs.getValidator(ersSheetsConf(schemeInfo)(sheetName).configFileName)
-    } catch {
-      case e: Exception =>
-        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-        logger.error("setValidator has thrown an exception. Exception message: " + e.getMessage)
-        throw ERSFileProcessingException(
-          s"${ErrorResponseMessages.dataParserConfigFailure}",
-          "Could not set the validator ")
-    }
+  private def getValidatorException(errorMsg: String): ERSFileProcessingException =
+    ERSFileProcessingException(
+      ErrorResponseMessages.dataParserConfigFailure,
+      errorMsg
+    )
+
+  def getValidator(sheetName: String)
+                  (implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ERSFileProcessingException, DataValidator] = {
+      try {
+        Right(ERSValidationConfigs.getValidator(ersSheetsConf(schemeInfo)(sheetName).configFileName))
+      } catch {
+        case _: ConfigException.Missing =>
+          val errorMsg = "Could not set the validator due to a missing config"
+          auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, errorMsg)
+          logger.error(s"[getValidator] $errorMsg for sheet name: $sheetName and scheme type: ${schemeInfo.schemeType}.")
+          Left(getValidatorException(errorMsg))
+        case _: java.util.NoSuchElementException =>
+          val errorMsg = s"Sheet name: $sheetName does not match any for scheme types."
+          auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, errorMsg)
+          logger.error(s"[getValidator] $errorMsg")
+          Left(getValidatorException(errorMsg))
+      }
   }
 
   def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
     implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, SheetInfo] = {
-    logger.debug(s"[DataGenerator][getSheetCsv] Looking for sheetName: $sheetName")
     ersSheetsConf(schemeInfo).get(sheetName) match {
       case Some(sheetInfo) => Right(sheetInfo)
       case _ =>
@@ -135,7 +149,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
         Left(ERSFileProcessingException(
           s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-          s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}"))
+          s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
     }
   }
 
@@ -156,26 +170,31 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   def identifyAndDefineSheet(data: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): String = {
     logger.debug("5.1  case 0 identifyAndDefineSheet  ")
     val res = getSheet(data)
-    if (res.schemeType.toLowerCase == schemeInfo.schemeType.toLowerCase) {
+    val schemeInfoSchemeType = schemeInfo.schemeType
+    val requestSchemeType = res.schemeType
+    if (requestSchemeType.toLowerCase == schemeInfoSchemeType.toLowerCase) {
       logger.debug("****5.1.1  data contains data:  *****" + data)
       data
     } else {
       auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
       logger.warn(ErrorResponseMessages.dataParserIncorrectSchemeType())
       throw ERSFileProcessingException(
-        s"${ErrorResponseMessages.dataParserIncorrectSchemeType()}",
-        s"${ErrorResponseMessages.dataParserIncorrectSchemeType(data)}")
+        s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+        s"${ErrorResponseMessages.dataParserIncorrectSchemeType(
+          Some(schemeInfoSchemeType),
+          Some(requestSchemeType)
+        )}"
+      )
     }
   }
 
   def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): SheetInfo = {
-    logger.info(s"Looking for sheetName: $sheetName (schemeRef: ${schemeInfo.schemeRef})")
     ersSheetsConf(schemeInfo).getOrElse(sheetName, {
       auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
       logger.warn("[DataGenerator][getSheet] Couldn't identify SheetName")
       throw ERSFileProcessingException(
         s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-        s"${ErrorResponseMessages.dataParserUnidentifiableSheetName(sheetName)}")
+        s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")
     })
   }
 
