@@ -34,7 +34,7 @@ import scala.xml._
 
 
 class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with TimeLimits {
-
+  // scalastyle:off magic.number
   object TestDataParser extends DataParser
 
   val mockAuditEvents: AuditEvents = mock[AuditEvents]

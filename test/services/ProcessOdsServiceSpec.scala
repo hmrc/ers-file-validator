@@ -41,7 +41,7 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 
 
 class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter {
-
+  // scalastyle:off magic.number
   val mockSessionService: SessionCacheService = mock[SessionCacheService]
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
   val mockDataGenerator: DataGenerator = mock[DataGenerator]

@@ -50,7 +50,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
 class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with TimeLimits with ScalaFutures with EitherValues {
-
+  // scalastyle:off magic.number
   val mockDataGenerator: DataGenerator = mock[DataGenerator]
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]

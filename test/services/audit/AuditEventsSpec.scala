@@ -34,7 +34,7 @@ import org.scalatest.wordspec.AnyWordSpecLike
 import java.time.ZonedDateTime
 
 class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
-
+  // scalastyle:off magic.number
   implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   implicit var hc: HeaderCarrier = new HeaderCarrier()
   val mockAuditService: AuditService = mock[AuditService]

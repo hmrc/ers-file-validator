@@ -39,7 +39,7 @@ import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.util.Try
 
 class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with HeaderData {
-
+  // scalastyle:off magic.number
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
@@ -98,7 +98,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       ("Other_Convertible_V4", otherHeaderSheet6Data, 15, false),
       ("Other_Notional_V4", otherHeaderSheet7Data, 13, false),
       ("Other_Enhancement_V4", otherHeaderSheet8Data, 14, false),
-      ("Other_Sold_V4", otherHeaderSheet9Data, 14, false),
+      ("Other_Sold_V4", otherHeaderSheet9Data, 14, false)
     ).foreach{
       case (schemeName, headerData, headerSize, v5Scheme) =>
         s"validate $schemeName headerRow as valid" in {

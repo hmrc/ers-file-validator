@@ -52,7 +52,7 @@ import java.time.ZonedDateTime
 
 class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadControllerSpec"))
   with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with GuiceOneAppPerSuite with WithMockedAuthActions with ScalaFutures {
-
+  // scalastyle:off magic.number
   val empRef: String = "1234/ABCD"
   val mockSessionService: SessionCacheService = mock[SessionCacheService]
   val mockProcessOdsService: ProcessOdsService = mock[ProcessOdsService]
