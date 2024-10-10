@@ -24,7 +24,7 @@ import uk.gov.hmrc.services.validation.DataValidator
  * Created by raghu on 26/01/16.
  */
 case class SheetInfo (schemeType:String, sheetId: Int, sheetName:String, sheetTitle:String,configFileName: String, headerRow:List[String])
-
+// scalastyle:off magic.number
 object ERSTemplatesInfo extends EMITemplateInfo with CsopTemplateInfo with SipTemplateInfo with OtherTemplateInfo with SayeTemplateInfo{
 
   val csopSheets: Map[String, SheetInfo] = Map(

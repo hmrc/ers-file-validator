@@ -49,6 +49,7 @@ trait SipTemplateInfo {
     "17.If yes, enter the HMRC valuation reference given"
   )//.map(_.replaceAll(sipHeaderFormat,""))
 
+
   val sipOutHeaderRow = List(
     "1.Date of event (yyyy-mm-dd)",
     "2.Employee first name",

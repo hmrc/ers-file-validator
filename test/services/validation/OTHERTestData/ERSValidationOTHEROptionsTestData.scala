@@ -26,6 +26,7 @@ trait ERSValidationOTHEROptionsTestData {
   val rowNumber:Int = 1
 
   def getDescriptions: List[String] = {
+      // scalastyle:off magic.number
     val descriptions =
       List(
         //Column A
