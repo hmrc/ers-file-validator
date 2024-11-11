@@ -75,6 +75,24 @@ class CSOPOptionsRCLTest extends PlaySpec with ERSValidationCSOPRCLTestData with
       assert(resOpt.isDefined)
       resOpt.get must containError(ValidationError(cellC,"mandatoryC","C01","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))
     }
+
+    "when colB is answered yes then remaining columns from C to I are mandatory and if entered invalid or missing data then it should throw error " in {
+      val row = Row(1,getWronglyEnteredCellData)
+      val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
+      resOpt.get.size mustBe 3
+    }
+
+    "when colB is answered yes then remaining columns from C to I are mandatory and if entered valid data then it should not throw any error" in {
+      val row = Row(1,getAllCellData)
+      val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
+      resOpt mustBe None
+    }
+
+    "when colB is answered no then remaining columns from C to I are optional " in {
+      val row = Row(1,getRequiredCellData)
+      val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
+      resOpt mustBe None
+    }
   }
 }
 

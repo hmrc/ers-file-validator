@@ -82,22 +82,22 @@ trait ERSValidationCSOPRCLTestData {
       Cell("C", rowNumber, "Ten"),
       Cell("C", rowNumber, "123456789012345.1234"),
       Cell("D", rowNumber, "John"),
-      Cell("D", rowNumber, " "),
+      Cell("D", rowNumber, "AbcdefghijklmnopqrstuvwxyzAbcdefghijklmnopqrstuvwxyz"),
       Cell("D", rowNumber, "AbcdefghijklmnopqrstuvwxyzAbcdefghijklmnopqrstuvwxyz"),
       Cell("E", rowNumber, "John"),
       Cell("E", rowNumber, "AbcdefghijklmnopqrstuvwxyzAbcdefghijklmnopqrstuvwxyz"),
       Cell("F", rowNumber, "John"),
-      Cell("F", rowNumber, ""),
+      Cell("F", rowNumber, "AbcdefghijklmnopqrstuvwxyzAbcdefghijklmnopqrstuvwxyz"),
       Cell("F", rowNumber, "AbcdefghijklmnopqrstuvwxyzAbcdefghijklmnopqrstuvwxyz"),
       Cell("G", rowNumber, "AB123456A"),
       Cell("G", rowNumber, "ABB25345BA1"),
       Cell("G", rowNumber, "AB123456"),
-      Cell("G", rowNumber, ""),
+      Cell("G", rowNumber, "AB123456"),
       Cell("H", rowNumber, "123/XZ55555555"),
       Cell("H", rowNumber, "1234/12345/67890abcd"),
-      Cell("H", rowNumber, ""),
+      Cell("H", rowNumber, "1234/12345/67890abcd"),
       Cell("I", rowNumber, "Yes"),
-      Cell("I", rowNumber, " "),
+      Cell("I", rowNumber, "123yes"),
       Cell("I", rowNumber, "YyEeSs")
     )
     testData
@@ -151,5 +151,42 @@ trait ERSValidationCSOPRCLTestData {
     )
     rowData
   }
+  def getRequiredCellData:Seq[Cell] = {
+    val rowData = Seq(
+      Cell("A", rowNumber, "2014-12-10"),
+      Cell("B", rowNumber, "no"),
+      Cell("C", rowNumber, "12.4444"),
+      Cell("D", rowNumber, "firstName")
+    )
+    rowData
+  }
+  def getAllCellData:Seq[Cell] = {
+    val rowData = Seq(
+      Cell("A", rowNumber, "2014-12-10"),
+      Cell("B", rowNumber, "yes"),
+      Cell("C", rowNumber, "12.4444"),
+      Cell("D", rowNumber, "firstName"),
+      Cell("E", rowNumber, "MiddleName"),
+      Cell("F", rowNumber, "lastName"),
+      Cell("G", rowNumber, "TN010181Y"),
+      Cell("H", rowNumber, "123/AB456"),
+      Cell("I", rowNumber, "no")
+    )
+    rowData
+  }
 
+  def getWronglyEnteredCellData:Seq[Cell] = {
+    val rowData = Seq(
+      Cell("A", rowNumber, "2014-12-10"),
+      Cell("B", rowNumber, "yes"),
+      Cell("C", rowNumber, "12.444"),
+      Cell("D", rowNumber, "AbcdefghijklmnopqrstuvwxyzAbcdefghijklmnopqrstuvwxyz"),
+      Cell("E", rowNumber, ""),
+      Cell("F", rowNumber, "lastName"),
+      Cell("G", rowNumber, "TN010181Y"),
+      Cell("H", rowNumber, "123/AB456"),
+      Cell("I", rowNumber, "no")
+    )
+    rowData
+  }
 }
