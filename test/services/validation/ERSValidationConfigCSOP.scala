@@ -101,5 +101,14 @@ class CSOPOptionsExercisedTest extends PlaySpec with ERSValidationCSOPExercisedT
       assert(resOpt.isDefined)
       resOpt.get must containError(ValidationError(cellR,"mandatoryR","R01","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))
     }
+
+    "when stockExchange is answered no, mvAgreedHMRC is a mandatory field" in {
+      val cellN = Cell("N", rowNumber, "")
+      val cellJ = Cell("J", rowNumber, "no")
+      val row = Row(1,Seq(cellN,cellJ))
+      val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
+      assert(resOpt.isDefined)
+      resOpt.get must containError(ValidationError(cellN,"mandatoryN","N01","Enter 'yes' or 'no'."))
+    }
   }
 }
