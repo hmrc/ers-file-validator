@@ -43,29 +43,29 @@ trait ERSValidationCSOPRCLTestData {
         "Return This entry is larger than the maximum number value allowed. For amtOrValue when to many characters",
         //Column D
         "When releasedindividualFirstName contains characters and is less the 35 characters, no validation errors should be raised",
-        "Return This entry must contain 35 characters or less. For releasedindividualFirstName when the user inputs an empty string",
+        "no validation error should be raised. For releasedindividualFirstName when the user inputs an empty string",
         "Return This entry must contain 35 characters or less. For releasedindividualFirstName when the user inputs too many characters",
         //Column E
         "When releasedindividualSecondName contains characters and is less the 35 characters, no validation errors should be raised",
         "Return This entry must contain 35 characters or less. For releasedindividualSecondName when the user inputs too many characters",
         //Column F
         "When releasedindividualLastName contains characters and is less the 35 characters, no validation errors should be raised",
-        "Return This entry must contain 35 characters or less. For releasedindividualLastName when the user inputsan empty string",
+        "When the user inputs an empty string no validation error should be raised",
         "Return This entry must contain 35 characters or less. For releasedindividualLastName when the user inputs too many characters",
         //Column G
         "When releasedindividualNino matches the expected Nino format, no validation error should be raised",
         "Return Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y). When the submitted text does not match a valid Nino.",
         "Return Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y). When the submitted text is missing a letter.",
-        "Return Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y). For individualNino when no nino is provided.",
+        "no validation error should be raised. For individualNino when no nino is provided.",
         //Column H
         "When releasedindividualPayeReference matches the expected PAYE reference format, no validation error should be raised",
         "Return Enter an employer PAYE reference. For example '123/AB456'. When the submitted text does not match the PAYE format.",
-        "Return Enter an employer PAYE reference. For example '123/AB456'. When the submitted text is empty.",
+        "no validation error should be raised. When the submitted text is empty.",
         //Column I
         "When payeOperatedApplied is Yes or No, no validation error should be raised",
-        "Return This entry must be 'yes' or 'no'. When an empty string is given for payeOperatedApplied.",
+        "no validation error should be raised. When an empty string is given for payeOperatedApplied.",
         "Return This entry must be 'yes' or 'no'. When the characters entered do not match yes or no for payeOperatedApplied."
-       )
+      )
     descriptions
   }
 
@@ -116,22 +116,22 @@ trait ERSValidationCSOPRCLTestData {
       Some(List(ValidationErrorData("error.3", "003", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
       Some(List(ValidationErrorData("error.3", "003", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
       None,
-      Some(List(ValidationErrorData("error.4", "004", "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      None,
       Some(List(ValidationErrorData("error.4", "004", "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       None,
       Some(List(ValidationErrorData("error.5", "005", "Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."))),
       None,
-      Some(List(ValidationErrorData("error.6", "006", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      None,
       Some(List(ValidationErrorData("error.6", "006", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
       None,
       Some(List(ValidationErrorData("error.7", "007", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
       Some(List(ValidationErrorData("error.7", "007", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
-      Some(List(ValidationErrorData("error.7", "007", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      None,
       None,
       Some(List(ValidationErrorData("error.8", "008", "Enter an employer PAYE reference. For example '123/AB456'."))),
-      Some(List(ValidationErrorData("error.8", "008", "Enter an employer PAYE reference. For example '123/AB456'."))),
       None,
-      Some(List(ValidationErrorData("error.9", "009", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      None,
+      None,
       Some(List(ValidationErrorData("error.9", "009", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated.")))
     )
 
@@ -151,5 +151,42 @@ trait ERSValidationCSOPRCLTestData {
     )
     rowData
   }
+  def getRequiredCellData:Seq[Cell] = {
+    val rowData = Seq(
+      Cell("A", rowNumber, "2014-12-10"),
+      Cell("B", rowNumber, "no"),
+      Cell("C", rowNumber, "12.4444"),
+      Cell("D", rowNumber, "firstName")
+    )
+    rowData
+  }
+  def getAllCellData:Seq[Cell] = {
+    val rowData = Seq(
+      Cell("A", rowNumber, "2014-12-10"),
+      Cell("B", rowNumber, "yes"),
+      Cell("C", rowNumber, "12.4444"),
+      Cell("D", rowNumber, "firstName"),
+      Cell("E", rowNumber, "MiddleName"),
+      Cell("F", rowNumber, "lastName"),
+      Cell("G", rowNumber, "TN010181Y"),
+      Cell("H", rowNumber, "123/AB456"),
+      Cell("I", rowNumber, "no")
+    )
+    rowData
+  }
 
+  def getWronglyEnteredCellData:Seq[Cell] = {
+    val rowData = Seq(
+      Cell("A", rowNumber, "2014-12-10"),
+      Cell("B", rowNumber, "yes"),
+      Cell("C", rowNumber, "12.444"),
+      Cell("D", rowNumber, "AbcdefghijklmnopqrstuvwxyzAbcdefghijklmnopqrstuvwxyz"),
+      Cell("E", rowNumber, ""),
+      Cell("F", rowNumber, "lastName"),
+      Cell("G", rowNumber, "TN010181Y"),
+      Cell("H", rowNumber, "123/AB456"),
+      Cell("I", rowNumber, "no")
+    )
+    rowData
+  }
 }
