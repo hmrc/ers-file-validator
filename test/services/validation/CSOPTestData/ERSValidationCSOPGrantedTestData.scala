@@ -59,6 +59,7 @@ trait ERSValidationCSOPGrantedTestData {
         "return no errors when given a correct hmrcRef number",
         "return an error when an invalid hmrc reference number is given",
         //Column I
+        "return a list[ValidationError] when given an empty value a ValidationError will be raised",
         "return no errors when given a correct input for the employeeHoldSharesGreaterThan30K question",
         "return a list[ValidationError] when given invalid data for the employeeHoldSharesGreaterThan30K question"
       )
@@ -91,6 +92,7 @@ trait ERSValidationCSOPGrantedTestData {
       Cell("G", rowNumber, "YEss"),
       Cell("H", rowNumber, "aa12345678"),
       Cell("H", rowNumber, "aaa123a456788"),
+      Cell("I", rowNumber, ""),
       Cell("I", rowNumber, "yes"),
       Cell("I", rowNumber, "yyeess")
     )
@@ -123,6 +125,7 @@ trait ERSValidationCSOPGrantedTestData {
       Some(List(ValidationErrorData("error.7","007","Enter 'yes' or 'no'."))),
       None,
       Some(List(ValidationErrorData("error.8","008","Enter the HMRC reference (must be less than 11 characters)."))),
+      Some(List(ValidationErrorData("error.9","009","Enter 'yes' or 'no'."))),
       None,
       Some(List(ValidationErrorData("error.9","009","Enter 'yes' or 'no'.")))
     )
