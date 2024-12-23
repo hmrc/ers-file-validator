@@ -71,7 +71,8 @@ class DataUploadController @Inject()(sessionService: SessionCacheService,
           }
         },
         invalid = e => {
-          logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data")
+          val errorMessage = e.mkString(", ")
+          logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data :$errorMessage")
           deliverFileProcessingMetrics(startTime)
           Future.successful(BadRequest(e.toString))
         }

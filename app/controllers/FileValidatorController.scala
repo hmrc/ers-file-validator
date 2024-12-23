@@ -22,7 +22,6 @@ import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import services.SessionCacheService
-import sun.jvm.hotspot.HelloWorld.e
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import javax.inject.{Inject, Singleton}
@@ -52,8 +51,8 @@ class FileValidatorController @Inject()(sessionService: SessionCacheService,
         case Some(record) => Ok(Json.toJson(record))
         case None => NotFound("No callback record found")
       }.recover {
-        case e: Exception =>
-          logger.error(s"[FileValidatorController][getCallbackRecord] An error occurred while retrieving the callback record with exception: ${e.getMessage}", e)
+        case ex: Exception =>
+          logger.error(s"[FileValidatorController][getCallbackRecord] An error occurred while retrieving the callback record with exception: ${ex.getMessage}", ex)
           InternalServerError("An error occurred while retrieving the callback record.")
       }
   }
@@ -65,8 +64,8 @@ class FileValidatorController @Inject()(sessionService: SessionCacheService,
           sessionService.updateCallbackRecord(uploadStatus)(RequestWithUpdatedSession(request, sessionId))
             .map(_ => NoContent)
             .recover {
-              case e: Exception =>
-                logger.error(s"[FileValidatorController][updateCallbackRecord] An error occurred while updating the callback record with exception: ${e.getMessage}", e)
+              case ex: Exception =>
+                logger.error(s"[FileValidatorController][updateCallbackRecord] An error occurred while updating the callback record with exception: ${ex.getMessage}", ex)
                 InternalServerError("An error occurred while updating the callback record.")
             }
         },
