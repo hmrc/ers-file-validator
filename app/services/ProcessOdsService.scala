@@ -73,6 +73,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
       }
     } catch {
       case ex: Exception =>
+        logger.error(s"storeCallbackData failed with Exception: ${ex.getMessage}", ex)
         Future.failed(ex)
     }
   }
@@ -111,7 +112,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
           auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         case Left(ex) =>
           auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
-          logger.error(s"[ProcessOdsService][sendSchemeData] An exception occurred: ${ex.getMessage}")
+          logger.error(s"[ProcessOdsService][sendSchemeData] An exception occurred: ${ex.getMessage}", ex)
           throw ERSFileProcessingException(ex.toString, ex.getStackTrace.toString)
       }
     }
