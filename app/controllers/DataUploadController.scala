@@ -65,12 +65,13 @@ class DataUploadController @Inject()(sessionService: SessionCacheService,
               Accepted(e.message)
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)
-              logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data. schemeRef: ${schemeInfo.schemeRef}")
+              logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data for schemeRef: ${schemeInfo.schemeRef}" +
+                s", Exception: ${er.getMessage}", er)
               InternalServerError
           }
         },
         invalid = e => {
-          logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data.")
+          logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data")
           deliverFileProcessingMetrics(startTime)
           Future.successful(BadRequest(e.toString))
         }
