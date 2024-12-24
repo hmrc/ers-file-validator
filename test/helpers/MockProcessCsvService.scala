@@ -67,18 +67,6 @@ class MockProcessCsvService(auditEvents: AuditEvents,
     case Some(returner) => returner
   }
 
-//  override def sendSchemeDataCsv(ersSchemeData: SchemeData, empRef: String)(
-//    implicit hc: HeaderCarrier, request: Request[_]): Future[Option[Throwable]] = sendSchemeDataCsv match {
-//    case None => super.sendSchemeDataCsv(ersSchemeData, empRef)
-//    case Some(returner) => returner
-//  }
-//
-//  override def sendSchemeCsv(schemeData: SchemeData, empRef: String)(
-//    implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, Int]] = sendSchemeCsv match {
-//    case None => super.sendSchemeCsv(schemeData, empRef)
-//    case Some(returner) => returner
-//  }
-
   override def sendSchemeCsv(schemeData: SubmissionsSchemeData, empRef: String)(
     implicit hc: HeaderCarrier, request: Request[_]): Future[Option[Throwable]] = sendSchemeCsvNew match {
     case None => super.sendSchemeCsv(schemeData, empRef)
