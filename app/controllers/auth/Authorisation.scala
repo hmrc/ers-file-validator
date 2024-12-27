@@ -47,12 +47,12 @@ trait Authorisation extends AuthorisedFunctions with Logging {
         body(request)
       } recover {
         case exception: AuthorisationException =>
-          logger.warn(s"[AuthAction][invokeBlock] user is unauthorised for ${request.uri} with " +
+          logger.warn(s"[Authorisation][authorisedAction] user is unauthorised for ${request.uri} with " +
             s"exception ${exception.getMessage}", exception)
           Unauthorized
       }
     ).getOrElse {
-      logger.warn(s"[AuthAction][invokeBlock] an invalid empRef was supplied when trying to hit ${request.uri}")
+      logger.warn(s"[Authorisation][authorisedAction] an invalid empRef was supplied when trying to hit ${request.uri}")
       Future.successful(Unauthorized)
     }
   }
@@ -70,11 +70,11 @@ trait Authorisation extends AuthorisedFunctions with Logging {
           body(request)
         } recover {
           case exception: AuthorisationException =>
-            logger.warn(s"[AuthAction][invokeBlock] user is unauthorised for ${request.uri} with exception  ${exception.getMessage}", exception)
+            logger.warn(s"[Authorisation][authorisedAction] user is unauthorised for ${request.uri} with exception  ${exception.getMessage}", exception)
             Unauthorized
         }
       ).getOrElse {
-        logger.warn(s"[AuthAction][invokeBlock] an invalid empRef was supplied when trying to hit ${request.uri}")
+        logger.warn(s"[Authorisation][authorisedAction] an invalid empRef was supplied when trying to hit ${request.uri}")
         Future.successful(Unauthorized)
       }
   }

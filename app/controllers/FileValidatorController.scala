@@ -39,7 +39,8 @@ class FileValidatorController @Inject()(sessionService: SessionCacheService,
         .map { case (_, sessionId) =>
           Created(Json.toJson(Map("sessionId" -> sessionId)))
         }.recover {
-          case _: Exception =>
+          case e: Exception =>
+            logger.error(s"[FileValidatorController][createCallbackRecord] An error occurred while creating the callback record with exception: ${e.getMessage}", e)
             InternalServerError("An error occurred while creating the callback record.")
         }
   }
@@ -50,7 +51,8 @@ class FileValidatorController @Inject()(sessionService: SessionCacheService,
         case Some(record) => Ok(Json.toJson(record))
         case None => NotFound("No callback record found")
       }.recover {
-        case _: Exception =>
+        case ex: Exception =>
+          logger.error(s"[FileValidatorController][getCallbackRecord] An error occurred while retrieving the callback record with exception: ${ex.getMessage}", ex)
           InternalServerError("An error occurred while retrieving the callback record.")
       }
   }
@@ -62,7 +64,8 @@ class FileValidatorController @Inject()(sessionService: SessionCacheService,
           sessionService.updateCallbackRecord(uploadStatus)(RequestWithUpdatedSession(request, sessionId))
             .map(_ => NoContent)
             .recover {
-              case _: Exception =>
+              case ex: Exception =>
+                logger.error(s"[FileValidatorController][updateCallbackRecord] An error occurred while updating the callback record with exception: ${ex.getMessage}", ex)
                 InternalServerError("An error occurred while updating the callback record.")
             }
         },
