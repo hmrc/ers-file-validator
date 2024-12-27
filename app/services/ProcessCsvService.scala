@@ -117,7 +117,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     result.fold(
       throwable => Future(Left(throwable)),
       csvFileSubmissions => {
-        logger.info("File length " + csvFileSubmissions.fileLength)
+        logger.info("[ProcessCsvService][extractSchemeDataNew]: File length " + csvFileSubmissions.fileLength)
         sendSchemeCsv(SubmissionsSchemeData(schemeInfo, csvFileSubmissions.sheetName, csvFileSubmissions.upscanCallback, csvFileSubmissions.fileLength), empRef)
           .map {
             case Some(throwable) => Left(throwable)
