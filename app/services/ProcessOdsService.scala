@@ -73,7 +73,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
       }
     } catch {
       case ex: Exception =>
-        logger.error(s"storeCallbackData failed with Exception: ${ex.getMessage}", ex)
+        logger.error(s"[ProcessOdsService][processFile]: storeCallbackData failed with Exception: ${ex.getMessage}", ex)
         Future.failed(ex)
     }
   }
