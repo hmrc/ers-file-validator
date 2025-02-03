@@ -27,6 +27,7 @@ import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
 import play.api.Logging
 import play.api.libs.json.JsValue
 import play.api.mvc._
+import services.audit.AuditEvents
 import services.{ProcessCsvService, ProcessOdsService, SessionCacheService}
 import uk.gov.hmrc.http.SessionId
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
@@ -38,7 +39,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class DataUploadController @Inject()(sessionService: SessionCacheService,
+class DataUploadController @Inject()(auditEvents: AuditEvents,
+                                     sessionService: SessionCacheService,
                                      processOdsService: ProcessOdsService,
                                      processCsvService: ProcessCsvService,
                                      val authConnector: DefaultAuthConnector,
@@ -116,6 +118,10 @@ class DataUploadController @Inject()(sessionService: SessionCacheService,
                   case _ => None
                 }
                 val totalRowCount = result.foldLeft(0)((accum, inputTuple) => accum + inputTuple.fileLength)
+                result.foreach((csvFileLengthInfo: CsvFileLengthInfo) =>
+                  logger.info(s"[DataUploadController][processCsvFileDataFromFrontendV2]: Total number of rows for csv file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): ${csvFileLengthInfo.fileLength}")
+                )
+                auditEvents.totalRows(totalRowCount, schemeInfo)
                 val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
                 sessionService.storeCallbackData(res.callbackData.head, totalRowCount)(RequestWithUpdatedSession(request, sessionId)).map {
                   case callback: Option[UpscanCallback] if callback.isDefined =>
