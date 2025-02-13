@@ -64,7 +64,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
       val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
       sessionService.storeCallbackData(callbackData, totalRows)(RequestWithUpdatedSession(request, sessionId)).map {
         case Some(_) => {
-          logger.warn(s"Total rows for schemeRef ${schemeInfo.schemeRef}: $totalRows")
+          logger.info(s"[ProcessOdsService][processFile]: Total number of rows for ods file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): $totalRows")
           auditEvents.totalRows(totalRows, schemeInfo)
           res1
         }

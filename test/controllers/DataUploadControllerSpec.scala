@@ -47,6 +47,7 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.Application
 import org.scalatest.wordspec.AnyWordSpecLike
+import services.audit.AuditEvents
 
 import java.time.ZonedDateTime
 
@@ -58,15 +59,22 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
   val mockProcessOdsService: ProcessOdsService = mock[ProcessOdsService]
   val mockProcessCsvService: ProcessCsvService = mock[ProcessCsvService]
   val mockAuthConnector: DefaultAuthConnector = mock[DefaultAuthConnector]
+  val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val metrics: Metrics = mock[Metrics]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   override implicit lazy val app: Application = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
   implicit def materializer: Materializer = Play.materializer
   val defaultActionBuilder: DefaultActionBuilder = app.injector.instanceOf(classOf[DefaultActionBuilder])
 
-  val dataUploadController: DataUploadController = new DataUploadController(mockSessionService,
-    mockProcessOdsService, mockProcessCsvService, mockAuthConnector,
-    stubControllerComponents(), defaultActionBuilder) {
+  val dataUploadController: DataUploadController = new DataUploadController(
+    mockAuditEvents,
+    mockSessionService,
+    mockProcessOdsService,
+    mockProcessCsvService,
+    mockAuthConnector,
+    stubControllerComponents(),
+    defaultActionBuilder
+  ) {
     override def authorisedAction(empRef: String)(body: AsyncRequest): Action[AnyContent] =
       mockAuthorisedAction(empRef: String)(body: AsyncRequest)
 
@@ -192,17 +200,22 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     }
   }
 
-  val secondDataUploadController: DataUploadController = new DataUploadController(mockSessionService,
-    mockProcessOdsService, mockProcessCsvService, mockAuthConnector,
-    stubControllerComponents(), defaultActionBuilder) {
-    override def authorisedAction(empRef: String)(body: AsyncRequest): Action[AnyContent] =
-      mockAuthorisedAction(empRef: String)(body: AsyncRequest)
+  val secondDataUploadController: DataUploadController = new DataUploadController(
+    mockAuditEvents,
+    mockSessionService,
+    mockProcessOdsService,
+    mockProcessCsvService,
+    mockAuthConnector,
+    stubControllerComponents(),
+    defaultActionBuilder) {
+      override def authorisedAction(empRef: String)(body: AsyncRequest): Action[AnyContent] =
+        mockAuthorisedAction(empRef: String)(body: AsyncRequest)
 
-    override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
-      mockAuthorisedActionWithBody(empRef: String)(body: AsyncRequestJson)
+      override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
+        mockAuthorisedActionWithBody(empRef: String)(body: AsyncRequestJson)
 
-    override private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] = Future.successful(HttpResponse(StatusCodes.OK))
-  }
+      override private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] = Future.successful(HttpResponse(StatusCodes.OK))
+    }
 
   "Calling streamFile" should {
     "process the response" in {
