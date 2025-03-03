@@ -142,7 +142,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
   }
 
-  "processFilesNew" should {
+  "processFiles" should {
 
     def returnStubSource(x: String, data: String): Source[HttpResponse, NotUsed] = {
       Source.single(HttpResponse(entity = data))
@@ -164,7 +164,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
         .thenReturn(Right((mock[DataValidator], sheetTest)))
 
-      val resultFuture = testService.processFilesNew(callback, returnStubSource(_, data))
+      val resultFuture = testService.processFiles(callback, returnStubSource(_, data))
 
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
@@ -182,7 +182,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
-      val resultFuture = testService.processFilesNew(callback, returnStubSource(_, data))
+      val resultFuture = testService.processFiles(callback, returnStubSource(_, data))
 
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
@@ -204,7 +204,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
         .thenReturn(Right((mock[DataValidator], sheetTest)))
 
-      val resultFuture = testService.processFilesNew(callback, returnStubSource(_, data))
+      val resultFuture = testService.processFiles(callback, returnStubSource(_, data))
 
       val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
       result mustBe List(Left(ERSFileProcessingException("thisIsBad", "qualityContent")))
@@ -218,7 +218,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         "ers.exceptions.dataParser.validatorError"
       )))
 
-      val resultFuture = testProcessCsvService.processFilesNew(callback, returnStubSource(_, data))
+      val resultFuture = testProcessCsvService.processFiles(callback, returnStubSource(_, data))
 
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
       boolList.head match {
@@ -289,10 +289,10 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
     }
   }
 
-  "extractSchemeDataNew" should {
+  "extractSchemeData" should {
     "pass on a Left if given a Left" in {
       val result: Future[Either[Throwable, CsvFileLengthInfo]] = testProcessCsvService
-        .extractSchemeDataNew(schemeInfo, "anEmpRef", Left(new Exception("hello there")))
+        .extractSchemeData(schemeInfo, "anEmpRef", Left(new Exception("hello there")))
 
       assert(result.futureValue.isLeft)
       result.futureValue.swap.value.getMessage mustBe "hello there"
@@ -304,7 +304,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         sendSchemeCsvNew = Some(Future.successful(Some(new Exception("this was bad")))))
 
       val result = Await.result(testService
-        .extractSchemeDataNew(schemeInfo, "anEmpRef", Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))))),
+        .extractSchemeData(schemeInfo, "anEmpRef", Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))))),
         Duration.Inf
       )
 
@@ -318,7 +318,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         sendSchemeCsvNew = Some(Future.successful(None)))
 
       val result = Await.result(testService
-        .extractSchemeDataNew(schemeInfo, "anEmpRef",
+        .extractSchemeData(schemeInfo, "anEmpRef",
           Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no")))),
         Duration.Inf
       )

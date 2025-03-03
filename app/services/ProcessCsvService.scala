@@ -72,7 +72,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       }
 
 
-  def processFilesNew(callback: UpscanCsvFileData, source: String => Source[HttpResponse, _])(
+  def processFiles(callback: UpscanCsvFileData, source: String => Source[HttpResponse, _])(
     implicit request: Request[_], hc: HeaderCarrier
   ): List[Future[Either[Throwable, CsvFileSubmissions]]] =
     callback.callbackData map { successUpload =>
@@ -111,13 +111,13 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     }
 
 
-  def extractSchemeDataNew(schemeInfo: SchemeInfo, empRef: String, result: Either[Throwable, CsvFileSubmissions])(
+  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[Throwable, CsvFileSubmissions])(
     implicit request: Request[_], hc: HeaderCarrier
   ): Future[Either[Throwable, CsvFileLengthInfo]] = {
     result.fold(
       throwable => Future(Left(throwable)),
       csvFileSubmissions => {
-        logger.info("[ProcessCsvService][extractSchemeDataNew]: File length " + csvFileSubmissions.fileLength)
+        logger.info("[ProcessCsvService][extractSchemeData]: File length " + csvFileSubmissions.fileLength)
         sendSchemeCsv(SubmissionsSchemeData(schemeInfo, csvFileSubmissions.sheetName, csvFileSubmissions.upscanCallback, csvFileSubmissions.fileLength), empRef)
           .map {
             case Some(throwable) => Left(throwable)
