@@ -3,7 +3,7 @@ import sbt.*
 
 object AppDependencies {
 
-  val bootstrapVersion  = "9.10.0"
+  val bootstrapVersion  = "9.11.0"
   val pekkoVersion      = "1.0.2"
   val mongoVersion      = "2.5.0"
 
@@ -24,7 +24,7 @@ object AppDependencies {
     "org.apache.pekko"        %% "pekko-testkit"            % "1.0.3",
     "org.apache.pekko"        %% "pekko-stream"             % pekkoVersion,
     "com.vladsch.flexmark"    %  "flexmark-all"             % "0.64.8",
-    "org.jsoup"               %  "jsoup"                    % "1.18.3",
+    "org.jsoup"               %  "jsoup"                    % "1.19.1",
     "uk.gov.hmrc"             %% "bootstrap-test-play-30"   % bootstrapVersion,
     "org.scalatest"           %% "scalatest"                % "3.2.19",
     "org.scalatestplus"       %% "mockito-4-11"             % "3.2.18.0",

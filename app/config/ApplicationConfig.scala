@@ -38,7 +38,7 @@ class ApplicationConfig @Inject()(config: ServicesConfig) {
   lazy val splitLargeSchemes: Boolean = config.getBoolean("largefiles.enabled")
   lazy val submissionsUrl: String = config.baseUrl("ers-submissions")
   lazy val validationChunkSize: Int = config.getInt("validationChunkSize")
-  lazy val uploadCsvSizeLimit: Int = config.getInt("csv.uploadSizeLimit")
+  lazy val uploadFileSizeLimit: Int = config.getInt("file-size.uploadSizeLimit")
   lazy val mongoTTLInSeconds: Int = config.getInt("mongodb.timeToLiveInSeconds")
   lazy val csopV5Enabled: Boolean = config.getConfBool("features.csop-v5.enabled", defBool = false)
 }
