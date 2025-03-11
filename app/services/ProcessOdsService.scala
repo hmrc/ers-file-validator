@@ -48,11 +48,9 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request : Request[_]): Future[Int] = {
     try {
       val startTime = System.currentTimeMillis()
-      logger.info("2.0 start: ")
       val result = dataGenerator.getErrors(readFile(callbackData.downloadUrl))
-      logger.debug("2.1 result contains: " + result)
+      logger.info("[ProcessOdsService][processFile]: result contains: " + result)
       deliverBESMetrics(startTime)
-      logger.debug("No. of SchemeData Objects " + result.size)
       val filesWithData = result.filter(_.data.nonEmpty)
       var totalRows = 0
       val res1 = filesWithData.foldLeft(0) {

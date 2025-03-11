@@ -53,7 +53,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
-  when(mockAppConfig.uploadCsvSizeLimit).thenReturn(10000)
+  when(mockAppConfig.uploadFileSizeLimit).thenReturn(10000)
   when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(10000)
 
   val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "CSOP_OptionsGranted_V4", "sheetTitle", "configFileName", List("aHeader"))
