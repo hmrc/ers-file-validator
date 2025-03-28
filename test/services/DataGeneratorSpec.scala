@@ -18,7 +18,7 @@ package services
 
 import com.typesafe.config.ConfigFactory
 import config.ApplicationConfig
-import models.{ERSFileProcessingException, SchemeInfo}
+import models.{ERSFileProcessingException, ERSFileProcessingExceptionWithSchemeTypes, SchemeInfo}
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfter, EitherValues}
@@ -172,8 +172,8 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   "return an error indicating the sheet type is not as expected" in {
     val schemeInfoWithWrongSchemeType: SchemeInfo = schemeInfo.copy(schemeType = "CSOP")
-    val result: ERSFileProcessingException =
-      intercept[ERSFileProcessingException](dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfoWithWrongSchemeType, hc, request))
+    val result: ERSFileProcessingExceptionWithSchemeTypes =
+      intercept[ERSFileProcessingExceptionWithSchemeTypes](dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfoWithWrongSchemeType, hc, request))
     assert(result.message === "Incorrect ERS Template - Sheet Name isn't as expected")
     assert(result.context === "Incorrect ERS Template - Scheme Type isn't as expected, expected: CSOP parsed: EMI")
     verify(mockAuditEvents, times(1))

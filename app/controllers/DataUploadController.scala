@@ -24,8 +24,9 @@ import controllers.auth.Authorisation
 import metrics.Metrics
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
+import models.userScheme.ExpectedAndActualScheme
 import play.api.Logging
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import services.audit.AuditEvents
 import services.{ProcessCsvService, ProcessOdsService, SessionCacheService}
@@ -61,10 +62,11 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
             deliverFileProcessingMetrics(startTime)
             Ok(result.toString)
           }.recover {
-            case e: ERSFileProcessingException =>
+            case e: ERSFileProcessingExceptionWithSchemeTypes =>
               deliverFileProcessingMetrics(startTime)
+              val test = ExpectedAndActualScheme(e.message, e.expected, e.actual)
               logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException: ${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
-              Accepted(e.message)
+              Accepted(Json.toJson(test))
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)
               logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data for schemeRef: ${schemeInfo.schemeRef}" +
