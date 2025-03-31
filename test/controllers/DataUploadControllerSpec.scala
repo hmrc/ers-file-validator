@@ -139,6 +139,13 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       status(result) shouldBe INTERNAL_SERVER_ERROR
       }
 
+    "Return ACCEPTED when ERSFileProcessingExceptionWithSchemeTypes is thrown" in {
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
+        .thenReturn(Future.failed(ERSFileProcessingExceptionWithSchemeTypes("Error with scheme type", "Tests", "ExpectedScheme", "ActualScheme")))
+      val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
+      status(result) shouldBe ACCEPTED
+    }
+
     "Return ACCEPTED when ERSFileProcessingException is thrown" in {
       when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
         .thenReturn(Future.failed(ERSFileProcessingException("Error", "Tests", None)))
