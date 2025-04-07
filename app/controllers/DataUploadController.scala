@@ -65,7 +65,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
             case e: ERSFileProcessingExceptionWithSchemeTypes =>
               deliverFileProcessingMetrics(startTime)
               val schemeMismatch = ExpectedAndActualScheme(e.message, e.expected, e.actual)
-              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException: ${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
+              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingExceptionWithSchemeTypes: ${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
               Accepted(Json.toJson(schemeMismatch))
             case e: ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
