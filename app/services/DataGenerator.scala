@@ -179,7 +179,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
       logger.warn(ErrorResponseMessages.dataParserIncorrectSchemeType())
       throw ERSFileProcessingExceptionWithSchemeTypes(
-        message = s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+        message = s"${ErrorResponseMessages.dataParserIncorrectSheetName}, expected scheme: $schemeInfoSchemeType, actual scheme: $requestSchemeType",
         context = s"${ErrorResponseMessages.dataParserIncorrectSchemeType(
           Some(schemeInfoSchemeType),
           Some(requestSchemeType)
