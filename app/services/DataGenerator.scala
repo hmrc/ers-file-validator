@@ -18,7 +18,7 @@ package services
 
 import config.ApplicationConfig
 import metrics.Metrics
-import models.{ERSFileProcessingException, ERSFileProcessingExceptionWithSchemeTypes, SchemeData, SchemeInfo}
+import models.{ERSFileProcessingException, ERSFileProcessingSchemeTypeException, SchemeData, SchemeInfo}
 import play.api.Logging
 import play.api.mvc.Request
 import services.ERSTemplatesInfo.{ersSheetsWithCsopV4, ersSheetsWithCsopV5}
@@ -45,6 +45,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     if (applicationConfig.csopV5Enabled && csopV5required(schemeInfo)) ersSheetsWithCsopV5 else ersSheetsWithCsopV4
 
   @throws(classOf[ERSFileProcessingException])
+  @throws(classOf[ERSFileProcessingSchemeTypeException])
   def getErrors(iterator: Iterator[String])(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): ListBuffer[SchemeData] = {
     var rowNum = 0
     implicit var sheetName: String = ""
@@ -178,14 +179,14 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     } else {
       auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
       logger.warn(ErrorResponseMessages.dataParserIncorrectSchemeType())
-      throw ERSFileProcessingExceptionWithSchemeTypes(
-        message = s"${ErrorResponseMessages.dataParserIncorrectSheetName}, expected scheme: $schemeInfoSchemeType, actual scheme: $requestSchemeType",
+      throw ERSFileProcessingSchemeTypeException(
+        message = s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
         context = s"${ErrorResponseMessages.dataParserIncorrectSchemeType(
           Some(schemeInfoSchemeType),
           Some(requestSchemeType)
         )}",
-        expected = schemeInfoSchemeType,
-        actual = requestSchemeType
+        expectedSchemeType = schemeInfoSchemeType,
+        requestSchemeType = requestSchemeType
       )
     }
   }

@@ -48,6 +48,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.Application
 import org.scalatest.wordspec.AnyWordSpecLike
 import services.audit.AuditEvents
+import utils.ErrorResponseMessages
 
 import java.time.ZonedDateTime
 
@@ -139,11 +140,26 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       status(result) shouldBe INTERNAL_SERVER_ERROR
       }
 
-    "Return ACCEPTED when ERSFileProcessingExceptionWithSchemeTypes is thrown" in {
+    "Return ACCEPTED when ERSFileProcessingSchemeTypeException is thrown" in {
+      val errorMessage = ErrorResponseMessages.dataParserIncorrectSheetName
+      val expectedSchemeType = "EMI"
+      val requestSchemeType = "CSOP"
+
       when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
-        .thenReturn(Future.failed(ERSFileProcessingExceptionWithSchemeTypes("Error with scheme type", "Tests", "ExpectedScheme", "ActualScheme")))
+        .thenReturn(Future.failed(ERSFileProcessingSchemeTypeException(
+          errorMessage,
+          ErrorResponseMessages.dataParserIncorrectSchemeType(Some(expectedSchemeType), Some(requestSchemeType)),
+          expectedSchemeType,
+          requestSchemeType
+        )))
+
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
       status(result) shouldBe ACCEPTED
+      val jsonResponse = contentAsJson(result)
+
+      (jsonResponse \ "errorMessage").as[String] shouldBe errorMessage
+      (jsonResponse \ "expectedSchemeType").as[String] shouldBe expectedSchemeType
+      (jsonResponse \ "requestSchemeType").as[String] shouldBe requestSchemeType
     }
 
     "Return ACCEPTED when ERSFileProcessingException is thrown" in {
