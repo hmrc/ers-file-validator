@@ -25,6 +25,7 @@ import org.apache.pekko.testkit.TestKit
 import fixtures.WithMockedAuthActions
 import metrics.Metrics
 import models._
+import models.scheme.SchemeMismatchError
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
@@ -155,11 +156,11 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
 
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
       status(result) shouldBe ACCEPTED
-      val jsonResponse = contentAsJson(result)
+      val mismatchError = contentAsJson(result).as[SchemeMismatchError]
 
-      (jsonResponse \ "errorMessage").as[String] shouldBe errorMessage
-      (jsonResponse \ "expectedSchemeType").as[String] shouldBe expectedSchemeType
-      (jsonResponse \ "requestSchemeType").as[String] shouldBe requestSchemeType
+      mismatchError.errorMessage shouldBe errorMessage
+      mismatchError.expectedSchemeType shouldBe expectedSchemeType
+      mismatchError.requestSchemeType shouldBe requestSchemeType
     }
 
     "Return ACCEPTED when ERSFileProcessingException is thrown" in {
