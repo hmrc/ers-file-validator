@@ -13,7 +13,7 @@ lazy val IntegrationTest = config("it") extend Test
 val appName: String = "ers-file-validator"
 
 ThisBuild / majorVersion := 1
-ThisBuild / scalaVersion := "2.13.15"
+ThisBuild / scalaVersion := "2.13.16"
 
 lazy val plugins: Seq[Plugins] = Seq(play.sbt.PlayScala, SbtDistributablesPlugin)
 

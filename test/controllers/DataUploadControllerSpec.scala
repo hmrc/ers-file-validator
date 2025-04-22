@@ -25,6 +25,7 @@ import org.apache.pekko.testkit.TestKit
 import fixtures.WithMockedAuthActions
 import metrics.Metrics
 import models._
+import models.scheme.SchemeMismatchError
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
@@ -48,6 +49,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.Application
 import org.scalatest.wordspec.AnyWordSpecLike
 import services.audit.AuditEvents
+import utils.ErrorResponseMessages
 
 import java.time.ZonedDateTime
 
@@ -138,6 +140,28 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
       status(result) shouldBe INTERNAL_SERVER_ERROR
       }
+
+    "Return ACCEPTED when ERSFileProcessingSchemeTypeException is thrown" in {
+      val errorMessage = ErrorResponseMessages.dataParserIncorrectSheetName
+      val expectedSchemeType = "EMI"
+      val requestSchemeType = "CSOP"
+
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
+        .thenReturn(Future.failed(ERSFileProcessingSchemeTypeException(
+          errorMessage,
+          ErrorResponseMessages.dataParserIncorrectSchemeType(Some(expectedSchemeType), Some(requestSchemeType)),
+          expectedSchemeType,
+          requestSchemeType
+        )))
+
+      val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
+      status(result) shouldBe ACCEPTED
+      val mismatchError = contentAsJson(result).as[SchemeMismatchError]
+
+      mismatchError.errorMessage shouldBe errorMessage
+      mismatchError.expectedSchemeType shouldBe expectedSchemeType
+      mismatchError.requestSchemeType shouldBe requestSchemeType
+    }
 
     "Return ACCEPTED when ERSFileProcessingException is thrown" in {
       when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))

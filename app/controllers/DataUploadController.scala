@@ -23,9 +23,10 @@ import org.apache.pekko.stream.scaladsl.Source
 import controllers.auth.Authorisation
 import metrics.Metrics
 import models._
+import models.scheme.SchemeMismatchError
 import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
 import play.api.Logging
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import services.audit.AuditEvents
 import services.{ProcessCsvService, ProcessOdsService, SessionCacheService}
@@ -51,7 +52,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
 
   def processFileDataFromFrontend(empRef: String): Action[AnyContent] = authorisedAction(empRef) {
     implicit request: Request[AnyContent] =>
-      val startTime =  System.currentTimeMillis()
+      val startTime = System.currentTimeMillis()
       logger.debug("File Processing Request Received At: " + startTime)
       val json = request.body.asJson.get
       json.validate[UpscanFileData].fold(
@@ -61,6 +62,13 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
             deliverFileProcessingMetrics(startTime)
             Ok(result.toString)
           }.recover {
+            case e: ERSFileProcessingSchemeTypeException =>
+              deliverFileProcessingMetrics(startTime)
+              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingSchemeTypeException: +" +
+                s"${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
+
+              val schemeError = SchemeMismatchError(e.message, e.expectedSchemeType, e.requestSchemeType)
+              Accepted(Json.toJson(schemeError))
             case e: ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
               logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException: ${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
@@ -81,7 +89,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
       )
   }
 
-  def deliverFileProcessingMetrics(startTime:Long): Unit =
+  def deliverFileProcessingMetrics(startTime: Long): Unit =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
   def processCsvFileDataFromFrontendV2(empRef: String): Action[JsValue] = authorisedActionWithBody(empRef) {
@@ -152,6 +160,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
       .single(HttpRequest(uri = downloadUrl))
       .mapAsync(parallelism = 1)(makeRequest)
   }
+
   // $COVERAGE-OFF$
   private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] = Http()(actorSystem).singleRequest(request)
   // $COVERAGE-ON$
