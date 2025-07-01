@@ -74,21 +74,30 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 
   def processFiles(callback: UpscanCsvFileData, source: String => Source[HttpResponse, _])(
     implicit request: Request[_], hc: HeaderCarrier
-  ): List[Future[Either[Throwable, CsvFileSubmissions]]] =
+  ): List[Future[Either[UserValidationError, CsvFileSubmissions]]] =
     callback.callbackData map { successUpload =>
 
       val sheetName = successUpload.name.replace(".csv", "")
       val tryValidator: Either[Throwable, (DataValidator, SheetInfo)] = dataGenerator.getValidatorAndSheetInfo(sheetName, callback.schemeInfo)
 
       tryValidator.fold(
-        throwable => Future.successful(Left(throwable)),
+        throwable => throwable match {
+          case _: ERSFileProcessingException =>
+            Future.successful(Left(UnknownSheetError(
+              s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+              s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")))
+          case _ =>
+            Future.successful(Left(UnknownSheetError(
+              s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+              s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")))
+        },
         setValidator => {
           val (validator, sheetInfo) = setValidator
 
-          val futureListOfErrors: Future[Seq[Either[Throwable, Seq[String]]]] = extractBodyOfRequest(source(successUpload.downloadUrl))
+          val futureListOfErrors: Future[Seq[Either[UserValidationError, Seq[String]]]] = extractBodyOfRequest(source(successUpload.downloadUrl))
             .via(eitherFromFunction(processRow(_, successUpload.name, callback.schemeInfo, validator, sheetInfo)))
             .takeWhile(_.isRight, inclusive = true)
-            .runWith(Sink.seq[Either[Throwable, Seq[String]]])
+            .runWith(Sink.seq[Either[UserValidationError, Seq[String]]])
 
           /* Because of the .takeWhile function above, if any row had an error in it, the 'creation' or futureListOfErrors will terminate.
              Since .takeWhile is set to be inclusive, if any row had an error in it, it will be the last object in the list.
@@ -97,12 +106,12 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
            */
           futureListOfErrors.map { sequenceOfEithers =>
             sequenceOfEithers.lastOption match {
-              case None => Left(ERSFileProcessingException(
+              case None => Left(NoDataError(
                 s"${ErrorResponseMessages.ersCheckCsvFileNoData(sheetName + ".csv")}",
                 s"${ErrorResponseMessages.ersCheckCsvFileNoData()}"))
               case Some(lastRowValidation) => lastRowValidation match {
                 case Right(_) => Right(CsvFileSubmissions(sheetName, sequenceOfEithers.length, successUpload))
-                case Left(exception) => Left(exception)
+                case Left(userError) => Left(userError)
               }
             }
           }
@@ -110,17 +119,16 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       )
     }
 
-
-  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[Throwable, CsvFileSubmissions])(
+  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[UserValidationError, CsvFileSubmissions])(
     implicit request: Request[_], hc: HeaderCarrier
-  ): Future[Either[Throwable, CsvFileLengthInfo]] = {
+  ): Future[Either[UserValidationError, CsvFileLengthInfo]] = {
     result.fold(
-      throwable => Future(Left(throwable)),
+      userError => Future(Left(userError)),
       csvFileSubmissions => {
         logger.info("[ProcessCsvService][extractSchemeData]: File length " + csvFileSubmissions.fileLength)
         sendSchemeCsv(SubmissionsSchemeData(schemeInfo, csvFileSubmissions.sheetName, csvFileSubmissions.upscanCallback, csvFileSubmissions.fileLength), empRef)
           .map {
-            case Some(throwable) => Left(throwable)
+            case Some(throwable) => throw throwable
             case None =>
               val noOfSlices: Int = ValidationUtils.numberOfSlices(csvFileSubmissions.fileLength, appConfig.maxNumberOfRowsPerSubmission)
               Right(CsvFileLengthInfo(noOfSlices, csvFileSubmissions.fileLength))
@@ -134,22 +142,23 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
   }
 
   def processRow(rowBytes: List[ByteString], sheetName: String, schemeInfo: SchemeInfo, validator: DataValidator, sheetInfo: SheetInfo)(
-    implicit request: Request[_], hc: HeaderCarrier): Either[Throwable, Seq[String]] = {
+    implicit request: Request[_], hc: HeaderCarrier): Either[UserValidationError, Seq[String]] = {
     val rowStrings: Seq[String] = rowBytes.map(byteString => byteString.utf8String)
     val parsedRow = formatDataToValidate(rowStrings, sheetInfo)
     Try {
       validator.validateRow(Row(0, getCells(parsedRow, 0)))
     } match {
       case Failure(exception) =>
-        logger.error(s"[ProcessCsvService][processRow] Exception returned when attempting to validate row: ${exception.getMessage}", exception)
-        Left(exception)
+        logger.error(s"[ProcessCsvService][processRow] System error when attempting to validate row: ${exception.getMessage}", exception)
+        throw exception
       case Success(list) if list.isEmpty => Right(parsedRow)
       case Success(_) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
         logger.warn("[ProcessCsvService][processRow] Row validation found validation errors")
-        Left(ERSFileProcessingException(
+        Left(RowValidationError(
           s"${ErrorResponseMessages.dataParserFileInvalid}",
-          s"${ErrorResponseMessages.dataParserValidationFailure}"))
+          s"${ErrorResponseMessages.dataParserValidationFailure}",
+          0))
     }
   }
 
@@ -170,8 +179,9 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 
 
 object FlowOps {
-
-  def eitherFromFunction[A, B](input: A => Either[Throwable, B]): Flow[Either[Throwable, A], Either[Throwable, B], NotUsed] =
-    Flow.fromFunction(_.flatMap(input))
-
+  def eitherFromFunction[A, B](input: A => Either[UserValidationError, B]): Flow[Either[Throwable, A], Either[UserValidationError, B], NotUsed] =
+    Flow.fromFunction(_.fold(
+      throwable => throw throwable,
+      value => input(value)
+    ))
 }

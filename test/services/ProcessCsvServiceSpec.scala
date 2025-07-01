@@ -80,7 +80,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
   }
 
   "processRow" should {
-    "process a row and return the errors it contains" in {
+    "process a row and return the user validation error it contains" in {
       val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName",
         (1 to 5).map(_.toString).toList)
 
@@ -92,13 +92,14 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val result = testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
         "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
 
-      result.swap.value mustBe ERSFileProcessingException(
-        s"${ErrorResponseMessages.dataParserFileInvalid}",
-        s"${ErrorResponseMessages.dataParserValidationFailure}")
-      assert(result.isLeft)
+      result.isLeft mustBe true
+      result.left.value mustBe a[RowValidationError]
+      val error = result.left.value.asInstanceOf[RowValidationError]
+      error.message mustBe s"${ErrorResponseMessages.dataParserFileInvalid}"
+      error.context mustBe s"${ErrorResponseMessages.dataParserValidationFailure}"
     }
 
-    "process a row and return an empty list if there are no errors" in {
+    "process a row and return the data if there are no errors" in {
       val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName",
         (1 to 5).map(_.toString).toList)
 
@@ -114,7 +115,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       result.value mustBe List("thisIsARow", "With", "ManyValues")
     }
 
-    "return throwable if validateRow returned a throwable" in {
+    "throw system error if validateRow throws an exception" in {
       val testService = new MockProcessCsvService(
         mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
         formatDataToValidate = Some(Seq("thisIsARow", "With", "ManyValues"))
@@ -124,11 +125,11 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       val dataValidator = mock[DataValidator]
       when(dataValidator.validateRow(any())).thenThrow(new RuntimeException("this validation failed"))
-      val result = testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
-        "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
-
-      assert(result.isLeft)
-      result.swap.value.getMessage mustBe "this validation failed"
+      val exception = intercept[RuntimeException] {
+        testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
+          "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
+      }
+      exception.getMessage mustBe "this validation failed"
     }
   }
 
@@ -140,15 +141,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       Source.single(HttpResponse(entity = data))
     }
 
-  }
-
-  "processFiles" should {
-
-    def returnStubSource(x: String, data: String): Source[HttpResponse, NotUsed] = {
-      Source.single(HttpResponse(entity = data))
-    }
-
-    "return true if all rows are valid" in {
+    "return Right if all rows are valid" in {
       val upscanCallback = UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))
 
       val callback = UpscanCsvFileData(List(upscanCallback), schemeInfo)
@@ -172,7 +165,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       assert(boolList.forall(_.isRight))
     }
 
-    "return a throwable when file is empty" in {
+    "return a user validation error when file is empty" in {
       val testService: ProcessCsvService = new MockProcessCsvService(
         mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector
       )(
@@ -187,19 +180,22 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       assert(boolList.head.isLeft)
-      boolList.head.swap.value.getMessage mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
+      boolList.head.left.value mustBe a[NoDataError]
+      val error = boolList.head.left.value.asInstanceOf[NoDataError]
+      error.message mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
       assert(boolList.forall(_.isLeft))
     }
 
-    "return a throwable when an error occurs during the file validation" in {
+    "return a user validation error when an error occurs during the file validation" in {
       val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,test,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
+      val userError = RowValidationError("thisIsBad", "qualityContent", 1)
       val testService: ProcessCsvService = new MockProcessCsvService(
         mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector
       )(
         mockExtractBodyOfRequest = Some(_ => Source.single(Right(List(ByteString(data))))),
-        processRow = Some(Left(ERSFileProcessingException("thisIsBad", "qualityContent")))
+        processRow = Some(Left(userError))
       )
       when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
         .thenReturn(Right((mock[DataValidator], sheetTest)))
@@ -207,10 +203,10 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val resultFuture = testService.processFiles(callback, returnStubSource(_, data))
 
       val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
-      result mustBe List(Left(ERSFileProcessingException("thisIsBad", "qualityContent")))
+      result mustBe List(Left(userError))
     }
 
-    "return a throwable when an error occurs during the file processing" in {
+    "return a user validation error when an error occurs during the file processing" in {
       val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
       when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any())).thenReturn(Left(ERSFileProcessingException(
@@ -222,8 +218,9 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
       boolList.head match {
-        case Left(ex) => ex.getMessage mustBe "ers.exceptions.dataParser.configFailure"
-        case Right(_) => fail("Expected result to be a Left")
+        case Left(userError: UnknownSheetError) =>
+          userError.message mustBe s"${ErrorResponseMessages.dataParserIncorrectSheetName}"
+        case _ => fail("Expected result to be a Left with UnknownSheetError")
       }
       assert(boolList.forall(_.isLeft))
     }
@@ -239,11 +236,12 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       result.utf8String mustBe "Test response body"
     }
 
-    "return a failed source with an UpstreamErrorResponse if response status is not Ok (200)" in {
+    "return a failed source with an ERSFileProcessingException if response status is not Ok (200)" in {
       val response = HttpResponse(status = StatusCodes.InternalServerError)
       val resultFuture = testProcessCsvService.extractEntityData(response).runWith(Sink.head)
 
       assert(resultFuture.failed.futureValue.getMessage.contains("Failed to stream the data from file"))
+      assert(resultFuture.failed.futureValue.isInstanceOf[ERSFileProcessingException])
     }
   }
 
@@ -291,25 +289,26 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
   "extractSchemeData" should {
     "pass on a Left if given a Left" in {
-      val result: Future[Either[Throwable, CsvFileLengthInfo]] = testProcessCsvService
-        .extractSchemeData(schemeInfo, "anEmpRef", Left(new Exception("hello there")))
+      val userError = RowValidationError("hello there", "context", 1)
+      val result: Future[Either[UserValidationError, CsvFileLengthInfo]] = testProcessCsvService
+        .extractSchemeData(schemeInfo, "anEmpRef", Left(userError))
 
       assert(result.futureValue.isLeft)
-      result.futureValue.swap.value.getMessage mustBe "hello there"
+      result.futureValue.left.value mustBe userError
     }
 
-    "return a Left if sendSchemeCsv finds errors" in {
+    "throw system error if sendSchemeCsv finds errors" in {
       val testService = new MockProcessCsvService(
         mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
         sendSchemeCsvNew = Some(Future.successful(Some(new Exception("this was bad")))))
 
-      val result = Await.result(testService
-        .extractSchemeData(schemeInfo, "anEmpRef", Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))))),
-        Duration.Inf
-      )
+      val futureResult = testService
+        .extractSchemeData(schemeInfo, "anEmpRef", Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1)))))
 
-      assert(result.isLeft)
-      result.swap.value.getMessage mustBe "this was bad"
+      val exception = intercept[Exception] {
+        Await.result(futureResult, Duration.Inf)
+      }
+      exception.getMessage mustBe "this was bad"
     }
 
     "return a Right if sendSchemeCsv is happy" in {

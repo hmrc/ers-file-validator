@@ -58,25 +58,28 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
       json.validate[UpscanFileData].fold(
         valid = res => {
           implicit val schemeInfo: SchemeInfo = res.schemeInfo
-          processOdsService.processFile(res.callbackData, empRef).map { result =>
-            deliverFileProcessingMetrics(startTime)
-            Ok(result.toString)
-          }.recover {
-            case e: ERSFileProcessingSchemeTypeException =>
+          processOdsService.processFile(res.callbackData, empRef).map {
+            case Right(result) =>
               deliverFileProcessingMetrics(startTime)
-              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingSchemeTypeException: +" +
-                s"${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
-
-              val schemeError = SchemeMismatchError(e.message, e.expectedSchemeType, e.requestSchemeType)
+              Ok(result.toString)
+            case Left(userError: SchemeTypeMismatchError) =>
+              deliverFileProcessingMetrics(startTime)
+              logger.warn(s"[DataUploadController][processFileDataFromFrontend] Scheme type mismatch: " +
+                s"${userError.message}, expected: ${userError.expectedSchemeType}, got: ${userError.requestSchemeType}, schemeRef: ${schemeInfo.schemeRef}")
+              val schemeError = SchemeMismatchError(userError.message, userError.expectedSchemeType, userError.requestSchemeType)
               Accepted(Json.toJson(schemeError))
+            case Left(userError) =>
+              deliverFileProcessingMetrics(startTime)
+              logger.warn(s"[DataUploadController][processFileDataFromFrontend] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
+              Accepted(userError.message)
+          }.recover {
             case e: ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
-              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException: ${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
-              Accepted(e.message)
+              logger.error(s"[DataUploadController][processFileDataFromFrontend] System error: ${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
+              InternalServerError
             case er: Exception =>
               deliverFileProcessingMetrics(startTime)
-              logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data for schemeRef: ${schemeInfo.schemeRef}" +
-                s", Exception: ${er.getMessage}", er)
+              logger.error(s"[DataUploadController][processFileDataFromFrontend] Unexpected system error for schemeRef: ${schemeInfo.schemeRef}, Exception: ${er.getMessage}", er)
               InternalServerError
           }
         },
@@ -102,22 +105,18 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
           logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
 
-          val processedFiles: List[Future[Either[Throwable, CsvFileSubmissions]]] = processCsvService.processFiles(res, streamFile)
+          val processedFiles: List[Future[Either[UserValidationError, CsvFileSubmissions]]] = processCsvService.processFiles(res, streamFile)
 
-          val extractedSchemeData: Seq[Future[Either[Throwable, CsvFileLengthInfo]]] = processedFiles.map { submission =>
+          val extractedSchemeData: Seq[Future[Either[UserValidationError, CsvFileLengthInfo]]] = processedFiles.map { submission =>
             submission.flatMap(processCsvService.extractSchemeData(res.schemeInfo, empRef, _))
           }
 
           Future.sequence(extractedSchemeData).flatMap { allFilesResults =>
             allFilesResults.collectFirst {
-              case Left(throwable: ERSFileProcessingException) =>
-                logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] ERS file processing exception: ${throwable.message}, schemeRef: ${schemeInfo.schemeRef}")
+              case Left(userError) =>
+                logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}")
                 deliverFileProcessingMetrics(startTime)
-                Future.successful(Accepted(throwable.message))
-              case Left(throwable) =>
-                logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] Unknown exception: ${throwable.getMessage}, full exception: $throwable, schemeRef: ${schemeInfo.schemeRef}")
-                deliverFileProcessingMetrics(startTime)
-                Future.successful(InternalServerError)
+                Future.successful(Accepted(userError.message))
             } match {
               case Some(futureResult) => futureResult
               case None =>
@@ -144,6 +143,15 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
                     Accepted("csv callback data storage in sessioncache failed")
                 }
             }
+          }.recover {
+            case e: ERSFileProcessingException =>
+              logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] System error: ${e.getMessage}, schemeRef: ${schemeInfo.schemeRef}")
+              deliverFileProcessingMetrics(startTime)
+              InternalServerError
+            case throwable =>
+              logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] Unexpected system error: ${throwable.getMessage}, schemeRef: ${schemeInfo.schemeRef}")
+              deliverFileProcessingMetrics(startTime)
+              InternalServerError
           }
         },
         invalid = e => {

@@ -17,7 +17,7 @@
 package services
 
 import config.ApplicationConfig
-import models.{ERSFileProcessingException, SchemeInfo}
+import models.{ERSFileProcessingException, HeaderValidationError, SchemeInfo, UnknownSheetError}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
 import org.scalatestplus.mockito.MockitoSugar
@@ -81,29 +81,22 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     result.value._2 must equal(3)
   }
 
-    "display incorrectSheetName exception in identifyAndDefineSheet method" in {
-      def exceptionMessage: String = {
-        try {
-          dataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo, hc, request).toString
-        }
-        catch {
-          case e: ERSFileProcessingException => e.message + ", " + e.context
-        }
+    "display incorrectSheetName user validation error in identifyAndDefineSheet method" in {
+      val result = dataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo, hc, request)
+      result match {
+        case Left(UnknownSheetError(message, context)) =>
+          s"$message, $context" mustBe "Incorrect ERS Template - Sheet Name isn't as expected, Couldn't find config for given SheetName, sheet name may be incorrect"
+        case _ => fail("Expected UnknownSheetError")
       }
-
-      exceptionMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected, Couldn't find config for given SheetName, sheet name may be incorrect"
     }
 
-    "display incorrectHeader exception in validateHeaderRow method" in {
-      def exceptionMessage: String = {
-        try {
-          dataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V4")(schemeInfo, hc, request).toString
-        }
-        catch {
-          case e: ERSFileProcessingException => e.message + ", " + e.context
-        }
+    "display incorrectHeader user validation error in validateHeaderRow method" in {
+      val result = dataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V4")(schemeInfo, hc, request)
+      result match {
+        case Left(HeaderValidationError(message, context)) =>
+          s"$message, $context" mustBe "Incorrect ERS Template - Header doesn't match, Header doesn't match"
+        case _ => fail("Expected HeaderValidationError")
       }
-      exceptionMessage mustBe "Incorrect ERS Template - Header doesn't match, Header doesn't match"
     }
 
     "return sheetInfo given a valid sheet name" in {
