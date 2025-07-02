@@ -224,6 +224,37 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       }
       assert(boolList.forall(_.isLeft))
     }
+
+    "return UnknownSheetError when getValidatorAndSheetInfo returns ERSFileProcessingException" in {
+      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
+      val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
+
+      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
+        .thenReturn(Left(ERSFileProcessingException("Config error", "Missing config")))
+
+      val resultFuture = testProcessCsvService.processFiles(callback, returnStubSource(_, data))
+      val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
+
+      result.head.isLeft mustBe true
+      result.head.left.value mustBe a[UnknownSheetError]
+      val error = result.head.left.value.asInstanceOf[UnknownSheetError]
+      error.message mustBe s"${ErrorResponseMessages.dataParserIncorrectSheetName}"
+      error.context mustBe s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"
+    }
+
+    "return UnknownSheetError when getValidatorAndSheetInfo returns other throwable" in {
+      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
+      val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
+
+      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
+        .thenReturn(Left(new RuntimeException("Some other error")))
+
+      val resultFuture = testProcessCsvService.processFiles(callback, returnStubSource(_, data))
+      val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
+
+      result.head.isLeft mustBe true
+      result.head.left.value mustBe a[UnknownSheetError]
+    }
   }
 
   "extractEntityData" should {
