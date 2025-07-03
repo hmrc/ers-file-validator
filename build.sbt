@@ -40,7 +40,6 @@ lazy val microservice = Project(appName, file("."))
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator
   )
-  .settings(resolvers += Resolver.jcenterRepo)
   .settings(PlayKeys.playDefaultPort := 9226)
 
     scalacOptions ++= Seq(
@@ -52,5 +51,3 @@ lazy val it = project
   .dependsOn(microservice % "test->test")
   .settings(DefaultBuildSettings.itSettings())
   .settings(Test / fork := true)
-
-addCommandAlias("scalastyleAll", "all scalastyle Test/scalastyle")
