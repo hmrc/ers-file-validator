@@ -67,11 +67,11 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
               logger.warn(s"[DataUploadController][processFileDataFromFrontend] Scheme type mismatch: " +
                 s"${userError.message}, expected: ${userError.expectedSchemeType}, got: ${userError.requestSchemeType}, schemeRef: ${schemeInfo.schemeRef}")
               val schemeError = SchemeMismatchError(userError.message, userError.expectedSchemeType, userError.requestSchemeType)
-              Accepted(Json.toJson(schemeError))
+              BadRequest(Json.toJson(schemeError))
             case Left(userError) =>
               deliverFileProcessingMetrics(startTime)
               logger.warn(s"[DataUploadController][processFileDataFromFrontend] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
-              Accepted(userError.message)
+              BadRequest(userError.message)
           }.recover {
             case e: ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
@@ -116,7 +116,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
               case Left(userError) =>
                 logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}")
                 deliverFileProcessingMetrics(startTime)
-                Future.successful(Accepted(userError.message))
+                Future.successful(BadRequest(userError.message))
             } match {
               case Some(futureResult) => futureResult
               case None =>
@@ -140,7 +140,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
                       s"[DataUploadController][processCsvFileDataFromFrontendV2] csv storeCallbackData failed" +
                         s" while storing data, schemeRef: ${schemeInfo.schemeRef}, timestamp: ${java.time.LocalTime.now()}.")
                     deliverFileProcessingMetrics(startTime)
-                    Accepted("csv callback data storage in sessioncache failed")
+                    BadRequest("csv callback data storage in sessioncache failed")
                 }
             }
           }.recover {

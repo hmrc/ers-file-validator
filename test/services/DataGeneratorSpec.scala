@@ -38,7 +38,7 @@ import scala.collection.immutable.ArraySeq
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with HeaderData {
-  // scalastyle:off magic.number
+
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
@@ -63,11 +63,15 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
   }
 
   "validateHeaderRow" should {
-    "return with a system error if the sheet name isn't recognised" in {
-      val exception = intercept[ERSFileProcessingException] {
-        dataGenerator.validateHeaderRow(XMLTestData.otherHeaderSheet1Data, "csopHeaderSheet1Data")(schemeInfo, hc, request)
+    "return Left if the sheet name isn't recognised" in {
+      val result = dataGenerator.validateHeaderRow(XMLTestData.otherHeaderSheet1Data, "csopHeaderSheet1Data")(schemeInfo, hc, request)
+      result.isLeft mustBe true
+      result match {
+        case Left(error: UnknownSheetError) =>
+          error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+        case Left(_) => fail("Expected UnknownSheetError")
+        case Right(_) => fail("Expected Left but got Right")
       }
-      exception.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
       verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo), argEq("csopHeaderSheet1Data"), argEq("Could not set the validator"))(any(), any())
     }
 

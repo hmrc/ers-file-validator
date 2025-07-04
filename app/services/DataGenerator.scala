@@ -85,7 +85,8 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
           logger.info(s"SchemeData = ${schemeData.size} (schemeRef: ${schemeInfo.schemeRef}) ******")
           rowNum = 1
           validator = getValidator(sheetName) match {
-            case Left(exception: ERSFileProcessingException) => throw exception
+            case Left(exception: ERSFileProcessingException) =>
+              return Left(UnknownSheetError(exception.message, exception.context))
             case Right(value: DataValidator) => value
           }
         } else {
@@ -133,7 +134,6 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       Right(schemeData)
 
     } catch {
-      case e: ERSFileProcessingException => throw e
       case e: Exception =>
         logger.error(s"[DataGenerator][getErrors] Unexpected system error: ${e.getMessage}", e)
         throw ERSFileProcessingException(
@@ -189,61 +189,60 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
   def identifyAndDefineSheet(data: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[UserValidationError, String] = {
     logger.debug("5.1  case 0 identifyAndDefineSheet  ")
-    try {
-      val res = getSheet(data)
-      val schemeInfoSchemeType = schemeInfo.schemeType
-      val requestSchemeType = res.schemeType
-      if (requestSchemeType.toLowerCase == schemeInfoSchemeType.toLowerCase) {
-        logger.debug("****5.1.1  data contains data:  *****" + data)
-        Right(data)
-      } else {
-        auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
-        logger.warn(ErrorResponseMessages.dataParserIncorrectSchemeType())
-        Left(SchemeTypeMismatchError(
-          message = s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-          context = s"${ErrorResponseMessages.dataParserIncorrectSchemeType(Some(schemeInfoSchemeType), Some(requestSchemeType))}",
-          expectedSchemeType = schemeInfoSchemeType,
-          requestSchemeType = requestSchemeType
-        ))
-      }
-    } catch {
-      case _: ERSFileProcessingException =>
+
+    getSheet(data) match {
+      case Left(userError) => Left(userError)
+      case Right(res) =>
+        val schemeInfoSchemeType = schemeInfo.schemeType
+        val requestSchemeType = res.schemeType
+        if (requestSchemeType.toLowerCase == schemeInfoSchemeType.toLowerCase) {
+          logger.debug("****5.1.1  data contains data:  *****" + data)
+          Right(data)
+        } else {
+          auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
+          logger.warn(ErrorResponseMessages.dataParserIncorrectSchemeType())
+          Left(SchemeTypeMismatchError(
+            message = s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+            context = s"${ErrorResponseMessages.dataParserIncorrectSchemeType(Some(schemeInfoSchemeType), Some(requestSchemeType))}",
+            expectedSchemeType = schemeInfoSchemeType,
+            requestSchemeType = requestSchemeType
+          ))
+        }
+    }
+  }
+
+  def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[UserValidationError, SheetInfo] = {
+    ersSheetsConf(schemeInfo).get(sheetName) match {
+      case Some(sheetInfo) => Right(sheetInfo)
+      case None =>
+        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
+        logger.warn("[DataGenerator][getSheet] Couldn't identify SheetName")
         Left(UnknownSheetError(
           s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
           s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
     }
   }
 
-  def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): SheetInfo = {
-    ersSheetsConf(schemeInfo).getOrElse(sheetName, {
-      auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-      logger.warn("[DataGenerator][getSheet] Couldn't identify SheetName")
-      throw ERSFileProcessingException(
-        s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-        s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")
-    })
-  }
-
   def validateHeaderRow(rowData: Seq[String], sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[UserValidationError, Int] = {
     val headerFormat = "[^a-zA-Z0-9]"
 
-    try {
-      val header = getSheet(sheetName)(schemeInfo, hc, request).headerRow.map(_.replaceAll(headerFormat, ""))
-      val data = rowData.take(header.size)
-      val dataTrim = data.map(_.replaceAll(headerFormat, ""))
+    getSheet(sheetName) match {
+      case Left(userError) => Left(userError)
+      case Right(sheetInfo) =>
+        val header = sheetInfo.headerRow.map(_.replaceAll(headerFormat, ""))
+        val data = rowData.take(header.size)
+        val dataTrim = data.map(_.replaceAll(headerFormat, ""))
 
-      logger.debug("5.3  case 9 sheetName =" + sheetName + "data = " + dataTrim + "header == -> " + header)
-      if (dataTrim == header) {
-        Right(header.size)
-      } else {
-        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Header row invalid")
-        logger.warn("Error while reading File + Incorrect ERS Template")
-        Left(HeaderValidationError(
-          s"${ErrorResponseMessages.dataParserIncorrectHeader}",
-          s"${ErrorResponseMessages.dataParserHeadersDontMatch}"))
-      }
-    } catch {
-      case e: ERSFileProcessingException => throw e
+        logger.debug("5.3  case 9 sheetName =" + sheetName + "data = " + dataTrim + "header == -> " + header)
+        if (dataTrim == header) {
+          Right(header.size)
+        } else {
+          auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Header row invalid")
+          logger.warn("Error while reading File + Incorrect ERS Template")
+          Left(HeaderValidationError(
+            s"${ErrorResponseMessages.dataParserIncorrectHeader}",
+            s"${ErrorResponseMessages.dataParserHeadersDontMatch}"))
+        }
     }
   }
 

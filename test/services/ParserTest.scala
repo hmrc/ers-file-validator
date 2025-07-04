@@ -34,7 +34,7 @@ import scala.xml._
 
 
 class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with TimeLimits {
-  // scalastyle:off magic.number
+
   object TestDataParser extends DataParser
 
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
@@ -100,34 +100,43 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     }
 
     "return sheetInfo given a valid sheet name" in {
-      val sheet = dataGenerator.getSheet(ERSTemplatesInfo.emiSheet5Name)(schemeInfo, hc, request)
+      val result = dataGenerator.getSheet(ERSTemplatesInfo.emiSheet5Name)(schemeInfo, hc, request)
+      result.isRight mustBe true
+      val sheet = result.getOrElse(fail("Expected Right but got Left"))
       sheet.schemeType mustBe "EMI"
       sheet.sheetId mustBe 5
     }
 
     "return sheetInfo for CSOP_OptionsGranted_V4" in {
-      val sheet = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet1Name)(schemeInfo, hc, request)
+      val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet1Name)(schemeInfo, hc, request)
+      result.isRight mustBe true
+      val sheet = result.getOrElse(fail("Expected Right but got Left"))
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 1
     }
 
     "return sheetInfo for CSOP_OptionsRCL_V4" in {
-      val sheet = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet2Name)(schemeInfo, hc, request)
+      val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet2Name)(schemeInfo, hc, request)
+      result.isRight mustBe true
+      val sheet = result.getOrElse(fail("Expected Right but got Left"))
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 2
     }
 
     "return sheetInfo for CSOP_OptionsExercised_V4" in {
-      val sheet = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet3Name)(schemeInfo, hc, request)
+      val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet3Name)(schemeInfo, hc, request)
+      result.isRight mustBe true
+      val sheet = result.getOrElse(fail("Expected Right but got Left"))
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 3
     }
 
-    "throw an exception for an invalid sheetName" in {
-      val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getSheet("abc")(schemeInfo, hc, request)
-      }
-      result.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+    "return Left for an invalid sheetName" in {
+      val result = dataGenerator.getSheet("abc")(schemeInfo, hc, request)
+      result.isLeft mustBe true
+      result.swap.getOrElse(fail("Expected Left but got Right")) mustBe a[UnknownSheetError]
+      val Left(error) = result
+      error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
     }
 
     "Show that scala.xml.XML tries to access file system with malicious payload " in {

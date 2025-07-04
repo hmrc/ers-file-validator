@@ -21,7 +21,7 @@ import models.ValidationErrorData
 import org.apache.commons.lang3.StringUtils
 import uk.gov.hmrc.services.validation.models._
 
-trait ERSValidationCSOPExercisedTestData {// scalastyle:off magic.number
+trait ERSValidationCSOPExercisedTestData {
   val rowNumber:Int = 1
 
   def getDescriptions: List[String] ={

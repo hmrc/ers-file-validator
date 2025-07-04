@@ -48,7 +48,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 
 class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with TimeLimits with ScalaFutures with EitherValues {
-  // scalastyle:off magic.number
+
   val mockDataGenerator: DataGenerator = mock[DataGenerator]
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
@@ -115,7 +115,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       result.value mustBe List("thisIsARow", "With", "ManyValues")
     }
 
-    "throw system error if validateRow throws an exception" in {
+    "return Left when validateRow throws an exception" in {
       val testService = new MockProcessCsvService(
         mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
         formatDataToValidate = Some(Seq("thisIsARow", "With", "ManyValues"))
@@ -125,11 +125,15 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       val dataValidator = mock[DataValidator]
       when(dataValidator.validateRow(any())).thenThrow(new RuntimeException("this validation failed"))
-      val exception = intercept[RuntimeException] {
-        testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
-          "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
-      }
-      exception.getMessage mustBe "this validation failed"
+
+      val result = testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
+        "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
+
+      result.isLeft mustBe true
+      val error = result.swap.getOrElse(fail("Expected Left but got Right"))
+      error mustBe a[RowValidationError]
+      error.message mustBe "System error during validation"
+      error.context mustBe "Validation failed: this validation failed"
     }
   }
 

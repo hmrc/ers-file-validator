@@ -150,7 +150,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     } match {
       case Failure(exception) =>
         logger.error(s"[ProcessCsvService][processRow] System error when attempting to validate row: ${exception.getMessage}", exception)
-        throw exception
+        Left(RowValidationError("System error during validation", s"Validation failed: ${exception.getMessage}", 0))
       case Success(list) if list.isEmpty => Right(parsedRow)
       case Success(_) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")

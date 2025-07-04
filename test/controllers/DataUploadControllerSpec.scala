@@ -55,7 +55,7 @@ import java.time.ZonedDateTime
 
 class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadControllerSpec"))
   with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with GuiceOneAppPerSuite with WithMockedAuthActions with ScalaFutures {
-  // scalastyle:off magic.number
+
   val empRef: String = "1234/ABCD"
   val mockSessionService: SessionCacheService = mock[SessionCacheService]
   val mockProcessOdsService: ProcessOdsService = mock[ProcessOdsService]
@@ -146,7 +146,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       status(result) shouldBe INTERNAL_SERVER_ERROR
       }
 
-    "Return ACCEPTED when SchemeTypeMismatchError occurs" in {
+    "Return BAD_REQUEST when SchemeTypeMismatchError occurs" in {
       val errorMessage = ErrorResponseMessages.dataParserIncorrectSheetName
       val expectedSchemeType = "EMI"
       val requestSchemeType = "CSOP"
@@ -161,7 +161,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any())).thenReturn(Future.successful(Left(userError)))
 
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
-      status(result) shouldBe ACCEPTED
+      status(result) shouldBe BAD_REQUEST
       val mismatchError = contentAsJson(result).as[SchemeMismatchError]
 
       mismatchError.errorMessage shouldBe errorMessage
@@ -169,12 +169,12 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       mismatchError.requestSchemeType shouldBe requestSchemeType
     }
 
-    "Return ACCEPTED when other UserValidationError occurs" in {
+    "Return BAD_REQUEST when other UserValidationError occurs" in {
       val userError = HeaderValidationError("Header error", "Invalid header format")
 
       when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any())).thenReturn(Future.successful(Left(userError)))
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
-      status(result) shouldBe ACCEPTED
+      status(result) shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "Header error"
     }
   }
@@ -192,7 +192,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       status(result) shouldBe OK
     }
 
-    "return ACCEPTED when UserValidationError occurs in processing" in {
+    "return BAD_REQUEST when UserValidationError occurs in processing" in {
       val userError = RowValidationError("Row validation failed", "Invalid row data", 10)
 
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
@@ -201,11 +201,11 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
         .thenReturn(Future(Left(userError)))
 
       val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result) shouldBe ACCEPTED
+      status(result) shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "Row validation failed"
     }
 
-    "return ACCEPTED when UserValidationError occurs in extractSchemeData" in {
+    "return BAD_REQUEST when UserValidationError occurs in extractSchemeData" in {
       val userError = NoDataError("No data found", "File contains no data")
 
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
@@ -214,7 +214,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
         .thenReturn(Future(Left(userError)))
 
       val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result) shouldBe ACCEPTED
+      status(result) shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "No data found"
     }
 
@@ -247,7 +247,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
         .thenReturn(Future(Right(CsvFileLengthInfo(1,1))))
 
       val result: Future[Result] = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result) shouldBe ACCEPTED
+      status(result) shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "csv callback data storage in sessioncache failed"
     }
 

@@ -21,8 +21,6 @@ sealed trait UserValidationError {
   def context: String
 }
 
-case class FileFormatError(message: String, context: String) extends UserValidationError
-
 case class HeaderValidationError(message: String, context: String) extends UserValidationError
 
 case class RowValidationError(message: String, context: String, rowNumber: Int) extends UserValidationError
