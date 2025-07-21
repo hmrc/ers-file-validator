@@ -55,12 +55,8 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
     val startTime = System.currentTimeMillis()
 
-    def checkForMissingHeaders(rowNum: Int): Option[UserValidationError] = {
-      if (rowNum > 0 && rowNum < 9) {
-        Some(HeaderValidationError(
-          s"${ErrorResponseMessages.dataParserIncorrectHeader}",
-          s"${ErrorResponseMessages.dataParserIncorrectHeader}"))
-      } else None
+    def hasMissingHeaders(rowNum: Int): Boolean = {
+      rowNum > 0 && rowNum < 9
     }
 
     try {
@@ -69,9 +65,10 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         val rowData = parse(row)
         logger.debug(" parsed data ---> " + rowData + " -- cursor --> " + rowNum)
         if (rowData.isLeft) {
-          checkForMissingHeaders(rowNum) match {
-            case Some(error) => return Left(error)
-            case None =>
+          if (hasMissingHeaders(rowNum)) {
+            return Left(HeaderValidationError(
+              s"${ErrorResponseMessages.dataParserIncorrectHeader}",
+              s"${ErrorResponseMessages.dataParserIncorrectHeader}"))
           }
 
           identifyAndDefineSheet(rowData.swap.getOrElse("")) match {
@@ -120,10 +117,12 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         }
       }
 
-      checkForMissingHeaders(rowNum) match {
-        case Some(error) => return Left(error)
-        case None =>
+      if (hasMissingHeaders(rowNum)) {
+        return Left(HeaderValidationError(
+          s"${ErrorResponseMessages.dataParserIncorrectHeader}",
+          s"${ErrorResponseMessages.dataParserIncorrectHeader}"))
       }
+
       if (schemeData.foldLeft(0)((sum, obj) => sum + obj.data.size) == 0) {
         return Left(NoDataError(
           s"${ErrorResponseMessages.dataParserNoData}",
