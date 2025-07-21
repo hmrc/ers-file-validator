@@ -58,6 +58,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
           s"[ProcessCsvService][extractEntityData] Illegal response from Upscan: ${notOkResponse.status.intValue}, " +
             s"body: ${notOkResponse.entity.dataBytes}")
         Source.failed(
+
           ERSFileProcessingException(
             s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
             s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}"))
@@ -74,30 +75,22 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 
   def processFiles(callback: UpscanCsvFileData, source: String => Source[HttpResponse, _])(
     implicit request: Request[_], hc: HeaderCarrier
-  ): List[Future[Either[UserValidationError, CsvFileSubmissions]]] =
+  ): List[Future[Either[ErsError, CsvFileSubmissions]]] =
     callback.callbackData map { successUpload =>
 
       val sheetName = successUpload.name.replace(".csv", "")
-      val tryValidator: Either[Throwable, (DataValidator, SheetInfo)] = dataGenerator.getValidatorAndSheetInfo(sheetName, callback.schemeInfo)
 
-      tryValidator.fold(
-        throwable => throwable match {
-          case _: ERSFileProcessingException =>
-            Future.successful(Left(UnknownSheetError(
-              s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-              s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")))
-          case _ =>
-            Future.successful(Left(UnknownSheetError(
-              s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-              s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")))
-        },
-        setValidator => {
-          val (validator, sheetInfo) = setValidator
+      dataGenerator.getValidatorAndSheetInfo(sheetName, callback.schemeInfo) match {
 
-          val futureListOfErrors: Future[Seq[Either[UserValidationError, Seq[String]]]] = extractBodyOfRequest(source(successUpload.downloadUrl))
-            .via(eitherFromFunction(processRow(_, successUpload.name, callback.schemeInfo, validator, sheetInfo)))
-            .takeWhile(_.isRight, inclusive = true)
-            .runWith(Sink.seq[Either[UserValidationError, Seq[String]]])
+        case Right(validatorAndSheetInfo) =>
+
+          val (validator, sheetInfo) = validatorAndSheetInfo
+
+          val futureListOfErrors: Future[Seq[Either[Throwable, Seq[String]]]] =
+            extractBodyOfRequest(source(successUpload.downloadUrl))
+              .via(eitherFromFunction(processRow(_, successUpload.name, callback.schemeInfo, validator, sheetInfo)))
+              .takeWhile(_.isRight, inclusive = true)
+              .runWith(Sink.seq[Either[Throwable, Seq[String]]])
 
           /* Because of the .takeWhile function above, if any row had an error in it, the 'creation' or futureListOfErrors will terminate.
              Since .takeWhile is set to be inclusive, if any row had an error in it, it will be the last object in the list.
@@ -111,17 +104,30 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
                 s"${ErrorResponseMessages.ersCheckCsvFileNoData()}"))
               case Some(lastRowValidation) => lastRowValidation match {
                 case Right(_) => Right(CsvFileSubmissions(sheetName, sequenceOfEithers.length, successUpload))
-                case Left(userError) => Left(userError)
+                case Left(userError: UserValidationError) => Left(userError)
+                case Left(exception: Exception) => Left(ErsSystemError(exception.getMessage, "b"))
               }
             }
           }
-        }
-      )
+
+        case Left(throwable) =>
+          throwable match {
+            case _: ERSFileProcessingException =>
+              Future.successful(Left(UnknownSheetError(
+                s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+                s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")))
+            case _ =>
+              Future.successful(Left(UnknownSheetError(
+                s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+                s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")))
+          }
+
+      }
     }
 
-  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[UserValidationError, CsvFileSubmissions])(
+  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[ErsError, CsvFileSubmissions])(
     implicit request: Request[_], hc: HeaderCarrier
-  ): Future[Either[UserValidationError, CsvFileLengthInfo]] = {
+  ): Future[Either[ErsError, CsvFileLengthInfo]] = {
     result.fold(
       userError => Future(Left(userError)),
       csvFileSubmissions => {
@@ -142,7 +148,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
   }
 
   def processRow(rowBytes: List[ByteString], sheetName: String, schemeInfo: SchemeInfo, validator: DataValidator, sheetInfo: SheetInfo)(
-    implicit request: Request[_], hc: HeaderCarrier): Either[UserValidationError, Seq[String]] = {
+    implicit request: Request[_], hc: HeaderCarrier): Either[ErsError, Seq[String]] = {
     val rowStrings: Seq[String] = rowBytes.map(byteString => byteString.utf8String)
     val parsedRow = formatDataToValidate(rowStrings, sheetInfo)
     Try {
@@ -168,7 +174,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       case Right(_) =>
         auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         None
-      case Left(ex) =>
+      case Left(ex: Throwable) =>
         auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         logger.error(s"[ProcessCsvService][sendSchemeDataCsv] Exception found when sending to submissions: ${ex.getMessage}", ex)
         Some(ERSFileProcessingException(ex.toString, ex.getStackTrace.toString))
@@ -178,10 +184,9 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 }
 
 
+
 object FlowOps {
-  def eitherFromFunction[A, B](input: A => Either[UserValidationError, B]): Flow[Either[Throwable, A], Either[UserValidationError, B], NotUsed] =
-    Flow.fromFunction(_.fold(
-      throwable => throw throwable,
-      value => input(value)
-    ))
+  def eitherFromFunction[E <: Throwable, A, B](inputFn: A => Either[E, B]): Flow[Either[E, A], Either[E, B], NotUsed] = {
+    Flow.fromFunction(_.flatMap(inputFn))
+  }
 }

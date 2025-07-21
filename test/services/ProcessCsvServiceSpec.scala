@@ -325,7 +325,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
   "extractSchemeData" should {
     "pass on a Left if given a Left" in {
       val userError = RowValidationError("hello there", "context", 1)
-      val result: Future[Either[UserValidationError, CsvFileLengthInfo]] = testProcessCsvService
+      val result: Future[Either[ErsError, CsvFileLengthInfo]] = testProcessCsvService
         .extractSchemeData(schemeInfo, "anEmpRef", Left(userError))
 
       assert(result.futureValue.isLeft)

@@ -16,24 +16,37 @@
 
 package models
 
-sealed trait UserValidationError {
-  def message: String
+
+abstract class ErsException(val message: String) extends Exception(message)
+
+sealed abstract class ErsError(message: String) extends ErsException(message) {
   def context: String
 }
 
-case class HeaderValidationError(message: String, context: String) extends UserValidationError
+sealed abstract class UserValidationError(message: String) extends ErsError(message)
 
-case class RowValidationError(message: String, context: String, rowNumber: Int) extends UserValidationError
+case class HeaderValidationError(override val message: String, context: String) extends UserValidationError(message)
 
-case class SchemeTypeMismatchError(message: String,
-                                   context: String,
-                                   expectedSchemeType: String,
-                                   requestSchemeType: String) extends UserValidationError
+case class RowValidationError(override val message: String, context: String, rowNumber: Int) extends UserValidationError(message)
 
-case class NoDataError(message: String, context: String) extends UserValidationError
+case class SchemeTypeMismatchError(
+                                    override val message: String,
+                                    context: String,
+                                    expectedSchemeType: String,
+                                    requestSchemeType: String
+                                  ) extends UserValidationError(message)
 
-case class UnknownSheetError(message: String, context: String) extends UserValidationError
+case class NoDataError(override val message: String, context: String) extends UserValidationError(message)
 
-final case class ERSFileProcessingException(message: String,
-                                            context: String,
-                                            jsonSize: Option[Int] = None) extends Exception(message)
+case class UnknownSheetError(override val message: String, context: String) extends UserValidationError(message)
+
+
+sealed abstract class SystemError(message: String) extends ErsError(message)
+
+case class ErsSystemError(override val message: String, context: String) extends SystemError(message)
+
+case class ERSFileProcessingException(
+                                       override val message: String,
+                                       context: String,
+                                       jsonSize: Option[Int] = None
+                                     ) extends SystemError(message)

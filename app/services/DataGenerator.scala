@@ -62,7 +62,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     try {
       while (iterator.hasNext) {
         val row = iterator.next()
-        val rowData = parse(row)
+        val rowData: Either[String, (Seq[String], Int)] = parse(row) // can throw kaboom / Either
         logger.debug(" parsed data ---> " + rowData + " -- cursor --> " + rowNum)
         if (rowData.isLeft) {
           if (hasMissingHeaders(rowNum)) {
