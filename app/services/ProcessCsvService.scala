@@ -58,10 +58,11 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
           s"[ProcessCsvService][extractEntityData] Illegal response from Upscan: ${notOkResponse.status.intValue}, " +
             s"body: ${notOkResponse.entity.dataBytes}")
         Source.failed(
-
           ERSFileProcessingException(
             s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
-            s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}"))
+            s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}"
+          )
+        )
     }
 
   def extractBodyOfRequest: Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _] =
@@ -105,7 +106,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
               case Some(lastRowValidation) => lastRowValidation match {
                 case Right(_) => Right(CsvFileSubmissions(sheetName, sequenceOfEithers.length, successUpload))
                 case Left(userError: UserValidationError) => Left(userError)
-                case Left(exception: Exception) => Left(ErsSystemError(exception.getMessage, "b"))
+                case Left(exception: Throwable) => Left(ErsSystemError(exception.getMessage, "TODO add context here"))
               }
             }
           }
@@ -182,8 +183,6 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
   }
 
 }
-
-
 
 object FlowOps {
   def eitherFromFunction[E <: Throwable, A, B](inputFn: A => Either[E, B]): Flow[Either[E, A], Either[E, B], NotUsed] = {
