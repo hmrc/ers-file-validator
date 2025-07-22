@@ -54,7 +54,9 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
     implicit request: Request[AnyContent] =>
       val startTime = System.currentTimeMillis()
       logger.debug("File Processing Request Received At: " + startTime)
+
       val json = request.body.asJson.get
+
       json.validate[UpscanFileData].fold(
         valid = res => {
           implicit val schemeInfo: SchemeInfo = res.schemeInfo
@@ -68,10 +70,15 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
                 s"${userError.message}, expected: ${userError.expectedSchemeType}, got: ${userError.requestSchemeType}, schemeRef: ${schemeInfo.schemeRef}")
               val schemeError = SchemeMismatchError(userError.message, userError.expectedSchemeType, userError.requestSchemeType)
               BadRequest(Json.toJson(schemeError))
-            case Left(userError) =>
+            case Left(userError: UserValidationError) =>
               deliverFileProcessingMetrics(startTime)
               logger.warn(s"[DataUploadController][processFileDataFromFrontend] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
               BadRequest(userError.message)
+            case Left(systemError: SystemError) => // todo: if we have this, do we need the recover below?
+              deliverFileProcessingMetrics(startTime)
+              logger.error(s"[DataUploadController][processFileDataFromFrontend] System error: ${systemError.message}, context: ${systemError.context}, schemeRef: ${schemeInfo.schemeRef}")
+              InternalServerError
+
           }.recover {
             case e: ERSFileProcessingException =>
               deliverFileProcessingMetrics(startTime)
@@ -128,8 +135,11 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
                 result.foreach((csvFileLengthInfo: CsvFileLengthInfo) =>
                   logger.info(s"[DataUploadController][processCsvFileDataFromFrontendV2]: Total number of rows for csv file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): ${csvFileLengthInfo.fileLength}")
                 )
+
                 auditEvents.totalRows(totalRowCount, schemeInfo)
+
                 val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
+
                 sessionService.storeCallbackData(res.callbackData.head, totalRowCount)(RequestWithUpdatedSession(request, sessionId)).map {
                   case callback: Option[UpscanCallback] if callback.isDefined =>
                     val numberOfSlices = result.map(_.noOfSlices).sum

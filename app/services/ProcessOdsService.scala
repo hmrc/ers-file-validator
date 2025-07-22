@@ -45,7 +45,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
   val splitSchemes: Boolean = appConfig.splitLargeSchemes
   val maxNumberOfRows: Int = appConfig.maxNumberOfRowsPerSubmission
 
-  def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[UserValidationError, Int]] = {
+  def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsError, Int]] = {
     try {
       val startTime = System.currentTimeMillis()
 
@@ -75,7 +75,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
             }
             case None =>
               logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
-              throw ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data")
+              Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
           }
       }
     } catch {
