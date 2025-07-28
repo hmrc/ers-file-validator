@@ -246,12 +246,12 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       error.context mustBe s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"
     }
 
-    "return UnknownSheetError when getValidatorAndSheetInfo returns other throwable" in {
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
+    "return UnknownSheetError when getValidatorAndSheetInfo returns UnknownSheetError" in {
+      val callback = UpscanCsvFileData(List(UpscanCallback("Invalid_Sheet.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
       when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
-        .thenReturn(Left(new RuntimeException("Some other error")))
+        .thenReturn(Left(UnknownSheetError("Invalid sheet name", "Sheet not found in configuration")))
 
       val resultFuture = testProcessCsvService.processFiles(callback, returnStubSource(_, data))
       val result = Await.result(Future.sequence(resultFuture), Duration.Inf)

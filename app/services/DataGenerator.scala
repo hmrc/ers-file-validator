@@ -18,7 +18,7 @@ package services
 
 import config.ApplicationConfig
 import metrics.Metrics
-import models.{ERSFileProcessingException, SchemeData, SchemeInfo, UserValidationError, HeaderValidationError, RowValidationError, SchemeTypeMismatchError, NoDataError, UnknownSheetError}
+import models.{ERSFileProcessingException, ErsError, ErsSystemError, HeaderValidationError, NoDataError, RowValidationError, SchemeData, SchemeInfo, SchemeTypeMismatchError, SystemError, UnknownSheetError, UserValidationError}
 import play.api.Logging
 import play.api.mvc.Request
 import services.ERSTemplatesInfo.{ersSheetsWithCsopV4, ersSheetsWithCsopV5}
@@ -44,7 +44,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   private[services] def ersSheetsConf(schemeInfo: SchemeInfo): Map[String, SheetInfo] =
     if (applicationConfig.csopV5Enabled && csopV5required(schemeInfo)) ersSheetsWithCsopV5 else ersSheetsWithCsopV4
 
-  def getErrors(iterator: Iterator[String])(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[UserValidationError, ListBuffer[SchemeData]] = {
+  def getErrors(iterator: Iterator[String])(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, ListBuffer[SchemeData]] = {
     var rowNum = 0
     implicit var sheetName: String = ""
     var sheetColSize = 0
@@ -82,9 +82,12 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
           logger.info(s"SchemeData = ${schemeData.size} (schemeRef: ${schemeInfo.schemeRef}) ******")
           rowNum = 1
           validator = getValidator(sheetName) match {
-            case Left(exception: ERSFileProcessingException) =>
-              return Left(UnknownSheetError(exception.message, exception.context))
-            case Right(value: DataValidator) => value
+            case Left(error) =>
+              error match {
+                case userError: UserValidationError => return Left(userError)
+                case systemError: SystemError => throw systemError
+              }
+            case Right(value) => value
           }
         } else {
           rowData.map { rd =>
@@ -141,8 +144,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     }
   }
 
-  def getValidator(sheetName: String)
-                  (implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ERSFileProcessingException, DataValidator] = {
+  def getValidator(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, DataValidator] = {
     try {
       Right(ERSValidationConfigs.getValidator(ersSheetsConf(schemeInfo)(sheetName).configFileName))
     } catch {
@@ -150,45 +152,43 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         val errorMsg = "Could not set the validator due to a missing config"
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, errorMsg)
         logger.error(s"[getValidator] $errorMsg for sheet name: $sheetName and scheme type: ${schemeInfo.schemeType}.")
-        Left(ERSFileProcessingException(errorMsg, "Config missing"))
+        Left(ErsSystemError(errorMsg, "Config missing"))
       case _: java.util.NoSuchElementException =>
         val errorMsg = s"Sheet name: $sheetName does not match any for scheme types."
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, errorMsg)
         logger.error(s"[getValidator] $errorMsg")
-        Left(ERSFileProcessingException(errorMsg, "Invalid sheet configuration"))
+        Left(UnknownSheetError(errorMsg, "Invalid sheet configuration"))
     }
   }
 
   def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
-    implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, SheetInfo] = {
+    implicit hc: HeaderCarrier, request: Request[_]): Either[ErsError, SheetInfo] = {
     ersSheetsConf(schemeInfo).get(sheetName) match {
       case Some(sheetInfo) => Right(sheetInfo)
       case _ =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
         logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
-        Left(ERSFileProcessingException(
+        Left(UnknownSheetError(
           s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
           s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
     }
   }
 
   def getValidatorAndSheetInfo(sheetName: String, schemeInfo: SchemeInfo)(
-    implicit hc: HeaderCarrier, request: Request[_]): Either[Throwable, (DataValidator, SheetInfo)] = {
+    implicit hc: HeaderCarrier, request: Request[_]): Either[ErsError, (DataValidator, SheetInfo)] = {
     (Try(ERSValidationConfigs.getValidator(ersSheetsConf(schemeInfo)(sheetName).configFileName)), getSheetCsv(sheetName, schemeInfo)) match {
       case (Success(validator), Right(value)) => Right((validator, value))
       case (Failure(e), _) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
         logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
-        Left(ERSFileProcessingException(
+        Left(ErsSystemError(
           s"${ErrorResponseMessages.dataParserConfigFailure}",
           "Could not set the validator "))
       case (_, Left(e)) => Left(e)
     }
   }
 
-  def identifyAndDefineSheet(data: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[UserValidationError, String] = {
-    logger.debug("5.1  case 0 identifyAndDefineSheet  ")
-
+  def identifyAndDefineSheet(data: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, String] = {
     getSheet(data) match {
       case Left(userError) => Left(userError)
       case Right(res) =>
@@ -210,7 +210,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     }
   }
 
-  def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[UserValidationError, SheetInfo] = {
+  def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, SheetInfo] = {
     ersSheetsConf(schemeInfo).get(sheetName) match {
       case Some(sheetInfo) => Right(sheetInfo)
       case None =>
@@ -222,7 +222,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     }
   }
 
-  def validateHeaderRow(rowData: Seq[String], sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[UserValidationError, Int] = {
+  def validateHeaderRow(rowData: Seq[String], sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, Int] = {
     val headerFormat = "[^a-zA-Z0-9]"
 
     getSheet(sheetName) match {
@@ -246,7 +246,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   }
 
   def generateRowData(rowData: Seq[String], rowCount: Int, validator: DataValidator)(
-    implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): Either[UserValidationError, Seq[String]] = {
+    implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): Either[ErsError, Seq[String]] = {
 
     logger.debug("5.4  case _ rowData is " + rowData)
     ErsValidator.validateRow(rowData, rowCount, validator) match {

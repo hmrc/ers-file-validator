@@ -134,17 +134,25 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       status(result) shouldBe BAD_REQUEST
       }
 
-    "Return INTERNAL_SERVER_ERROR when system error occurs" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(Future.failed(ERSFileProcessingException("System error", "Test system error")))
-      val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
-      status(result) shouldBe INTERNAL_SERVER_ERROR
+    "Throw system error when ERSFileProcessingException occurs" in {
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any()))
+        .thenReturn(Future.failed(ERSFileProcessingException("System error", "Test system error")))
+
+      // The exception should be thrown and not caught by the controller
+      intercept[ERSFileProcessingException] {
+        Await.result(dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d))), Duration.Inf)
+      }
     }
 
-    "Return INTERNAL_SERVER_ERROR when unexpected exception is thrown" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(Future.failed(new RuntimeException("Unexpected error")))
-      val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
-      status(result) shouldBe INTERNAL_SERVER_ERROR
+    "Throw exception when unexpected exception occurs" in {
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
+        .thenReturn(Future.failed(new RuntimeException("Unexpected error")))
+
+      // The exception should be thrown and not caught by the controller
+      intercept[RuntimeException] {
+        Await.result(dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d))), Duration.Inf)
       }
+    }
 
     "Return BAD_REQUEST when SchemeTypeMismatchError occurs" in {
       val errorMessage = ErrorResponseMessages.dataParserIncorrectSheetName
@@ -218,24 +226,28 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       contentAsString(result) shouldBe "No data found"
     }
 
-    "return INTERNAL_SERVER_ERROR when system error occurs" in {
+    "throw system error when ERSFileProcessingException occurs" in {
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future.failed(ERSFileProcessingException("System error", "Database connection failed")))
 
-      val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result) shouldBe INTERNAL_SERVER_ERROR
+      // The exception should be thrown and not caught by the controller
+      intercept[ERSFileProcessingException] {
+        Await.result(dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData))), Duration.Inf)
+      }
     }
 
-    "return INTERNAL_SERVER_ERROR if any other kind of exception occurs" in {
+    "throw exception when any other kind of exception occurs" in {
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future.failed(new RuntimeException("Oh boy")))
 
-      val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result) shouldBe INTERNAL_SERVER_ERROR
+      // The exception should be thrown and not caught by the controller
+      intercept[RuntimeException] {
+        Await.result(dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData))), Duration.Inf)
+      }
     }
 
     "return an error when failing to store callback data" in {

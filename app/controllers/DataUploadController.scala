@@ -64,30 +64,25 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
             case Right(result) =>
               deliverFileProcessingMetrics(startTime)
               Ok(result.toString)
-            case Left(userError: SchemeTypeMismatchError) =>
-              deliverFileProcessingMetrics(startTime)
-              logger.warn(s"[DataUploadController][processFileDataFromFrontend] Scheme type mismatch: " +
-                s"${userError.message}, expected: ${userError.expectedSchemeType}, got: ${userError.requestSchemeType}, schemeRef: ${schemeInfo.schemeRef}")
-              val schemeError = SchemeMismatchError(userError.message, userError.expectedSchemeType, userError.requestSchemeType)
-              BadRequest(Json.toJson(schemeError))
-            case Left(userError: UserValidationError) =>
-              deliverFileProcessingMetrics(startTime)
-              logger.warn(s"[DataUploadController][processFileDataFromFrontend] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
-              BadRequest(userError.message)
-            case Left(systemError: SystemError) => // todo: if we have this, do we need the recover below?
-              deliverFileProcessingMetrics(startTime)
-              logger.error(s"[DataUploadController][processFileDataFromFrontend] System error: ${systemError.message}, context: ${systemError.context}, schemeRef: ${schemeInfo.schemeRef}")
-              InternalServerError
 
-          }.recover {
-            case e: ERSFileProcessingException =>
+            case Left(error: ErsError) =>
               deliverFileProcessingMetrics(startTime)
-              logger.error(s"[DataUploadController][processFileDataFromFrontend] System error: ${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
-              InternalServerError
-            case er: Exception =>
-              deliverFileProcessingMetrics(startTime)
-              logger.error(s"[DataUploadController][processFileDataFromFrontend] Unexpected system error for schemeRef: ${schemeInfo.schemeRef}, Exception: ${er.getMessage}", er)
-              InternalServerError
+
+              error match {
+                case schemeError: SchemeTypeMismatchError =>
+                  logger.warn(s"[DataUploadController][processFileDataFromFrontend] Scheme type mismatch: " +
+                    s"${schemeError.message}, expected: ${schemeError.expectedSchemeType}, got: ${schemeError.requestSchemeType}, schemeRef: ${schemeInfo.schemeRef}")
+                  val schemeMismatch = SchemeMismatchError(schemeError.message, schemeError.expectedSchemeType, schemeError.requestSchemeType)
+                  BadRequest(Json.toJson(schemeMismatch))
+
+                case userError: UserValidationError =>
+                  logger.warn(s"[DataUploadController][processFileDataFromFrontend] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
+                  BadRequest(userError.message)
+
+                case systemError: SystemError =>
+                  logger.error(s"[DataUploadController][processFileDataFromFrontend] Unexpected system error in Left: ${systemError.message}")
+                  throw systemError
+              }
           }
         },
         invalid = e => {
@@ -120,7 +115,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
 
           Future.sequence(extractedSchemeData).flatMap { allFilesResults =>
             allFilesResults.collectFirst {
-              case Left(userError) =>
+              case Left(userError: UserValidationError) =>
                 logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}")
                 deliverFileProcessingMetrics(startTime)
                 Future.successful(BadRequest(userError.message))
@@ -153,15 +148,6 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
                     BadRequest("csv callback data storage in sessioncache failed")
                 }
             }
-          }.recover {
-            case e: ERSFileProcessingException =>
-              logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] System error: ${e.getMessage}, schemeRef: ${schemeInfo.schemeRef}")
-              deliverFileProcessingMetrics(startTime)
-              InternalServerError
-            case throwable =>
-              logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] Unexpected system error: ${throwable.getMessage}, schemeRef: ${schemeInfo.schemeRef}")
-              deliverFileProcessingMetrics(startTime)
-              InternalServerError
           }
         },
         invalid = e => {

@@ -18,7 +18,7 @@ package services
 
 import com.typesafe.config.ConfigFactory
 import config.ApplicationConfig
-import models.{ERSFileProcessingException, SchemeInfo, HeaderValidationError, RowValidationError, SchemeTypeMismatchError, UnknownSheetError, NoDataError}
+import models.{ErsSystemError, HeaderValidationError, NoDataError, RowValidationError, SchemeInfo, SchemeTypeMismatchError, UnknownSheetError}
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfter, EitherValues}
@@ -123,26 +123,44 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   "setValidator" should {
     "return a DataValidator if the given sheet name is valid" in {
-      val maybeDataValidator: Either[ERSFileProcessingException, DataValidator] =
-        dataGenerator.getValidator("EMI40_Adjustments_V4")(SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", ""), hc, request)
+      val maybeDataValidator = dataGenerator.getValidator("EMI40_Adjustments_V4")(SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", ""), hc, request)
       assert(maybeDataValidator.isRight)
     }
 
-    "return a system error if the given sheet name is not valid" in {
+    "return a user error if the given sheet name is not valid" in {
       val result = dataGenerator.getValidator("Invalid")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request)
-      result.left.map { exception: ERSFileProcessingException =>
-        assert(exception.message === "Sheet name: Invalid does not match any for scheme types.")
-        assert(exception.context === "Invalid sheet configuration")
+      result.left.map { error =>
+        error mustBe a[UnknownSheetError]
+        val unknownSheetError = error.asInstanceOf[UnknownSheetError]
+        assert(unknownSheetError.message === "Sheet name: Invalid does not match any for scheme types.")
+        assert(unknownSheetError.context === "Invalid sheet configuration")
       }
     }
 
-    "throw an exception if the given sheet name maps to a config file which does not exist" in {
-      dataGenerator.getValidator("CSOP_OptionsGranted_V4")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request)
-        .left
-        .map { (exception: ERSFileProcessingException) =>
-          assert(exception.message === "Failed to find the config file")
-          assert(exception.context === "Could not set the validator due to a missing config.")
+    "return a system error if the given sheet name maps to a config file which does not exist" in {
+      val result = dataGenerator.getValidator("CSOP_OptionsGranted_V4")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request)
+      result.left.map { error =>
+        error mustBe a[ErsSystemError]
+        val systemError = error.asInstanceOf[ErsSystemError]
+        assert(systemError.message === "Could not set the validator due to a missing config")
+        assert(systemError.context === "Config missing")
+      }
+    }
+
+    "return ErsSystemError when ConfigException.Missing occurs" in {
+      val testDataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig) {
+        override def ersSheetsConf(schemeInfo: SchemeInfo): Map[String, SheetInfo] = {
+          Map("TestSheet" -> SheetInfo("EMI", 1, "TestSheet", "Test", "non-existent-config-file", List("header")))
         }
+      }
+
+      val result = testDataGenerator.getValidator("TestSheet")(schemeInfo, hc, request)
+
+      result.isLeft mustBe true
+      result.left.value mustBe a[ErsSystemError]
+      val systemError = result.left.value.asInstanceOf[ErsSystemError]
+      systemError.message mustBe "Could not set the validator due to a missing config"
+      systemError.context mustBe "Config missing"
     }
   }
 
@@ -154,10 +172,12 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       }
     }
 
-    "return a left with an exception if the given sheet name is not valid" in {
+    "return a left with an error if the given sheet name is not valid" in {
       dataGenerator.getValidatorAndSheetInfo("Invalid", SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", "")) match {
-        case Left(_) => succeed
-        case Right(_) => fail("Did not return expected exception")
+        case Left(error) =>
+          error mustBe a[ErsSystemError]
+          succeed
+        case Right(_) => fail("Did not return expected error")
       }
     }
   }
@@ -380,16 +400,15 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     }
 
     "return a left if sheetname is not found in sheets" in {
-
       val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
       val testService: DataGenerator = testServiceCreator(Map("anotherName" -> sheetTest))
 
       val result = testService.getSheetCsv("aWrongName", schemeInfo)
       assert(result.isLeft)
-      result.swap.value mustBe ERSFileProcessingException(
-        s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-        s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")
-
+      result.left.value mustBe a[UnknownSheetError]
+      val error = result.left.value.asInstanceOf[UnknownSheetError]
+      error.message mustBe s"${ErrorResponseMessages.dataParserIncorrectSheetName}"
+      error.context mustBe s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"
     }
   }
 

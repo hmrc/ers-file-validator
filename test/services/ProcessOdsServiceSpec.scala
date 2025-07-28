@@ -148,6 +148,24 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier],any[Request[_]])
   }
 
+  "throw system error when DataGenerator returns system error" in {
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+      override val splitSchemes = false
+      override val maxNumberOfRows = 1
+      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+    }
+
+    val systemError = ErsSystemError("System configuration error", "Config validation failed")
+    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Left(systemError))
+
+    val caughtException = intercept[ErsSystemError] {
+      Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
+    }
+
+    caughtException.message mustBe "System configuration error"
+    caughtException.context mustBe "Config validation failed"
+  }
+
   "throw a system exception when the callback data isn't stored correctly" in {
     val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
       override val splitSchemes = true
@@ -196,7 +214,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     }
   }
 
-  "convert a system exception during file processing into a future for handling" in {
+  "throw the original exception during file processing" in {
     val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
       override val splitSchemes = true
       override val maxNumberOfRows = 1
@@ -205,11 +223,10 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
 
     when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenThrow(new RuntimeException("Test"))
 
-    val exception = intercept[ERSFileProcessingException] {
+    val exception = intercept[RuntimeException] {
       Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
     }
 
-    exception.message mustBe "Unexpected system error"
-    exception.context mustBe "Test"
+    exception.getMessage mustBe "Test"
   }
 }
