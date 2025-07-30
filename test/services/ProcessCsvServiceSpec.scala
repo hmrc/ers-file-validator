@@ -224,7 +224,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       boolList.head match {
         case Left(userError: UnknownSheetError) =>
           userError.message mustBe s"${ErrorResponseMessages.dataParserIncorrectSheetName}"
-        case _ => fail("Expected result to be a Left with UserValidationError")
+        case _ => fail("Expected result to be a Left with UnknownSheetError")
       }
       assert(boolList.forall(_.isLeft))
     }

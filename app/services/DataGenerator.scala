@@ -250,9 +250,12 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     implicit schemeInfo: SchemeInfo, sheetName: String, hc: HeaderCarrier, request: Request[_]): Either[ErsError, Seq[String]] = {
 
     logger.debug("5.4  case _ rowData is " + rowData)
-    ErsValidator.validateRow(rowData, rowCount, validator) match {
-      case None => Right(rowData)
-      case err: Option[List[ValidationError]] => {
+
+    Try {
+      ErsValidator.validateRow(rowData, rowCount, validator)
+    } match {
+      case Success(None) => Right(rowData)
+      case Success(err: Option[List[ValidationError]]) => {
         // $COVERAGE-OFF$
         logger.debug(s"Error while Validating Row num--> ${rowCount} ")
         logger.debug(s"Rowdata is --> ${rowData.map(res => res)}")
@@ -266,6 +269,12 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
           s"${ErrorResponseMessages.dataParserValidationFailure}",
           rowCount))
       }
+      case Failure(exception) =>
+        logger.error(s"[DataGenerator][generateRowData] System error during row validation: ${exception.getMessage}", exception)
+        Left(ErsSystemError(
+          s"System error during validation",
+          s"Validation system failure: ${exception.getMessage}"
+        ))
     }
   }
 

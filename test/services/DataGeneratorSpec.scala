@@ -261,15 +261,17 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       verify(mockAuditEvents, times(1)).validationErrorAudit(argEq(err), argEq(schemeInfo), argEq("Other_Grants_V4"))(any(), any())
     }
 
-    "throw exception if ErsValidator.validateRow throws exception" in {
+    "return ErsSystemError if ErsValidator.validateRow throws exception" in {
       val mockValidator = mock[DataValidator]
       when(mockValidator.validateRow(any[Row])).thenThrow(new RuntimeException("this is a runtime exception"))
 
-      val caughtException = intercept[RuntimeException] {
-        dataGenerator.generateRowData(testAct, 10, mockValidator)(schemeInfo, "Other_Grants_V4", hc, request)
-      }
+      val result = dataGenerator.generateRowData(testAct, 10, mockValidator)(schemeInfo, "Other_Grants_V4", hc, request)
 
-      caughtException.getMessage mustBe "this is a runtime exception"
+      result.isLeft mustBe true
+      result.left.value mustBe a[ErsSystemError]
+      val systemError = result.left.value.asInstanceOf[ErsSystemError]
+      systemError.message mustBe "System error during validation"
+      systemError.context mustBe "Validation system failure: this is a runtime exception"
     }
   }
 

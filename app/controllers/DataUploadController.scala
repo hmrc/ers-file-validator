@@ -129,9 +129,8 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
             } match {
               case Some(futureResult) => futureResult
               case None =>
-                val result: Seq[CsvFileLengthInfo] = allFilesResults.flatMap {
-                  case Right(info) => Some(info)
-                  case _ => None
+                val result: Seq[CsvFileLengthInfo] = allFilesResults.collect {
+                  case Right(info) => info
                 }
                 val totalRowCount = result.foldLeft(0)((accum, inputTuple) => accum + inputTuple.fileLength)
                 result.foreach((csvFileLengthInfo: CsvFileLengthInfo) =>
