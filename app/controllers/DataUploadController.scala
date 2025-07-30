@@ -80,8 +80,8 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
                   BadRequest(userError.message)
 
                 case systemError: SystemError =>
-                  logger.error(s"[DataUploadController][processFileDataFromFrontend] Unexpected system error in Left: ${systemError.message}")
-                  throw systemError
+                  logger.error(s"[DataUploadController][processFileDataFromFrontend] Unexpected system error: ${systemError.message}")
+                  InternalServerError
               }
           }
         },
@@ -115,10 +115,17 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
 
           Future.sequence(extractedSchemeData).flatMap { allFilesResults =>
             allFilesResults.collectFirst {
-              case Left(userError: UserValidationError) =>
-                logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}")
-                deliverFileProcessingMetrics(startTime)
-                Future.successful(BadRequest(userError.message))
+              case Left(error: ErsError) =>
+                error match {
+                  case userError: UserValidationError =>
+                    logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}")
+                    deliverFileProcessingMetrics(startTime)
+                    Future.successful(BadRequest(userError.message))
+                  case systemError: SystemError =>
+                    logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] System error: ${systemError.message}, schemeRef: ${schemeInfo.schemeRef}")
+                    deliverFileProcessingMetrics(startTime)
+                    Future.successful(InternalServerError)
+                }
             } match {
               case Some(futureResult) => futureResult
               case None =>
@@ -145,7 +152,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
                       s"[DataUploadController][processCsvFileDataFromFrontendV2] csv storeCallbackData failed" +
                         s" while storing data, schemeRef: ${schemeInfo.schemeRef}, timestamp: ${java.time.LocalTime.now()}.")
                     deliverFileProcessingMetrics(startTime)
-                    BadRequest("csv callback data storage in sessioncache failed")
+                    Accepted("csv callback data storage in sessioncache failed")
                 }
             }
           }

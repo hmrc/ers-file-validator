@@ -106,7 +106,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
               case Some(lastRowValidation) => lastRowValidation match {
                 case Right(_) => Right(CsvFileSubmissions(sheetName, sequenceOfEithers.length, successUpload))
                 case Left(userError: UserValidationError) => Left(userError)
-                case Left(exception: Throwable) => Left(ErsSystemError(exception.getMessage, "TODO add context here"))
+                case Left(exception: Throwable) => Left(ErsSystemError(exception.getMessage, s"Error processing CSV file: ${successUpload.name}"))
               }
             }
           }
@@ -135,7 +135,8 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
         logger.info("[ProcessCsvService][extractSchemeData]: File length " + csvFileSubmissions.fileLength)
         sendSchemeCsv(SubmissionsSchemeData(schemeInfo, csvFileSubmissions.sheetName, csvFileSubmissions.upscanCallback, csvFileSubmissions.fileLength), empRef)
           .map {
-            case Some(throwable) => throw throwable
+            case Some(throwable) =>
+              Left(ERSFileProcessingException(throwable.getMessage, "Error during CSV submission processing"))
             case None =>
               val noOfSlices: Int = ValidationUtils.numberOfSlices(csvFileSubmissions.fileLength, appConfig.maxNumberOfRowsPerSubmission)
               Right(CsvFileLengthInfo(noOfSlices, csvFileSubmissions.fileLength))

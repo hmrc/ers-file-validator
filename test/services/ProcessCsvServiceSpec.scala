@@ -224,7 +224,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       boolList.head match {
         case Left(userError: UnknownSheetError) =>
           userError.message mustBe s"${ErrorResponseMessages.dataParserIncorrectSheetName}"
-        case _ => fail("Expected result to be a Left with UnknownSheetError")
+        case _ => fail("Expected result to be a Left with UserValidationError")
       }
       assert(boolList.forall(_.isLeft))
     }
@@ -332,7 +332,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       result.futureValue.left.value mustBe userError
     }
 
-    "throw system error if sendSchemeCsv finds errors" in {
+    "return system error if sendSchemeCsv finds errors" in {
       val testService = new MockProcessCsvService(
         mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
         sendSchemeCsvNew = Some(Future.successful(Some(new Exception("this was bad")))))
@@ -340,10 +340,13 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val futureResult = testService
         .extractSchemeData(schemeInfo, "anEmpRef", Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1)))))
 
-      val exception = intercept[Exception] {
-        Await.result(futureResult, Duration.Inf)
-      }
-      exception.getMessage mustBe "this was bad"
+      val result = Await.result(futureResult, Duration.Inf)
+
+      result.isLeft mustBe true
+      result.left.value mustBe a[ERSFileProcessingException]
+      val error = result.left.value.asInstanceOf[ERSFileProcessingException]
+      error.message mustBe "this was bad"
+      error.context mustBe "Error during CSV submission processing"
     }
 
     "return a Right if sendSchemeCsv is happy" in {

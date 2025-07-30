@@ -148,7 +148,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier],any[Request[_]])
   }
 
-  "throw system error when DataGenerator returns system error" in {
+  "return system error when DataGenerator returns system error" in {
     val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
       override val splitSchemes = false
       override val maxNumberOfRows = 1
@@ -158,15 +158,12 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     val systemError = ErsSystemError("System configuration error", "Config validation failed")
     when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Left(systemError))
 
-    val caughtException = intercept[ErsSystemError] {
-      Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
-    }
+    val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
 
-    caughtException.message mustBe "System configuration error"
-    caughtException.context mustBe "Config validation failed"
+    result mustBe Left(systemError)
   }
 
-  "throw a system exception when the callback data isn't stored correctly" in {
+  "return system error when the callback data isn't stored correctly" in {
     val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
       override val splitSchemes = true
       override val maxNumberOfRows = 1
@@ -180,14 +177,9 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
     when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(None))
 
-    try {
-      Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo , request), Duration(5, SECONDS))
-      throw new TestFailedException("Expected ERSFileProcessingException to be returned", 1)
-    } catch {
-      case ex: ERSFileProcessingException =>
-        ex.message mustBe "callback data storage in sessioncache failed "
-        ex.context mustBe "Exception storing callback data"
-    }
+    val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
+
+    result mustBe Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
   }
 
   "throw an exception when sending data to ers-submissions fails" in {

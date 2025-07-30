@@ -59,7 +59,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       rowNum > 0 && rowNum < 9
     }
 
-    try {
+    Try {
       while (iterator.hasNext) {
         val row = iterator.next()
         val rowData: Either[String, (Seq[String], Int)] = parse(row)
@@ -85,7 +85,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
             case Left(error) =>
               error match {
                 case userError: UserValidationError => return Left(userError)
-                case systemError: SystemError => throw systemError
+                case systemError: SystemError => return Left(systemError)
               }
             case Right(value) => value
           }
@@ -135,12 +135,13 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       logger.debug("The SchemeData that GetData finally returns: " + schemeData)
       Right(schemeData)
 
-    } catch {
-      case e: Exception =>
+    } match {
+      case Success(result) => result
+      case Failure(e) =>
         logger.error(s"[DataGenerator][getErrors] Unexpected system error: ${e.getMessage}", e)
-        throw ERSFileProcessingException(
+        Left(ERSFileProcessingException(
           "System error during file processing",
-          s"Unexpected error: ${e.getMessage}")
+          s"Unexpected error: ${e.getMessage}"))
     }
   }
 

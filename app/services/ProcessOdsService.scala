@@ -58,7 +58,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
           case systemError: SystemError =>
             logger.error(s"[ProcessOdsService][processFile] System error: ${systemError.message}, context: ${systemError.context}, schemeRef: ${schemeInfo.schemeRef}")
             deliverBESMetrics(startTime)
-            throw systemError
+            Future.successful(Left(systemError))
         }
 
       case Right(result) =>
@@ -81,7 +81,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
           }
           case None =>
             logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
-            throw ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data")
+            Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
         }
     }
   }
