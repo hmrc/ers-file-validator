@@ -131,9 +131,9 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       result.isLeft mustBe true
       val error = result.swap.getOrElse(fail("Expected Left but got Right"))
-      error mustBe a[ErsSystemError]
-      error.message mustBe "System error during validation"
-      error.context mustBe "Validation failed: this validation failed"
+      error mustBe a[RowValidationError]
+      error.message mustBe "Invalid file format"
+      error.context mustBe "Could not validate row due to unexpected structure. Error: this validation failed"
     }
   }
 

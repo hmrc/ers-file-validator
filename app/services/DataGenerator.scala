@@ -43,11 +43,13 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
   private[services] def ersSheetsConf(schemeInfo: SchemeInfo): Either[ErsError, Map[String, SheetInfo]] = {
     if (applicationConfig.csopV5Enabled) {
-      csopV5required(schemeInfo) match {
-        case Right(true) => Right(ersSheetsWithCsopV5)
-        case Right(false) => Right(ersSheetsWithCsopV4)
-        case Left(error) => Left(error)
-      }
+      csopV5required(schemeInfo).map(v5Required => {
+        if (v5Required) {
+          ersSheetsWithCsopV5
+        } else {
+          ersSheetsWithCsopV4
+        }
+      })
     } else {
       Right(ersSheetsWithCsopV4)
     }
@@ -151,69 +153,63 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   }
 
   def getValidator(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, DataValidator] = {
-    ersSheetsConf(schemeInfo) match {
-      case Left(error) => Left(error)
-      case Right(sheetsConf) =>
-        try {
-          sheetsConf.get(sheetName) match {
-            case Some(sheetInfo) => Right(ERSValidationConfigs.getValidator(sheetInfo.configFileName))
-            case None =>
-              val errorMsg = s"Sheet name: $sheetName does not match any for scheme types."
-              auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, errorMsg)
-              logger.error(s"[getValidator] $errorMsg")
-              Left(UnknownSheetError(errorMsg, "Invalid sheet configuration"))
-          }
-        } catch {
-          case _: ConfigException.Missing =>
-            val errorMsg = "Could not set the validator due to a missing config"
+    ersSheetsConf(schemeInfo).flatMap { sheetsConf =>
+      try {
+        sheetsConf.get(sheetName) match {
+          case Some(sheetInfo) => Right(ERSValidationConfigs.getValidator(sheetInfo.configFileName))
+          case None =>
+            val errorMsg = s"Sheet name: $sheetName does not match any for scheme types."
             auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, errorMsg)
-            logger.error(s"[getValidator] $errorMsg for sheet name: $sheetName and scheme type: ${schemeInfo.schemeType}.")
-            Left(ErsSystemError(errorMsg, "Config missing"))
+            logger.error(s"[getValidator] $errorMsg")
+            Left(UnknownSheetError(errorMsg, "Invalid sheet configuration"))
         }
+      } catch {
+        case _: ConfigException.Missing =>
+          val errorMsg = "Could not set the validator due to a missing config"
+          auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, errorMsg)
+          logger.error(s"[getValidator] $errorMsg for sheet name: $sheetName and scheme type: ${schemeInfo.schemeType}.")
+          Left(ErsSystemError(errorMsg, "Config missing"))
+      }
     }
   }
 
   def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
     implicit hc: HeaderCarrier, request: Request[_]): Either[ErsError, SheetInfo] = {
-    ersSheetsConf(schemeInfo) match {
-      case Left(error) => Left(error)
-      case Right(sheetsConf) =>
-        sheetsConf.get(sheetName) match {
-          case Some(sheetInfo) => Right(sheetInfo)
-          case None =>
-            auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-            logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
-            Left(UnknownSheetError(
-              s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-              s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
-        }
+    ersSheetsConf(schemeInfo).flatMap { sheetsConf =>
+      sheetsConf.get(sheetName) match {
+        case Some(sheetInfo) => Right(sheetInfo)
+        case None =>
+          auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
+          logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
+          Left(UnknownSheetError(
+            s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+            s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
+      }
     }
   }
 
 
   def getValidatorAndSheetInfo(sheetName: String, schemeInfo: SchemeInfo)(
     implicit hc: HeaderCarrier, request: Request[_]): Either[ErsError, (DataValidator, SheetInfo)] = {
-    ersSheetsConf(schemeInfo) match {
-      case Left(error) => Left(error)
-      case Right(sheetsConf) =>
-        sheetsConf.get(sheetName) match {
-          case Some(sheetInfo) =>
-            Try(ERSValidationConfigs.getValidator(sheetInfo.configFileName)) match {
-              case Success(validator) => Right((validator, sheetInfo))
-              case Failure(e) =>
-                auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-                logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
-                Left(ErsSystemError(
-                  s"${ErrorResponseMessages.dataParserConfigFailure}",
-                  "Could not set the validator"))
-            }
-          case None =>
-            auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-            logger.warn("[DataGenerator][getValidatorAndSheetInfo] Couldn't identify SheetName")
-            Left(UnknownSheetError(
-              s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-              s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
-        }
+    ersSheetsConf(schemeInfo).flatMap { sheetsConf =>
+      sheetsConf.get(sheetName) match {
+        case Some(sheetInfo) =>
+          Try(ERSValidationConfigs.getValidator(sheetInfo.configFileName)) match {
+            case Success(validator) => Right((validator, sheetInfo))
+            case Failure(e) =>
+              auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
+              logger.error("setValidator has thrown an exception, SheetName: " + sheetName + " Exception message: " + e.getMessage)
+              Left(ErsSystemError(
+                s"${ErrorResponseMessages.dataParserConfigFailure}",
+                "Could not set the validator"))
+          }
+        case None =>
+          auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
+          logger.warn("[DataGenerator][getValidatorAndSheetInfo] Couldn't identify SheetName")
+          Left(UnknownSheetError(
+            s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+            s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
+      }
     }
   }
 
@@ -240,18 +236,16 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   }
 
   def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, SheetInfo] = {
-    ersSheetsConf(schemeInfo) match {
-      case Left(error) => Left(error)
-      case Right(sheetsConf) =>
-        sheetsConf.get(sheetName) match {
-          case Some(sheetInfo) => Right(sheetInfo)
-          case None =>
-            auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-            logger.warn("[DataGenerator][getSheet] Couldn't identify SheetName")
-            Left(UnknownSheetError(
-              s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-              s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
-        }
+    ersSheetsConf(schemeInfo).flatMap { sheetsConf =>
+      sheetsConf.get(sheetName) match {
+        case Some(sheetInfo) => Right(sheetInfo)
+        case None =>
+          auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
+          logger.warn("[DataGenerator][getSheet] Couldn't identify SheetName")
+          Left(UnknownSheetError(
+            s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+            s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
+      }
     }
   }
 

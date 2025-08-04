@@ -159,8 +159,8 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       validator.validateRow(Row(0, getCells(parsedRow, 0)))
     } match {
       case Failure(exception) =>
-        logger.error(s"[ProcessCsvService][processRow] System error when attempting to validate row: ${exception.getMessage}", exception)
-        Left(ErsSystemError("System error during validation", s"Validation failed: ${exception.getMessage}"))
+        logger.error(s"[ProcessCsvService][processRow] Validation failed: ${exception.getMessage}", exception)
+        Left(RowValidationError("Invalid file format", s"Could not validate row due to unexpected structure. Error: ${exception.getMessage}", 0))
       case Success(list) if list.isEmpty => Right(parsedRow)
       case Success(_) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
