@@ -221,4 +221,18 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
 
     exception.getMessage mustBe "Test"
   }
+
+  "return ERSFileProcessingException when reading the file fails" in {
+    val exceptionMessage = "Simulated file read failure"
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+      override def readFile(downloadUrl: String) = throw new RuntimeException(exceptionMessage)
+    }
+
+    val result = Await.result(
+      fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request),
+      Duration(5, SECONDS)
+    )
+
+    result mustBe Left(ERSFileProcessingException("Error reading ODS file", exceptionMessage))
+  }
 }

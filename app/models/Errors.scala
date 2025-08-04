@@ -44,6 +44,8 @@ case class NoDataError(message: String, context: String) extends UserValidationE
 
 case class UnknownSheetError(message: String, context: String) extends UserValidationError(message)
 
+case class InvalidTaxYearError(message: String, context: String) extends UserValidationError(message)
+
 
 sealed abstract class SystemError(message: String) extends ErsError(message)
 

@@ -18,7 +18,7 @@ package services
 
 import com.typesafe.config.ConfigFactory
 import config.ApplicationConfig
-import models.{ErsSystemError, HeaderValidationError, NoDataError, RowValidationError, SchemeInfo, SchemeTypeMismatchError, UnknownSheetError}
+import models.{ErsError, ErsSystemError, HeaderValidationError, InvalidTaxYearError, NoDataError, RowValidationError, SchemeInfo, SchemeTypeMismatchError, UnknownSheetError}
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfter, EitherValues}
@@ -149,8 +149,8 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
     "return ErsSystemError when ConfigException.Missing occurs" in {
       val testDataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig) {
-        override def ersSheetsConf(schemeInfo: SchemeInfo): Map[String, SheetInfo] = {
-          Map("TestSheet" -> SheetInfo("EMI", 1, "TestSheet", "Test", "non-existent-config-file", List("header")))
+        override def ersSheetsConf(schemeInfo: SchemeInfo): Either[ErsError, Map[String, SheetInfo]] = {
+          Right(Map("TestSheet" -> SheetInfo("EMI", 1, "TestSheet", "Test", "non-existent-config-file", List("header"))))
         }
       }
 
@@ -175,12 +175,33 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     "return a left with an error if the given sheet name is not valid" in {
       dataGenerator.getValidatorAndSheetInfo("Invalid", SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", "")) match {
         case Left(error) =>
-          error mustBe a[ErsSystemError]
+          error mustBe a[UnknownSheetError]
           succeed
         case Right(_) => fail("Did not return expected error")
       }
     }
+
+    "return ErsSystemError when config file is missing for given sheet name" in {
+      val sheetName = "ValidSheetName"
+
+      val testDataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig) {
+        override def ersSheetsConf(schemeInfo: SchemeInfo): Either[ErsError, Map[String, SheetInfo]] = {
+          Right(Map(sheetName -> SheetInfo(
+            "schemeType", 1, sheetName, "Some Title", "non-existent-config", List("header1"))
+          ))
+        }
+      }
+
+      val result = testDataGenerator.getValidatorAndSheetInfo(sheetName, schemeInfo)(hc, request)
+
+      result.isLeft must be(true)
+      result.left.value mustBe a[ErsSystemError]
+      val error = result.left.value.asInstanceOf[ErsSystemError]
+
+      error.message mustBe ErrorResponseMessages.dataParserConfigFailure
+      error.context mustBe "Could not set the validator"
   }
+    }
 
   "identifyAndDefineSheet" should {
     "identify and define the sheet with correct scheme type" in {
@@ -387,7 +408,7 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
     def testServiceCreator(sheets: Map[String, SheetInfo]) = new DataGenerator(
       mockAuditEvents, mockAppConfig
     ) {
-      override def ersSheetsConf(schemeInfo: SchemeInfo): Map[String, SheetInfo] = sheets
+      override def ersSheetsConf(schemeInfo: SchemeInfo): Either[ErsError, Map[String, SheetInfo]] = Right(sheets)
     }
 
     when(mockAuditEvents.fileProcessingErrorAudit(any(), any(), any())(any(), any())).thenReturn(true)
@@ -411,6 +432,24 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       val error = result.left.value.asInstanceOf[UnknownSheetError]
       error.message mustBe s"${ErrorResponseMessages.dataParserIncorrectSheetName}"
       error.context mustBe s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"
+    }
+  }
+
+  "csopV5required" should {
+    "return InvalidTaxYearError when taxYear format is incorrect" in {
+      val badSchemeInfo = schemeInfo.copy(taxYear = "bad-format")
+
+      when(mockAppConfig.csopV5Enabled).thenReturn(true)
+
+      val generator = new DataGenerator(mockAuditEvents, mockAppConfig)
+
+      val result = generator.getValidator("EMI40_Adjustments_V4")(badSchemeInfo, hc, request)
+
+      result.isLeft mustBe true
+      result.left.value mustBe a[InvalidTaxYearError]
+      val error = result.left.value.asInstanceOf[InvalidTaxYearError]
+      error.message mustBe "Invalid tax year format"
+      error.context mustBe "Invalid tax year format or conversion error: bad-format, expected format YYYY/YY"
     }
   }
 

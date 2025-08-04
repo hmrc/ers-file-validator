@@ -131,7 +131,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       result.isLeft mustBe true
       val error = result.swap.getOrElse(fail("Expected Left but got Right"))
-      error mustBe a[RowValidationError]
+      error mustBe a[ErsSystemError]
       error.message mustBe "System error during validation"
       error.context mustBe "Validation failed: this validation failed"
     }
@@ -222,8 +222,9 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
       boolList.head match {
-        case Left(userError: UnknownSheetError) =>
-          userError.message mustBe s"${ErrorResponseMessages.dataParserIncorrectSheetName}"
+        case Left(systemError: ErsSystemError) =>
+          systemError.message mustBe "Unexpected error during validator setup"
+          systemError.context mustBe "Error processing sheet: ers.exceptions.dataParser.configFailure"
         case _ => fail("Expected result to be a Left with UnknownSheetError")
       }
       assert(boolList.forall(_.isLeft))
@@ -240,10 +241,10 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       result.head.isLeft mustBe true
-      result.head.left.value mustBe a[UnknownSheetError]
-      val error = result.head.left.value.asInstanceOf[UnknownSheetError]
-      error.message mustBe s"${ErrorResponseMessages.dataParserIncorrectSheetName}"
-      error.context mustBe s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"
+      result.head.left.value mustBe a[ErsSystemError]
+      val error = result.head.left.value.asInstanceOf[ErsSystemError]
+      error.message mustBe "Unexpected error during validator setup"
+      error.context mustBe "Error processing sheet: Config error"
     }
 
     "return UnknownSheetError when getValidatorAndSheetInfo returns UnknownSheetError" in {

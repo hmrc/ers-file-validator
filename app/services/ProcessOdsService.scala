@@ -33,6 +33,7 @@ import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
@@ -48,41 +49,49 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsError, Int]] = {
     val startTime = System.currentTimeMillis()
 
-    dataGenerator.getErrors(readFile(callbackData.downloadUrl)) match {
-      case Left(ersError) =>
-        ersError match {
-          case userError: UserValidationError =>
-            logger.warn(s"[ProcessOdsService][processFile] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
+    Try(readFile(callbackData.downloadUrl)) match {
+      case Success(iterator) =>
+        dataGenerator.getErrors(iterator) match {
+          case Left(ersError) =>
+            ersError match {
+              case userError: UserValidationError =>
+                logger.warn(s"[ProcessOdsService][processFile] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
+                deliverBESMetrics(startTime)
+                Future.successful(Left(userError))
+              case systemError: SystemError =>
+                logger.error(s"[ProcessOdsService][processFile] System error: ${systemError.message}, context: ${systemError.context}, schemeRef: ${schemeInfo.schemeRef}")
+                deliverBESMetrics(startTime)
+                Future.successful(Left(systemError))
+            }
+
+          case Right(result) =>
+            logger.debug("2.1 result contains: " + result)
             deliverBESMetrics(startTime)
-            Future.successful(Left(userError))
-          case systemError: SystemError =>
-            logger.error(s"[ProcessOdsService][processFile] System error: ${systemError.message}, context: ${systemError.context}, schemeRef: ${schemeInfo.schemeRef}")
-            deliverBESMetrics(startTime)
-            Future.successful(Left(systemError))
+            val filesWithData = result.filter(_.data.nonEmpty)
+            var totalRows = 0
+            val res1 = filesWithData.foldLeft(0) {
+              (res, el) => {
+                totalRows += el.data.size
+                res + sendScheme(el, empRef)
+              }
+            }
+            val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
+            sessionService.storeCallbackData(callbackData, totalRows)(RequestWithUpdatedSession(request, sessionId)).map {
+              case Some(_) => {
+                logger.info(s"[ProcessOdsService][processFile]: Total number of rows for ods file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): $totalRows")
+                auditEvents.totalRows(totalRows, schemeInfo)
+                Right(res1)
+              }
+              case None =>
+                logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
+                Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
+            }
         }
 
-      case Right(result) =>
-        logger.debug("2.1 result contains: " + result)
+      case Failure(exception) =>
+        logger.error(s"[ProcessOdsService][processFile] Unexpected error reading file: ${exception.getMessage}", exception)
         deliverBESMetrics(startTime)
-        val filesWithData = result.filter(_.data.nonEmpty)
-        var totalRows = 0
-        val res1 = filesWithData.foldLeft(0) {
-          (res, el) => {
-            totalRows += el.data.size
-            res + sendScheme(el, empRef)
-          }
-        }
-        val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
-        sessionService.storeCallbackData(callbackData, totalRows)(RequestWithUpdatedSession(request, sessionId)).map {
-          case Some(_) => {
-            logger.info(s"[ProcessOdsService][processFile]: Total number of rows for ods file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): $totalRows")
-            auditEvents.totalRows(totalRows, schemeInfo)
-            Right(res1)
-          }
-          case None =>
-            logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
-            Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
-        }
+        Future.successful(Left(ERSFileProcessingException("Error reading ODS file", exception.getMessage)))
     }
   }
 

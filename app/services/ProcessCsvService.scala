@@ -111,16 +111,18 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
             }
           }
 
-        case Left(throwable) =>
-          throwable match {
-            case _: ERSFileProcessingException =>
-              Future.successful(Left(UnknownSheetError(
-                s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-                s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")))
+        case Left(error) =>
+          error match {
+            case invalidTaxYear: InvalidTaxYearError =>
+              Future.successful(Left(invalidTaxYear))
+            case systemError: ErsSystemError =>
+              Future.successful(Left(systemError))
+            case unknownSheet: UnknownSheetError =>
+              Future.successful(Left(unknownSheet))
             case _ =>
-              Future.successful(Left(UnknownSheetError(
-                s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-                s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")))
+              Future.successful(Left(ErsSystemError(
+                s"Unexpected error during validator setup",
+                s"Error processing sheet: ${error.message}")))
           }
 
       }
@@ -130,7 +132,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     implicit request: Request[_], hc: HeaderCarrier
   ): Future[Either[ErsError, CsvFileLengthInfo]] = {
     result.fold(
-      userError => Future(Left(userError)),
+      error => Future(Left(error)),
       csvFileSubmissions => {
         logger.info("[ProcessCsvService][extractSchemeData]: File length " + csvFileSubmissions.fileLength)
         sendSchemeCsv(SubmissionsSchemeData(schemeInfo, csvFileSubmissions.sheetName, csvFileSubmissions.upscanCallback, csvFileSubmissions.fileLength), empRef)
@@ -158,7 +160,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     } match {
       case Failure(exception) =>
         logger.error(s"[ProcessCsvService][processRow] System error when attempting to validate row: ${exception.getMessage}", exception)
-        Left(RowValidationError("System error during validation", s"Validation failed: ${exception.getMessage}", 0))
+        Left(ErsSystemError("System error during validation", s"Validation failed: ${exception.getMessage}"))
       case Success(list) if list.isEmpty => Right(parsedRow)
       case Success(_) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
@@ -186,6 +188,31 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 }
 
 object FlowOps {
+  /**
+   * Converts a function that returns Either into an Akka Streams Flow.
+   *
+   * This lets you chain Either-returning functions in a stream without manually
+   * handling Left/Right cases every time.
+   *
+   * @param inputFn A function that transforms type A to Either[E, B] - can succeed (Right) or fail (Left)
+   * @tparam E The error type (must extend Throwable)
+   * @tparam A The input type (what we're transforming FROM)
+   * @tparam B The output type (what we're transforming TO)
+   *
+   * @return Flow that applies the function to Right values and passes Left values through unchanged
+   *
+   * Example:
+   * Instead of:
+     * .map {
+     *   case Left(error) => Left(error)
+     *   case Right(value) => processRow(value)
+     * }
+   *
+   * You can write:
+     *  .via(eitherFromFunction(processRow))
+   *
+   * Uses flatMap so errors automatically flow through without being processed.
+   */
   def eitherFromFunction[E <: Throwable, A, B](inputFn: A => Either[E, B]): Flow[Either[E, A], Either[E, B], NotUsed] = {
     Flow.fromFunction(_.flatMap(inputFn))
   }
