@@ -30,7 +30,7 @@ case class HeaderValidationError(message: String, context: String) extends UserV
 case class RowValidationError(
                                message: String,
                               context: String,
-                              rowNumber: Int
+                              rowNumber: Option[Int]
                              ) extends UserValidationError(message)
 
 case class SchemeTypeMismatchError(

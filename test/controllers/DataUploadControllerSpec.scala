@@ -190,7 +190,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     }
 
     "return BAD_REQUEST when UserValidationError occurs in processing" in {
-      val userError = RowValidationError("Row validation failed", "Invalid row data", 10)
+      val userError = RowValidationError("Row validation failed", "Invalid row data", Some(10))
 
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
         .thenReturn(List(Future(Left(userError)), Future(Left(userError))))

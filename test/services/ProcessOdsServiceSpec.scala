@@ -102,7 +102,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     }
 
     "return user validation error when DataGenerator returns validation error" in {
-      val userError = RowValidationError("Validation failed", "Row contains invalid data", 10)
+      val userError = RowValidationError("Validation failed", "Row contains invalid data", Some(10))
       when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Left(userError))
 
       val result = fileProcessingService.processFile(callbackData, "")(hc,schemeInfo, request)

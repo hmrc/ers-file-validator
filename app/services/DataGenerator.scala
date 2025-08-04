@@ -18,7 +18,7 @@ package services
 
 import config.ApplicationConfig
 import metrics.Metrics
-import models.{ERSFileProcessingException, ErsError, ErsSystemError, HeaderValidationError, InvalidTaxYearError, NoDataError, RowValidationError, SchemeData, SchemeInfo, SchemeTypeMismatchError, SystemError, UnknownSheetError, UserValidationError}
+import models.{ERSFileProcessingException, ErsError, ErsSystemError, HeaderValidationError, InvalidTaxYearError, NoDataError, RowValidationError, SchemeData, SchemeInfo, SchemeTypeMismatchError, UnknownSheetError}
 import play.api.Logging
 import play.api.mvc.Request
 import services.ERSTemplatesInfo.{ersSheetsWithCsopV4, ersSheetsWithCsopV5}
@@ -293,7 +293,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         Left(RowValidationError(
           s"${ErrorResponseMessages.dataParserFileInvalid}",
           s"${ErrorResponseMessages.dataParserValidationFailure}",
-          rowCount))
+          Some(rowCount)))
       }
       case Failure(exception) =>
         logger.error(s"[DataGenerator][generateRowData] System error during row validation: ${exception.getMessage}", exception)

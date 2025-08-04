@@ -194,7 +194,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
       val data = "2015-09-23,test,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
-      val userError = RowValidationError("thisIsBad", "qualityContent", 1)
+      val userError = RowValidationError("thisIsBad", "qualityContent", Some(1))
       val testService: ProcessCsvService = new MockProcessCsvService(
         mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector
       )(
@@ -222,10 +222,10 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
       boolList.head match {
-        case Left(systemError: ErsSystemError) =>
-          systemError.message mustBe "Unexpected error during validator setup"
-          systemError.context mustBe "Error processing sheet: ers.exceptions.dataParser.configFailure"
-        case _ => fail("Expected result to be a Left with UnknownSheetError")
+        case Left(systemError: ERSFileProcessingException) =>
+          systemError.message mustBe "ers.exceptions.dataParser.configFailure"
+          systemError.context mustBe "ers.exceptions.dataParser.validatorError"
+        case _ => fail("Expected result to be a Left with ERSFileProcessingException")
       }
       assert(boolList.forall(_.isLeft))
     }
@@ -241,10 +241,10 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
 
       result.head.isLeft mustBe true
-      result.head.left.value mustBe a[ErsSystemError]
-      val error = result.head.left.value.asInstanceOf[ErsSystemError]
-      error.message mustBe "Unexpected error during validator setup"
-      error.context mustBe "Error processing sheet: Config error"
+      result.head.left.value mustBe a[ERSFileProcessingException]
+      val error = result.head.left.value.asInstanceOf[ERSFileProcessingException]
+      error.message mustBe "Config error"
+      error.context mustBe "Missing config"
     }
 
     "return UnknownSheetError when getValidatorAndSheetInfo returns UnknownSheetError" in {
@@ -325,7 +325,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
   "extractSchemeData" should {
     "pass on a Left if given a Left" in {
-      val userError = RowValidationError("hello there", "context", 1)
+      val userError = RowValidationError("hello there", "context", Some(1))
       val result: Future[Either[ErsError, CsvFileLengthInfo]] = testProcessCsvService
         .extractSchemeData(schemeInfo, "anEmpRef", Left(userError))
 

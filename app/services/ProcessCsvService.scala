@@ -28,7 +28,6 @@ import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.util.ByteString
 import play.api.Logging
 import play.api.mvc.Request
-import services.FlowOps.eitherFromFunction
 import services.audit.AuditEvents
 import services.validation.ErsValidator.getCells
 import uk.gov.hmrc.http.HeaderCarrier
@@ -89,7 +88,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 
           val futureListOfErrors: Future[Seq[Either[Throwable, Seq[String]]]] =
             extractBodyOfRequest(source(successUpload.downloadUrl))
-              .via(eitherFromFunction(processRow(_, successUpload.name, callback.schemeInfo, validator, sheetInfo)))
+              .via(eitherFromFunction(rowBytes => processRow(rowBytes, successUpload.name, callback.schemeInfo, validator, sheetInfo)))
               .takeWhile(_.isRight, inclusive = true)
               .runWith(Sink.seq[Either[Throwable, Seq[String]]])
 
@@ -111,20 +110,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
             }
           }
 
-        case Left(error) =>
-          error match {
-            case invalidTaxYear: InvalidTaxYearError =>
-              Future.successful(Left(invalidTaxYear))
-            case systemError: ErsSystemError =>
-              Future.successful(Left(systemError))
-            case unknownSheet: UnknownSheetError =>
-              Future.successful(Left(unknownSheet))
-            case _ =>
-              Future.successful(Left(ErsSystemError(
-                s"Unexpected error during validator setup",
-                s"Error processing sheet: ${error.message}")))
-          }
-
+        case Left(error) => Future.successful(Left(error))
       }
     }
 
@@ -160,7 +146,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     } match {
       case Failure(exception) =>
         logger.error(s"[ProcessCsvService][processRow] Validation failed: ${exception.getMessage}", exception)
-        Left(RowValidationError("Invalid file format", s"Could not validate row due to unexpected structure. Error: ${exception.getMessage}", 0))
+        Left(RowValidationError("Invalid file format", s"Could not validate row due to unexpected structure. Error: ${exception.getMessage}", None))
       case Success(list) if list.isEmpty => Right(parsedRow)
       case Success(_) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
@@ -168,7 +154,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
         Left(RowValidationError(
           s"${ErrorResponseMessages.dataParserFileInvalid}",
           s"${ErrorResponseMessages.dataParserValidationFailure}",
-          0))
+          None))
     }
   }
 
@@ -185,35 +171,8 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     }
   }
 
-}
+  private def eitherFromFunction[E <: Throwable](inputFn: List[ByteString] => Either[E, Seq[String]]):
+  Flow[Either[E, List[ByteString]], Either[E, Seq[String]], NotUsed] =
+    Flow.fromFunction((element: Either[E, List[ByteString]]) => element.flatMap(inputFn))
 
-object FlowOps {
-  /**
-   * Converts a function that returns Either into an Akka Streams Flow.
-   *
-   * This lets you chain Either-returning functions in a stream without manually
-   * handling Left/Right cases every time.
-   *
-   * @param inputFn A function that transforms type A to Either[E, B] - can succeed (Right) or fail (Left)
-   * @tparam E The error type (must extend Throwable)
-   * @tparam A The input type (what we're transforming FROM)
-   * @tparam B The output type (what we're transforming TO)
-   *
-   * @return Flow that applies the function to Right values and passes Left values through unchanged
-   *
-   * Example:
-   * Instead of:
-     * .map {
-     *   case Left(error) => Left(error)
-     *   case Right(value) => processRow(value)
-     * }
-   *
-   * You can write:
-     *  .via(eitherFromFunction(processRow))
-   *
-   * Uses flatMap so errors automatically flow through without being processed.
-   */
-  def eitherFromFunction[E <: Throwable, A, B](inputFn: A => Either[E, B]): Flow[Either[E, A], Either[E, B], NotUsed] = {
-    Flow.fromFunction(_.flatMap(inputFn))
-  }
 }
