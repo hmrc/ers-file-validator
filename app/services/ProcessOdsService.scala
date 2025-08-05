@@ -32,6 +32,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.zip.ZipInputStream
 import javax.inject.{Inject, Singleton}
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -52,6 +53,8 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
     Try(readFile(callbackData.downloadUrl)) match {
       case Success(iterator) =>
         dataGenerator.getErrors(iterator) match {
+          case Right(result) =>
+            processSchemeData(callbackData, result, startTime, empRef)
           case Left(ersError) =>
             ersError match {
               case userError: UserValidationError =>
@@ -63,35 +66,45 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
                 deliverBESMetrics(startTime)
                 Future.successful(Left(systemError))
             }
-
-          case Right(result) =>
-            logger.debug("2.1 result contains: " + result)
-            deliverBESMetrics(startTime)
-            val filesWithData = result.filter(_.data.nonEmpty)
-            var totalRows = 0
-            val res1 = filesWithData.foldLeft(0) {
-              (res, el) => {
-                totalRows += el.data.size
-                res + sendScheme(el, empRef)
-              }
-            }
-            val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
-            sessionService.storeCallbackData(callbackData, totalRows)(RequestWithUpdatedSession(request, sessionId)).map {
-              case Some(_) => {
-                logger.info(s"[ProcessOdsService][processFile]: Total number of rows for ods file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): $totalRows")
-                auditEvents.totalRows(totalRows, schemeInfo)
-                Right(res1)
-              }
-              case None =>
-                logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
-                Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
-            }
         }
-
       case Failure(exception) =>
         logger.error(s"[ProcessOdsService][processFile] Unexpected error reading file: ${exception.getMessage}", exception)
         deliverBESMetrics(startTime)
         Future.successful(Left(ERSFileProcessingException("Error reading ODS file", exception.getMessage)))
+    }
+  }
+
+  private def processSchemeData(callbackData: UpscanCallback,
+                                result: ListBuffer[SchemeData],
+                                startTime: Long,
+                                empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsError, Int]] = {
+    logger.debug("2.1 result contains: " + result)
+    deliverBESMetrics(startTime)
+
+    val filesWithData = result.filter(_.data.nonEmpty)
+    var totalRows = 0
+    val res1: Try[Int] = Try(filesWithData.foldLeft(0) {
+      (res, el) => {
+        totalRows += el.data.size
+        res + sendScheme(el, empRef)
+      }
+    })
+
+    res1 match {
+      case Failure(exception) =>
+        Future.successful(Left(ERSFileProcessingException(exception.getMessage, exception.getStackTrace.toString)))
+      case Success(res1) =>
+        val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
+        sessionService.storeCallbackData(callbackData, totalRows)(RequestWithUpdatedSession(request, sessionId)).map {
+          case Some(_) => {
+            logger.info(s"[ProcessOdsService][processFile]: Total number of rows for ods file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): $totalRows")
+            auditEvents.totalRows(totalRows, schemeInfo)
+            Right(res1)
+          }
+          case None =>
+            logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
+            Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
+        }
     }
   }
 
