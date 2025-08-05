@@ -88,7 +88,11 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
 
           val futureListOfErrors: Future[Seq[Either[Throwable, Seq[String]]]] =
             extractBodyOfRequest(source(successUpload.downloadUrl))
-              .via(eitherFromFunction(rowBytes => processRow(rowBytes, successUpload.name, callback.schemeInfo, validator, sheetInfo)))
+              .via(
+                Flow.fromFunction((maybeRow: Either[Throwable, List[ByteString]]) =>
+                  maybeRow.flatMap(row => processRow(row, successUpload.name, callback.schemeInfo, validator, sheetInfo))
+                )
+              )
               .takeWhile(_.isRight, inclusive = true)
               .runWith(Sink.seq[Either[Throwable, Seq[String]]])
 
@@ -170,9 +174,4 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
         Some(ERSFileProcessingException(ex.toString, ex.getStackTrace.toString))
     }
   }
-
-  private def eitherFromFunction[E <: Throwable](inputFn: List[ByteString] => Either[E, Seq[String]]):
-  Flow[Either[E, List[ByteString]], Either[E, Seq[String]], NotUsed] =
-    Flow.fromFunction((element: Either[E, List[ByteString]]) => element.flatMap(inputFn))
-
 }
