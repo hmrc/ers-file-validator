@@ -41,7 +41,7 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 
 
 class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter {
-  // scalastyle:off magic.number
+
   val mockSessionService: SessionCacheService = mock[SessionCacheService]
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
   val mockDataGenerator: DataGenerator = mock[DataGenerator]
@@ -91,12 +91,23 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
       val listBuffer = ListBuffer(
         Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
       )
-      when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
+      when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
       when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
       when(mockSessionService.storeCallbackData(any(),any())(any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
+
       val result = fileProcessingService.processFile(callbackData, "")(hc,schemeInfo, request)
-      Await.result(result, Duration(5, SECONDS)) mustBe 1
+      val either = Await.result(result, Duration(5, SECONDS))
+      either mustBe Right(1)
+    }
+
+    "return user validation error when DataGenerator returns validation error" in {
+      val userError = RowValidationError("Validation failed", "Row contains invalid data", Some(10))
+      when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Left(userError))
+
+      val result = fileProcessingService.processFile(callbackData, "")(hc,schemeInfo, request)
+      val either = Await.result(result, Duration(5, SECONDS))
+      either mustBe Left(userError)
     }
 
     XMLTestData.staxIntegrationTests.foreach( rec => {
@@ -128,15 +139,31 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
       Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544"),
       Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
     )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
+    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
     when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(Some(callbackData)))
-    fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
+    val result = fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
+    Await.result(result, Duration(5, SECONDS))
     verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier],any[Request[_]])
   }
 
-  "throw and exception when the callback data isn't stored correctly" in {
+  "return system error when DataGenerator returns system error" in {
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+      override val splitSchemes = false
+      override val maxNumberOfRows = 1
+      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+    }
+
+    val systemError = ErsSystemError("System configuration error", "Config validation failed")
+    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Left(systemError))
+
+    val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
+
+    result mustBe Left(systemError)
+  }
+
+  "return system error when the callback data isn't stored correctly" in {
     val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
       override val splitSchemes = true
       override val maxNumberOfRows = 1
@@ -145,19 +172,14 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     val listBuffer = ListBuffer(
       Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
     )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
+    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
     when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(None))
 
-    try {
-      Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo , request), Duration(5, SECONDS))
-      throw new TestFailedException("Expected ERSFileProcessingException to be returned", 1)
-    } catch {
-      case ex: ERSFileProcessingException =>
-        ex.message mustBe "callback data storage in sessioncache failed "
-        ex.context mustBe "Exception storing callback data"
-    }
+    val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
+
+    result mustBe Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
   }
 
   "throw an exception when sending data to ers-submissions fails" in {
@@ -169,7 +191,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     val listBuffer = ListBuffer(
       Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
     )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer))
+    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
     when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]]))
       .thenReturn(Future.successful(Left(new RuntimeException("Runtime error"))))
@@ -184,21 +206,17 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     }
   }
 
-  "convert an exception during file processing into a future for handling" in {
+  "return ERSFileProcessingException when reading the file fails" in {
+    val exceptionMessage = "Simulated file read failure"
     val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = true
-      override val maxNumberOfRows = 1
-      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+      override def readFile(downloadUrl: String) = throw new RuntimeException(exceptionMessage)
     }
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenThrow(ERSFileProcessingException("Test", "Test"))
 
-    try {
-      Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo , request), Duration(5, SECONDS))
-      throw new TestFailedException("Expected ERSFileProcessingException to be returned", 1)
-    } catch {
-      case ex: ERSFileProcessingException =>
-        ex.message mustBe "Test"
-        ex.context mustBe "Test"
-    }
+    val result = Await.result(
+      fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request),
+      Duration(5, SECONDS)
+    )
+
+    result mustBe Left(ERSFileProcessingException("Error reading ODS file", exceptionMessage))
   }
 }

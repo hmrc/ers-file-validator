@@ -51,7 +51,7 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
       deliverSendToSubmissionsMetrics(startTime)
       Right(response)
     }.recover {
-      case exception => handleException(exception, startTime, schemeData.schemeInfo, schemeData.sheetName)
+      case exception => Left(handleException(exception, startTime, schemeData.schemeInfo, schemeData.sheetName))
     }
   }
 
@@ -67,32 +67,32 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
       Right(response)
     }.recover {
       case exception =>
-        handleException(exception, startTime, submissionsSchemeData.schemeInfo, submissionsSchemeData.sheetName)
+        Left(handleException(exception, startTime, submissionsSchemeData.schemeInfo, submissionsSchemeData.sheetName))
     }
   }
 
   def handleException(exception: Throwable, startTime: Long, schemeInfo: SchemeInfo, sheetName: String)
-                     (implicit hc: HeaderCarrier, request: Request[_]) = exception match {
+                     (implicit hc: HeaderCarrier, request: Request[_]): ERSFileProcessingException = exception match {
     case nf: BadRequestException =>
       deliverSendToSubmissionsMetrics(startTime)
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf)
       auditEvents.auditRunTimeError(nf, nf.toString, schemeInfo, sheetName)
-      Left(ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf.getMessage))
+      ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf.getMessage)
     case nf: NotFoundException =>
       deliverSendToSubmissionsMetrics(startTime)
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf)
       auditEvents.auditRunTimeError(nf, nf.toString, schemeInfo, sheetName)
-      Left(ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf.getMessage))
+      ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf.getMessage)
     case nf: ServiceUnavailableException =>
       deliverSendToSubmissionsMetrics(startTime)
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf)
       auditEvents.auditRunTimeError(nf, nf.toString, schemeInfo, sheetName)
-      Left(ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf.getMessage))
+      ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf.getMessage)
     case e =>
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e)
       deliverSendToSubmissionsMetrics(startTime)
       auditEvents.auditRunTimeError(e, e.toString, schemeInfo, sheetName)
-      Left(ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage))
+      ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage)
   }
 
   def deliverSendToSubmissionsMetrics(startTime: Long): Unit =

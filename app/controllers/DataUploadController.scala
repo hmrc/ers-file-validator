@@ -54,30 +54,35 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
     implicit request: Request[AnyContent] =>
       val startTime = System.currentTimeMillis()
       logger.debug("File Processing Request Received At: " + startTime)
+
       val json = request.body.asJson.get
+
       json.validate[UpscanFileData].fold(
         valid = res => {
           implicit val schemeInfo: SchemeInfo = res.schemeInfo
-          processOdsService.processFile(res.callbackData, empRef).map { result =>
-            deliverFileProcessingMetrics(startTime)
-            Ok(result.toString)
-          }.recover {
-            case e: ERSFileProcessingSchemeTypeException =>
+          processOdsService.processFile(res.callbackData, empRef).map {
+            case Right(result) =>
               deliverFileProcessingMetrics(startTime)
-              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingSchemeTypeException: +" +
-                s"${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
+              Ok(result.toString)
 
-              val schemeError = SchemeMismatchError(e.message, e.expectedSchemeType, e.requestSchemeType)
-              Accepted(Json.toJson(schemeError))
-            case e: ERSFileProcessingException =>
+            case Left(error: ErsError) =>
               deliverFileProcessingMetrics(startTime)
-              logger.warn(s"[DataUploadController][processFileDataFromFrontend] ERSFileProcessingException: ${e.getMessage}, context: ${e.context}, schemeRef: ${schemeInfo.schemeRef}")
-              Accepted(e.message)
-            case er: Exception =>
-              deliverFileProcessingMetrics(startTime)
-              logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data for schemeRef: ${schemeInfo.schemeRef}" +
-                s", Exception: ${er.getMessage}", er)
-              InternalServerError
+
+              error match {
+                case schemeError: SchemeTypeMismatchError =>
+                  logger.warn(s"[DataUploadController][processFileDataFromFrontend] Scheme type mismatch: " +
+                    s"${schemeError.message}, expected: ${schemeError.expectedSchemeType}, got: ${schemeError.requestSchemeType}, schemeRef: ${schemeInfo.schemeRef}")
+                  val schemeMismatch = SchemeMismatchError(schemeError.message, schemeError.expectedSchemeType, schemeError.requestSchemeType)
+                  BadRequest(Json.toJson(schemeMismatch))
+
+                case userError: UserValidationError =>
+                  logger.warn(s"[DataUploadController][processFileDataFromFrontend] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
+                  BadRequest(userError.message)
+
+                case systemError: SystemError =>
+                  logger.error(s"[DataUploadController][processFileDataFromFrontend] Unexpected system error: ${systemError.message}")
+                  InternalServerError
+              }
           }
         },
         invalid = e => {
@@ -102,35 +107,40 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
           logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
 
-          val processedFiles: List[Future[Either[Throwable, CsvFileSubmissions]]] = processCsvService.processFiles(res, streamFile)
+          val processedFiles: List[Future[Either[ErsError, CsvFileSubmissions]]] = processCsvService.processFiles(res, streamFile)
 
-          val extractedSchemeData: Seq[Future[Either[Throwable, CsvFileLengthInfo]]] = processedFiles.map { submission =>
+          val extractedSchemeData: Seq[Future[Either[ErsError, CsvFileLengthInfo]]] = processedFiles.map { submission =>
             submission.flatMap(processCsvService.extractSchemeData(res.schemeInfo, empRef, _))
           }
 
           Future.sequence(extractedSchemeData).flatMap { allFilesResults =>
             allFilesResults.collectFirst {
-              case Left(throwable: ERSFileProcessingException) =>
-                logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] ERS file processing exception: ${throwable.message}, schemeRef: ${schemeInfo.schemeRef}")
-                deliverFileProcessingMetrics(startTime)
-                Future.successful(Accepted(throwable.message))
-              case Left(throwable) =>
-                logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] Unknown exception: ${throwable.getMessage}, full exception: $throwable, schemeRef: ${schemeInfo.schemeRef}")
-                deliverFileProcessingMetrics(startTime)
-                Future.successful(InternalServerError)
+              case Left(error: ErsError) =>
+                error match {
+                  case userError: UserValidationError =>
+                    logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}")
+                    deliverFileProcessingMetrics(startTime)
+                    Future.successful(BadRequest(userError.message))
+                  case systemError: SystemError =>
+                    logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] System error: ${systemError.message}, schemeRef: ${schemeInfo.schemeRef}")
+                    deliverFileProcessingMetrics(startTime)
+                    Future.successful(InternalServerError)
+                }
             } match {
               case Some(futureResult) => futureResult
               case None =>
-                val result: Seq[CsvFileLengthInfo] = allFilesResults.flatMap {
-                  case Right(info) => Some(info)
-                  case _ => None
+                val result: Seq[CsvFileLengthInfo] = allFilesResults.collect {
+                  case Right(info) => info
                 }
                 val totalRowCount = result.foldLeft(0)((accum, inputTuple) => accum + inputTuple.fileLength)
                 result.foreach((csvFileLengthInfo: CsvFileLengthInfo) =>
                   logger.info(s"[DataUploadController][processCsvFileDataFromFrontendV2]: Total number of rows for csv file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): ${csvFileLengthInfo.fileLength}")
                 )
+
                 auditEvents.totalRows(totalRowCount, schemeInfo)
+
                 val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
+
                 sessionService.storeCallbackData(res.callbackData.head, totalRowCount)(RequestWithUpdatedSession(request, sessionId)).map {
                   case callback: Option[UpscanCallback] if callback.isDefined =>
                     val numberOfSlices = result.map(_.noOfSlices).sum

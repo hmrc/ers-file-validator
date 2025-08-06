@@ -18,7 +18,7 @@ package helpers
 
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
-import models.{SchemeInfo, SubmissionsSchemeData}
+import models.{ErsError, SchemeInfo, SubmissionsSchemeData, UserValidationError}
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.stream.scaladsl.Source
@@ -38,7 +38,7 @@ class MockProcessCsvService(auditEvents: AuditEvents,
                              formatDataToValidate: Option[Seq[String]] = None,
                              extractEntityData: Option[Source[ByteString, _]] = None,
                              mockExtractBodyOfRequest: Option[Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _]] = None,
-                             processRow: Option[Either[Throwable, Seq[String]]] = None,
+                             processRow: Option[Either[UserValidationError, Seq[String]]] = None,
                              sendSchemeDataCsv: Option[Future[Option[Throwable]]] = None,
                              sendSchemeCsv: Option[Future[Either[Throwable, Int]]] = None,
                              sendSchemeCsvNew: Option[Future[Option[Throwable]]] = None
@@ -62,7 +62,7 @@ class MockProcessCsvService(auditEvents: AuditEvents,
   }
 
   override def processRow(rowBytes: List[ByteString], sheetName: String, schemeInfo: SchemeInfo, validator: DataValidator, sheetInfo: SheetInfo)(
-    implicit request: Request[_], hc: HeaderCarrier): Either[Throwable, Seq[String]] = processRow match {
+    implicit request: Request[_], hc: HeaderCarrier): Either[ErsError, Seq[String]] = processRow match {
     case None => super.processRow(rowBytes, sheetName, schemeInfo, validator, sheetInfo)
     case Some(returner) => returner
   }

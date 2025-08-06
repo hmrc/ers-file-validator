@@ -17,7 +17,7 @@
 package services
 
 import config.ApplicationConfig
-import models.{ERSFileProcessingException, SchemeInfo}
+import models.{ERSFileProcessingException, HeaderValidationError, SchemeInfo, UnknownSheetError}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
 import org.scalatestplus.mockito.MockitoSugar
@@ -34,7 +34,7 @@ import scala.xml._
 
 
 class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with TimeLimits {
-  // scalastyle:off magic.number
+
   object TestDataParser extends DataParser
 
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
@@ -81,60 +81,62 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     result.value._2 must equal(3)
   }
 
-    "display incorrectSheetName exception in identifyAndDefineSheet method" in {
-      def exceptionMessage: String = {
-        try {
-          dataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo, hc, request).toString
-        }
-        catch {
-          case e: ERSFileProcessingException => e.message + ", " + e.context
-        }
-      }
+    "display incorrectSheetName user validation error in identifyAndDefineSheet method" in {
+      val result = dataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo, hc, request)
+      val error = result.left.value
 
-      exceptionMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected, Couldn't find config for given SheetName, sheet name may be incorrect"
+      error mustBe a[UnknownSheetError]
+      error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+      error.context mustBe "Couldn't find config for given SheetName, sheet name may be incorrect"
     }
 
-    "display incorrectHeader exception in validateHeaderRow method" in {
-      def exceptionMessage: String = {
-        try {
-          dataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V4")(schemeInfo, hc, request).toString
-        }
-        catch {
-          case e: ERSFileProcessingException => e.message + ", " + e.context
-        }
-      }
-      exceptionMessage mustBe "Incorrect ERS Template - Header doesn't match, Header doesn't match"
+    "display incorrectHeader user validation error in validateHeaderRow method" in {
+      val result = dataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V4")(schemeInfo, hc, request)
+      val error = result.left.value
+
+      error mustBe a[HeaderValidationError]
+      error.message mustBe "Incorrect ERS Template - Header doesn't match"
+      error.context mustBe "Header doesn't match"
     }
 
     "return sheetInfo given a valid sheet name" in {
-      val sheet = dataGenerator.getSheet(ERSTemplatesInfo.emiSheet5Name)(schemeInfo, hc, request)
+      val result = dataGenerator.getSheet(ERSTemplatesInfo.emiSheet5Name)(schemeInfo, hc, request)
+      result.isRight mustBe true
+      val sheet = result.value
       sheet.schemeType mustBe "EMI"
       sheet.sheetId mustBe 5
     }
 
     "return sheetInfo for CSOP_OptionsGranted_V4" in {
-      val sheet = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet1Name)(schemeInfo, hc, request)
+      val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet1Name)(schemeInfo, hc, request)
+      result.isRight mustBe true
+      val sheet = result.value
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 1
     }
 
     "return sheetInfo for CSOP_OptionsRCL_V4" in {
-      val sheet = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet2Name)(schemeInfo, hc, request)
+      val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet2Name)(schemeInfo, hc, request)
+      result.isRight mustBe true
+      val sheet = result.value
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 2
     }
 
     "return sheetInfo for CSOP_OptionsExercised_V4" in {
-      val sheet = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet3Name)(schemeInfo, hc, request)
+      val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet3Name)(schemeInfo, hc, request)
+      result.isRight mustBe true
+      val sheet = result.value
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 3
     }
 
-    "throw an exception for an invalid sheetName" in {
-      val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getSheet("abc")(schemeInfo, hc, request)
-      }
-      result.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+    "return Left for an invalid sheetName" in {
+      val result = dataGenerator.getSheet("abc")(schemeInfo, hc, request)
+      result.isLeft mustBe true
+      val error = result.left.value
+      error mustBe a[UnknownSheetError]
+      error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
     }
 
     "Show that scala.xml.XML tries to access file system with malicious payload " in {

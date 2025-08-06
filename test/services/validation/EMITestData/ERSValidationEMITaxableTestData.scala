@@ -25,7 +25,7 @@ import uk.gov.hmrc.services.validation.models._
  * Created by darryl on 26/01/16.
  */
 trait ERSValidationEMITaxableTestData {
-  // scalastyle:off magic.number
+
   val rowNumber:Int = 1
 
   def getDescriptions: List[String] = {

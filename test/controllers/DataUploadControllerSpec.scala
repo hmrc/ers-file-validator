@@ -55,7 +55,7 @@ import java.time.ZonedDateTime
 
 class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadControllerSpec"))
   with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with GuiceOneAppPerSuite with WithMockedAuthActions with ScalaFutures {
-  // scalastyle:off magic.number
+
   val empRef: String = "1234/ABCD"
   val mockSessionService: SessionCacheService = mock[SessionCacheService]
   val mockProcessOdsService: ProcessOdsService = mock[ProcessOdsService]
@@ -123,39 +123,42 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
 
   "processFileDataFromFrontend" must {
     "Successfully receive data" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(Future.successful(l.size))
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(Future.successful(Right(l.size)))
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
       status(result) shouldBe OK
     }
 
     "return errors when an incorrect json object is sent to process-file" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(Future.successful(l.size))
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(Future.successful(Right(l.size)))
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(metaData)))
       status(result) shouldBe BAD_REQUEST
       }
 
-    "Throw exception when invalid data is sent" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any()))
-        .thenReturn(Future.failed(new RuntimeException))
+    "Return INTERNAL_SERVER_ERROR when other SystemError occurs" in {
+      val systemError = ErsSystemError("System configuration error", "Config failure")
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
+        .thenReturn(Future.successful(Left(systemError)))
+
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      }
+    }
 
-    "Return ACCEPTED when ERSFileProcessingSchemeTypeException is thrown" in {
+    "Return BAD_REQUEST when SchemeTypeMismatchError occurs" in {
       val errorMessage = ErrorResponseMessages.dataParserIncorrectSheetName
       val expectedSchemeType = "EMI"
       val requestSchemeType = "CSOP"
 
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
-        .thenReturn(Future.failed(ERSFileProcessingSchemeTypeException(
-          errorMessage,
-          ErrorResponseMessages.dataParserIncorrectSchemeType(Some(expectedSchemeType), Some(requestSchemeType)),
-          expectedSchemeType,
-          requestSchemeType
-        )))
+      val userError = SchemeTypeMismatchError(
+        errorMessage,
+        ErrorResponseMessages.dataParserIncorrectSchemeType(Some(expectedSchemeType), Some(requestSchemeType)),
+        expectedSchemeType,
+        requestSchemeType
+      )
+
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any())).thenReturn(Future.successful(Left(userError)))
 
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
-      status(result) shouldBe ACCEPTED
+      status(result) shouldBe BAD_REQUEST
       val mismatchError = contentAsJson(result).as[SchemeMismatchError]
 
       mismatchError.errorMessage shouldBe errorMessage
@@ -163,11 +166,13 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       mismatchError.requestSchemeType shouldBe requestSchemeType
     }
 
-    "Return ACCEPTED when ERSFileProcessingException is thrown" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
-        .thenReturn(Future.failed(ERSFileProcessingException("Error", "Tests", None)))
+    "Return BAD_REQUEST when other UserValidationError occurs" in {
+      val userError = HeaderValidationError("Header error", "Invalid header format")
+
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any())).thenReturn(Future.successful(Left(userError)))
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
-      status(result) shouldBe ACCEPTED
+      status(result) shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Header error"
     }
   }
 
@@ -184,22 +189,37 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       status(result) shouldBe OK
     }
 
-    "return an ERSFileProcessingException if one occurs" in {
+    "return BAD_REQUEST when UserValidationError occurs in processing" in {
+      val userError = RowValidationError("Row validation failed", "Invalid row data", Some(10))
+
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
-        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
+        .thenReturn(List(Future(Left(userError)), Future(Left(userError))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
-        .thenReturn(Future(Left(ERSFileProcessingException("Error processing file",""))))
+        .thenReturn(Future(Left(userError)))
 
       val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result) shouldBe ACCEPTED
-      contentAsString(result) shouldBe "Error processing file"
+      status(result) shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "Row validation failed"
     }
 
-    "return a 500 if any other kind of exception occurs" in {
+    "return BAD_REQUEST when UserValidationError occurs in extractSchemeData" in {
+      val userError = NoDataError("No data found", "File contains no data")
+
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
-        .thenReturn(Future(Left(new RuntimeException("Oh boy"))))
+        .thenReturn(Future(Left(userError)))
+
+      val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
+      status(result) shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "No data found"
+    }
+
+    "return INTERNAL_SERVER_ERROR when SystemError occurs" in {
+      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
+        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
+        .thenReturn(Future.successful(Left(ErsSystemError("System configuration error", "Config failure"))))
 
       val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
       status(result) shouldBe INTERNAL_SERVER_ERROR

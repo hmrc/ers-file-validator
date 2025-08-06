@@ -18,7 +18,7 @@ package services
 
 import com.typesafe.config.ConfigFactory
 import config.ApplicationConfig
-import models.{ERSFileProcessingException, ERSFileProcessingSchemeTypeException, SchemeInfo}
+import models.{ERSFileProcessingException, ErsError, ErsSystemError, HeaderValidationError, InvalidTaxYearError, NoDataError, RowValidationError, SchemeInfo, SchemeTypeMismatchError, UnknownSheetError}
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfter, EitherValues}
@@ -36,10 +36,9 @@ import utils.ErrorResponseMessages
 import java.time.ZonedDateTime
 import scala.collection.immutable.ArraySeq
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
-import scala.util.Try
 
 class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with HeaderData {
-  // scalastyle:off magic.number
+
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
@@ -64,10 +63,27 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
   }
 
   "validateHeaderRow" should {
-    "return with an error if the sheet name isn't recognised" in {
-      val result = Try(dataGenerator.validateHeaderRow(XMLTestData.otherHeaderSheet1Data, "csopHeaderSheet1Data")(schemeInfo, hc, request))
-      result.isFailure must be(true)
+    "return Left if the sheet name isn't recognised" in {
+      val result = dataGenerator.validateHeaderRow(XMLTestData.otherHeaderSheet1Data, "csopHeaderSheet1Data")(schemeInfo, hc, request)
+      val error = result.left.value
+
+      error mustBe a[UnknownSheetError]
+      error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+      error.context mustBe "Couldn't find config for given SheetName, sheet name may be incorrect"
       verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo), argEq("csopHeaderSheet1Data"), argEq("Could not set the validator"))(any(), any())
+    }
+
+    "return HeaderValidationError when sheet exists but headers don't match" in {
+      val validSheetName = "EMI40_Adjustments_V4"
+      val mismatchedHeaderData = List("Wrong", "Header", "Data", "Here")
+
+      val result = dataGenerator.validateHeaderRow(mismatchedHeaderData, validSheetName)(schemeInfo, hc, request)
+      val error = result.left.value
+
+      error mustBe a[HeaderValidationError]
+      error.message mustBe "Incorrect ERS Template - Header doesn't match"
+      error.context mustBe "Header doesn't match"
+      verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo), argEq(validSheetName), argEq("Header row invalid"))(any(), any())
     }
 
     // FIXME: Potentially add validator tests for SAYE header
@@ -109,34 +125,57 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
           else {
             schemeInfo
           }
-          dataGenerator.validateHeaderRow(headerData, schemeName)(schemeInfoCorrectVersion, hc, request) must be(headerSize)
+          val result = dataGenerator.validateHeaderRow(headerData, schemeName)(schemeInfoCorrectVersion, hc, request)
+          result.isRight must be(true)
+          result.value must be(headerSize)
         }
     }
   }
 
   "setValidator" should {
     "return a DataValidator if the given sheet name is valid" in {
-      val maybeDataValidator: Either[ERSFileProcessingException, DataValidator] =
-        dataGenerator.getValidator("EMI40_Adjustments_V4")(SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", ""), hc, request)
+      val maybeDataValidator = dataGenerator.getValidator("EMI40_Adjustments_V4")(SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", ""), hc, request)
       assert(maybeDataValidator.isRight)
     }
 
-    "throw an exception if the given sheet name is not valid" in {
-      dataGenerator.getValidator("Invalid")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request)
-        .left
-        .map { (exception: ERSFileProcessingException) =>
-          assert(exception.message === "Failed to find the config file")
-          assert(exception.context === "Sheet name: Invalid does not match any for scheme types.")
-      }
+    "return a user error if the given sheet name is not valid" in {
+      val result = dataGenerator.getValidator("Invalid")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request)
+      val error = result.left.value
+
+      error mustBe a[UnknownSheetError]
+      error.message mustBe "Sheet name: Invalid does not match any for scheme types."
+      error.context mustBe "Invalid sheet configuration"
     }
 
-    "throw an exception if the given sheet name maps to a config file which does not exist" in {
-      dataGenerator.getValidator("CSOP_OptionsGranted_V4")(SchemeInfo("", ZonedDateTime.now(), "" ,"" ,"", ""), hc, request)
-        .left
-        .map { (exception: ERSFileProcessingException) =>
-          assert(exception.message === "Failed to find the config file")
-          assert(exception.context === "Could not set the validator due to a missing config.")
+    "return a system error if the given sheet name maps to a config file which does not exist" in {
+      val testDataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig) {
+        override def ersSheetsConf(schemeInfo: SchemeInfo): Either[ErsError, Map[String, SheetInfo]] = {
+          Right(Map("TestSheet" -> SheetInfo("EMI", 1, "TestSheet", "Test", "non-existent-config-file", List("header"))))
         }
+      }
+
+      val result = testDataGenerator.getValidator("TestSheet")(SchemeInfo("", ZonedDateTime.now(), "", "", "", ""), hc, request)
+      val error = result.left.value
+
+      error mustBe a[ErsSystemError]
+      error.message mustBe "Could not set the validator due to a missing config"
+      error.context mustBe "Config missing"
+    }
+
+    "return ErsSystemError when ConfigException.Missing occurs" in {
+      val testDataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig) {
+        override def ersSheetsConf(schemeInfo: SchemeInfo): Either[ErsError, Map[String, SheetInfo]] = {
+          Right(Map("TestSheet" -> SheetInfo("EMI", 1, "TestSheet", "Test", "non-existent-config-file", List("header"))))
+        }
+      }
+
+      val result = testDataGenerator.getValidator("TestSheet")(schemeInfo, hc, request)
+
+      result.isLeft mustBe true
+      result.left.value mustBe a[ErsSystemError]
+      val systemError = result.left.value.asInstanceOf[ErsSystemError]
+      systemError.message mustBe "Could not set the validator due to a missing config"
+      systemError.context mustBe "Config missing"
     }
   }
 
@@ -148,37 +187,64 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
       }
     }
 
-    "return a left with an exception if the given sheet name is not valid" in {
-      dataGenerator.getValidatorAndSheetInfo("Invalid", SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", "")) match {
-        case Left(_) => succeed
-        case Right(_) => fail("Did not return expected exception")
-      }
+    "return a left with an error if the given sheet name is not valid" in {
+      val result = dataGenerator.getValidatorAndSheetInfo("Invalid", SchemeInfo("", ZonedDateTime.now(), "", "2023/24", "", ""))
+      val error = result.left.value
+
+      error mustBe a[UnknownSheetError]
     }
+
+    "return ErsSystemError when config file is missing for given sheet name" in {
+      val sheetName = "ValidSheetName"
+
+      val testDataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig) {
+        override def ersSheetsConf(schemeInfo: SchemeInfo): Either[ErsError, Map[String, SheetInfo]] = {
+          Right(Map(sheetName -> SheetInfo(
+            "schemeType", 1, sheetName, "Some Title", "non-existent-config", List("header1"))
+          ))
+        }
+      }
+
+      val result = testDataGenerator.getValidatorAndSheetInfo(sheetName, schemeInfo)(hc, request)
+
+      result.isLeft must be(true)
+      result.left.value mustBe a[ErsSystemError]
+      val error = result.left.value.asInstanceOf[ErsSystemError]
+
+      error.message mustBe ErrorResponseMessages.dataParserConfigFailure
+      error.context mustBe "Could not set the validator"
   }
+    }
 
   "identifyAndDefineSheet" should {
     "identify and define the sheet with correct scheme type" in {
-      dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfo, hc, request) mustBe "EMI40_Adjustments_V4"
+      val result = dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfo, hc, request)
+      result.isRight must be(true)
+      result.value mustBe "EMI40_Adjustments_V4"
     }
 
-    "return an error indicating the sheet name indicating the sheet name isn't as expected" in {
-      val result: ERSFileProcessingException =
-        intercept[ERSFileProcessingException](dataGenerator.identifyAndDefineSheet("EMI40_Adjustments")(schemeInfo, hc, request))
-      assert(result.message === "Incorrect ERS Template - Sheet Name isn't as expected")
-      assert(result.context === "Couldn't find config for given SheetName, sheet name may be incorrect")
+    "return an error indicating the sheet name isn't recognised" in {
+      val result = dataGenerator.identifyAndDefineSheet("EMI40_Adjustments")(schemeInfo, hc, request)
+      val error = result.left.value
+
+      error mustBe a[UnknownSheetError]
+      error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+      error.context mustBe "Couldn't find config for given SheetName, sheet name may be incorrect"
       verify(mockAuditEvents, times(1))
         .fileProcessingErrorAudit(argEq(schemeInfo), argEq("EMI40_Adjustments"), argEq("Could not set the validator"))(any(), any())
     }
 
-  "return an error indicating the sheet type is not as expected" in {
-    val schemeInfoWithWrongSchemeType: SchemeInfo = schemeInfo.copy(schemeType = "CSOP")
-    val result: ERSFileProcessingSchemeTypeException =
-      intercept[ERSFileProcessingSchemeTypeException](dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfoWithWrongSchemeType, hc, request))
-    assert(result.message === "Incorrect ERS Template - Sheet Name isn't as expected")
-    assert(result.context === "Incorrect ERS Template - Scheme Type isn't as expected, expected: CSOP parsed: EMI")
-    verify(mockAuditEvents, times(1))
-      .fileProcessingErrorAudit(argEq(schemeInfoWithWrongSchemeType), argEq("EMI40_Adjustments_V4"), argEq("emi is not equal to csop"))(any(), any())
-  }
+    "return an error indicating the sheet type is not as expected" in {
+      val schemeInfoWithWrongSchemeType: SchemeInfo = schemeInfo.copy(schemeType = "CSOP")
+      val result = dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfoWithWrongSchemeType, hc, request)
+      val error = result.left.value
+
+      error mustBe a[SchemeTypeMismatchError]
+      error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+      error.context mustBe "Incorrect ERS Template - Scheme Type isn't as expected, expected: CSOP parsed: EMI"
+      verify(mockAuditEvents, times(1))
+        .fileProcessingErrorAudit(argEq(schemeInfoWithWrongSchemeType), argEq("EMI40_Adjustments_V4"), argEq("emi is not equal to csop"))(any(), any())
+    }
 
     "return an error when scheme types do not match" in {
       val schemeInfo2: SchemeInfo = SchemeInfo(
@@ -189,8 +255,10 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
         schemeName = "MyScheme",
         schemeType = "CSOP"
       )
-      val result = Try(dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfo2, hc, request))
-      result.isFailure must be(true)
+      val result = dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfo2, hc, request)
+      val error = result.left.value
+
+      error mustBe a[SchemeTypeMismatchError]
       verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo2), argEq("EMI40_Adjustments_V4"), argEq("emi is not equal to csop"))(any(), any())
     }
   }
@@ -216,30 +284,34 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
     "return the data when parsed correctly and no errors are found" in {
       val result = dataGenerator.generateRowData(XMLTestData.otherGrantsExpData, 10, validator)(schemeInfo, "Other_Grants_V4", hc, request)
-      result must be(XMLTestData.otherGrantsExpData)
+      result.isRight must be(true)
+      result.value must be(XMLTestData.otherGrantsExpData)
     }
 
     "return an error when an issue is found" in {
       val err = List(ValidationError(Cell("A",10,""),"error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))
-      val res1 = Try(dataGenerator.generateRowData(testAct, 10, validator)(schemeInfo, "Other_Grants_V4", hc, request))
-      res1.isFailure mustBe true
+      val result = dataGenerator.generateRowData(testAct, 10, validator)(schemeInfo, "Other_Grants_V4", hc, request)
+      result.isLeft mustBe true
+      result.left.value mustBe a[RowValidationError]
       verify(mockAuditEvents, times(1)).validationErrorAudit(argEq(err), argEq(schemeInfo), argEq("Other_Grants_V4"))(any(), any())
     }
 
-    "throw exception if ErsValidator.validateRow throws exception" in {
+    "return ErsSystemError if ErsValidator.validateRow throws exception" in {
       val mockValidator = mock[DataValidator]
       when(mockValidator.validateRow(any[Row])).thenThrow(new RuntimeException("this is a runtime exception"))
 
-     val caughtException = intercept[RuntimeException] {
-       dataGenerator.generateRowData(testAct, 10, mockValidator)(schemeInfo, "Other_Grants_V4", hc, request)
-     }
+      val result = dataGenerator.generateRowData(testAct, 10, mockValidator)(schemeInfo, "Other_Grants_V4", hc, request)
 
-      caughtException.getMessage mustBe "this is a runtime exception"
+      result.isLeft mustBe true
+      result.left.value mustBe a[ErsSystemError]
+      val systemError = result.left.value.asInstanceOf[ErsSystemError]
+      systemError.message mustBe "System error during validation"
+      systemError.context mustBe "Validation system failure: this is a runtime exception"
     }
   }
 
-  "getData" should {
-    "get an exception if ods file has less than 9 rows and doesn't have header data" in {
+  "getErrors" should {
+    "get a user validation error if ods file has less than 9 rows and doesn't have header data" in {
       val schemeInfo: SchemeInfo = SchemeInfo (
         schemeRef = "XA11000001231275",
         timestamp = ZonedDateTime.now,
@@ -248,13 +320,15 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
         schemeName = "MyScheme",
         schemeType = "CSOP"
       )
-      val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getErrors(XMLTestData.getInvalidCSOPWithoutHeaders)(schemeInfo, hc, request)
-      }
-      result.message mustBe "Incorrect ERS Template - Header doesn't match"
+      val result = dataGenerator.getErrors(XMLTestData.getInvalidCSOPWithoutHeaders)(schemeInfo, hc, request)
+      result.isLeft must be(true)
+      result.left.value mustBe a[HeaderValidationError]
+      val error = result.left.value.asInstanceOf[HeaderValidationError]
+      error.message mustBe "Incorrect ERS Template - Header doesn't match"
+      error.context mustBe "Incorrect ERS Template - Header doesn't match"
     }
 
-    "get an exception if ods file has more than 1 sheet but 1 of the sheets has less than 9 rows and doesn't have header data" in {
+    "get a user validation error if ods file has more than 1 sheet but 1 of the sheets has less than 9 rows and doesn't have header data" in {
       val schemeInfo: SchemeInfo = SchemeInfo (
         schemeRef = "XA11000001231275",
         timestamp = ZonedDateTime.now,
@@ -263,13 +337,15 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
         schemeName = "MyScheme",
         schemeType = "CSOP"
       )
-      val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getErrors(XMLTestData.getInvalidCSOPWith2Sheets1WithoutHeaders)(schemeInfo, hc, request)
-      }
-      result.message mustBe "Incorrect ERS Template - Header doesn't match"
+      val result = dataGenerator.getErrors(XMLTestData.getInvalidCSOPWith2Sheets1WithoutHeaders)(schemeInfo, hc, request)
+      result.isLeft must be(true)
+      result.left.value mustBe a[HeaderValidationError]
+      val error = result.left.value.asInstanceOf[HeaderValidationError]
+      error.message mustBe "Incorrect ERS Template - Header doesn't match"
+      error.context mustBe "Incorrect ERS Template - Header doesn't match"
     }
 
-    "get an exception if ods file doesn't contain any data" in {
+    "get a user validation error if ods file doesn't contain any data" in {
       val schemeInfo: SchemeInfo = SchemeInfo (
         schemeRef = "XA11000001231275",
         timestamp = ZonedDateTime.now,
@@ -278,34 +354,61 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
         schemeName = "MyScheme",
         schemeType = "CSOP"
       )
-      val result = intercept[ERSFileProcessingException] {
-        dataGenerator.getErrors(XMLTestData.getCSOPWithoutData)(schemeInfo, hc, request)
+      val result = dataGenerator.getErrors(XMLTestData.getCSOPWithoutData)(schemeInfo, hc, request)
+      result.isLeft must be(true)
+      result.left.value mustBe a[NoDataError]
+      val error = result.left.value.asInstanceOf[NoDataError]
+      error.message mustBe "The file that you chose doesn’t have any data after row 9. The reportable events data must start in cell A10.<br/><a href=\"https://www.gov.uk/government/collections/employment-related-securities\">Use the ERS guidance documents</a> to help you create error-free files."
+      error.context mustBe "The file that you chose doesn’t have any data after row 9. The reportable events data must start in cell A10.<br/><a href=\"https://www.gov.uk/government/collections/employment-related-securities\">Use the ERS guidance documents</a> to help you create error-free files."
+    }
+
+    "get a ERSFileProcessingException when an unexpected system error occurs" in {
+      val testDataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig) {
+        override def parse(row: String): Either[String, (Seq[String], Int)] = {
+          throw new RuntimeException("Unexpected parsing error")
+        }
       }
-      result.message mustBe "The file that you chose doesn’t have any data after row 9. The reportable events data must start in cell A10.<br/><a href=\"https://www.gov.uk/government/collections/employment-related-securities\">Use the ERS guidance documents</a> to help you create error-free files."
+
+      val result = testDataGenerator.getErrors(XMLTestData.getEMIAdjustmentsTemplate)(schemeInfo, hc, request)
+      val error = result.left.value
+
+      error mustBe a[ERSFileProcessingException]
+      error.message mustBe "System error during file processing"
+      error.context mustBe "Unexpected error: Unexpected parsing error"
     }
 
     "get Data for Iterator of Strings" in {
       val result = dataGenerator.getErrors(XMLTestData.getEMIAdjustmentsTemplate)(schemeInfo,hc,request)
-      result.size must be (1)
-      result.foreach(_.data.foreach(_ mustBe (XMLTestData.emiAdjustmentsExpData)))
-      try {
-        dataGenerator.getErrors(XMLTestData.getIncorrectsheetNameTemplate)(schemeInfo,hc,request)
-      } catch {
-        case e:Throwable => e.getMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
-      }
+      result.isRight must be(true)
+      val schemeData = result.value
+      schemeData.size must be (1)
+      schemeData.foreach(_.data.foreach(_ mustBe (XMLTestData.emiAdjustmentsExpData)))
+    }
+
+    "get user validation error for incorrect sheet name" in {
+      val result = dataGenerator.getErrors(XMLTestData.getIncorrectsheetNameTemplate)(schemeInfo,hc,request)
+      result.isLeft must be(true)
+      result.left.value mustBe a[UnknownSheetError]
+      val error = result.left.value.asInstanceOf[UnknownSheetError]
+      error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+      error.context mustBe "Couldn't find config for given SheetName, sheet name may be incorrect"
       verify(mockAuditEvents, times(1)).fileProcessingErrorAudit(argEq(schemeInfo), argEq("EMI40_Adjustment"), argEq("Could not set the validator"))(any(), any())
     }
 
     "get mandatory Data for Iterator of Strings" in {
       val result = dataGenerator.getErrors(XMLTestData.getEMIReplacedTemplate)(schemeInfo,hc,request)
-      result.size must be (1)
-      result.foreach(_.data.foreach(_ must be (XMLTestData.emiReplacedExpMandatoryData)))
+      result.isRight must be(true)
+      val schemeData = result.value
+      schemeData.size must be (1)
+      schemeData.foreach(_.data.foreach(_ must be (XMLTestData.emiReplacedExpMandatoryData)))
     }
 
     "expand repeated rows" in {
       val result = dataGenerator.getErrors(XMLTestData.getEMIAdjustmentsRepeatedTemplate)(schemeInfo,hc,request)
-      result.size mustEqual(1)
-      result.head.data.size mustEqual(4)
+      result.isRight must be(true)
+      val schemeData = result.value
+      schemeData.size mustEqual(1)
+      schemeData.head.data.size mustEqual(4)
     }
   }
 
@@ -334,35 +437,21 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   }
 
-  "getSheetCsv" should {
-    def testServiceCreator(sheets: Map[String, SheetInfo]) = new DataGenerator(
-      mockAuditEvents, mockAppConfig
-    ) {
-      override def ersSheetsConf(schemeInfo: SchemeInfo): Map[String, SheetInfo] = sheets
-    }
+  "csopV5required" should {
+    "return InvalidTaxYearError when taxYear format is incorrect" in {
+      val badSchemeInfo = schemeInfo.copy(taxYear = "bad-format")
 
-    when(mockAuditEvents.fileProcessingErrorAudit(any(), any(), any())(any(), any())).thenReturn(true)
+      when(mockAppConfig.csopV5Enabled).thenReturn(true)
 
-    "return a sheet info if sheetname is found in the sheets" in {
-      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
-      val testService: DataGenerator = testServiceCreator(Map("aName" -> sheetTest))
+      val generator = new DataGenerator(mockAuditEvents, mockAppConfig)
 
-      val result = testService.getSheetCsv("aName", schemeInfo)
-      assert(result.isRight)
-      result.value mustBe sheetTest
-    }
+      val result = generator.getValidator("EMI40_Adjustments_V4")(badSchemeInfo, hc, request)
 
-    "return a left if sheetname is not found in sheets" in {
-
-      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
-      val testService: DataGenerator = testServiceCreator(Map("anotherName" -> sheetTest))
-
-      val result = testService.getSheetCsv("aWrongName", schemeInfo)
-      assert(result.isLeft)
-      result.swap.value mustBe ERSFileProcessingException(
-        s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-        s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}")
-
+      result.isLeft mustBe true
+      result.left.value mustBe a[InvalidTaxYearError]
+      val error = result.left.value.asInstanceOf[InvalidTaxYearError]
+      error.message mustBe "Invalid tax year format"
+      error.context mustBe "Invalid tax year format or conversion error: bad-format, expected format YYYY/YY"
     }
   }
 
