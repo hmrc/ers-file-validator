@@ -20,7 +20,6 @@ import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
 import models._
 import models.upscan.UpscanCsvFileData
-import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.HttpResponse
 import org.apache.pekko.stream.connectors.csv.scaladsl.CsvParsing
@@ -122,7 +121,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
     implicit request: Request[_], hc: HeaderCarrier
   ): Future[Either[ErsError, CsvFileLengthInfo]] = {
     result.fold(
-      error => Future(Left(error)),
+      error => Future.successful(Left(error)),
       csvFileSubmissions => {
         logger.info("[ProcessCsvService][extractSchemeData]: File length " + csvFileSubmissions.fileLength)
         sendSchemeCsv(SubmissionsSchemeData(schemeInfo, csvFileSubmissions.sheetName, csvFileSubmissions.upscanCallback, csvFileSubmissions.fileLength), empRef)

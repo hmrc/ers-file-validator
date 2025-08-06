@@ -214,24 +214,22 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   }
 
   def identifyAndDefineSheet(data: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, String] = {
-    getSheet(data) match {
-      case Left(userError) => Left(userError)
-      case Right(res) =>
-        val schemeInfoSchemeType = schemeInfo.schemeType
-        val requestSchemeType = res.schemeType
-        if (requestSchemeType.toLowerCase == schemeInfoSchemeType.toLowerCase) {
-          logger.debug("****5.1.1  data contains data:  *****" + data)
-          Right(data)
-        } else {
-          auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
-          logger.warn(ErrorResponseMessages.dataParserIncorrectSchemeType())
-          Left(SchemeTypeMismatchError(
-            message = s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-            context = s"${ErrorResponseMessages.dataParserIncorrectSchemeType(Some(schemeInfoSchemeType), Some(requestSchemeType))}",
-            expectedSchemeType = schemeInfoSchemeType,
-            requestSchemeType = requestSchemeType
-          ))
-        }
+    getSheet(data).flatMap { res =>
+      val schemeInfoSchemeType = schemeInfo.schemeType
+      val requestSchemeType = res.schemeType
+      if (requestSchemeType.toLowerCase == schemeInfoSchemeType.toLowerCase) {
+        logger.debug("****5.1.1  data contains data:  *****" + data)
+        Right(data)
+      } else {
+        auditEvents.fileProcessingErrorAudit(schemeInfo, data, s"${res.schemeType.toLowerCase} is not equal to ${schemeInfo.schemeType.toLowerCase}")
+        logger.warn(ErrorResponseMessages.dataParserIncorrectSchemeType())
+        Left(SchemeTypeMismatchError(
+          message = s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
+          context = s"${ErrorResponseMessages.dataParserIncorrectSchemeType(Some(schemeInfoSchemeType), Some(requestSchemeType))}",
+          expectedSchemeType = schemeInfoSchemeType,
+          requestSchemeType = requestSchemeType
+        ))
+      }
     }
   }
 
@@ -252,23 +250,21 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   def validateHeaderRow(rowData: Seq[String], sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, Int] = {
     val headerFormat = "[^a-zA-Z0-9]"
 
-    getSheet(sheetName) match {
-      case Left(userError) => Left(userError)
-      case Right(sheetInfo) =>
-        val header = sheetInfo.headerRow.map(_.replaceAll(headerFormat, ""))
-        val data = rowData.take(header.size)
-        val dataTrim = data.map(_.replaceAll(headerFormat, ""))
+    getSheet(sheetName).flatMap { sheetInfo =>
+      val header = sheetInfo.headerRow.map(_.replaceAll(headerFormat, ""))
+      val data = rowData.take(header.size)
+      val dataTrim = data.map(_.replaceAll(headerFormat, ""))
 
-        logger.debug("5.3  case 9 sheetName =" + sheetName + "data = " + dataTrim + "header == -> " + header)
-        if (dataTrim == header) {
-          Right(header.size)
-        } else {
-          auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Header row invalid")
-          logger.warn("Error while reading File + Incorrect ERS Template")
-          Left(HeaderValidationError(
-            s"${ErrorResponseMessages.dataParserIncorrectHeader}",
-            s"${ErrorResponseMessages.dataParserHeadersDontMatch}"))
-        }
+      logger.debug("5.3  case 9 sheetName =" + sheetName + "data = " + dataTrim + "header == -> " + header)
+      if (dataTrim == header) {
+        Right(header.size)
+      } else {
+        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Header row invalid")
+        logger.warn("Error while reading File + Incorrect ERS Template")
+        Left(HeaderValidationError(
+          s"${ErrorResponseMessages.dataParserIncorrectHeader}",
+          s"${ErrorResponseMessages.dataParserHeadersDontMatch}"))
+      }
     }
   }
 
