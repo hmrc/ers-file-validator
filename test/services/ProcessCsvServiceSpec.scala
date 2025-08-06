@@ -377,7 +377,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val testService = new MockProcessCsvService(
         mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)()
 
-      when(mockDataGenerator.getSheetCsv(any(), any())(any(), any())).thenReturn(Right(sheetTest))
+      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any())(any(), any())).thenReturn(Right(mock[DataValidator], sheetTest))
       val result = testService.formatDataToValidate((11 to 20).map(_.toString), sheetTest)
 
       result mustBe (11 to 15).map(_.toString)

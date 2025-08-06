@@ -173,22 +173,6 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     }
   }
 
-  def getSheetCsv(sheetName: String, schemeInfo: SchemeInfo)(
-    implicit hc: HeaderCarrier, request: Request[_]): Either[ErsError, SheetInfo] = {
-    ersSheetsConf(schemeInfo).flatMap { sheetsConf =>
-      sheetsConf.get(sheetName) match {
-        case Some(sheetInfo) => Right(sheetInfo)
-        case None =>
-          auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
-          logger.warn("[DataGenerator][getSheetCsv] Couldn't identify SheetName")
-          Left(UnknownSheetError(
-            s"${ErrorResponseMessages.dataParserIncorrectSheetName}",
-            s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"))
-      }
-    }
-  }
-
-
   def getValidatorAndSheetInfo(sheetName: String, schemeInfo: SchemeInfo)(
     implicit hc: HeaderCarrier, request: Request[_]): Either[ErsError, (DataValidator, SheetInfo)] = {
     ersSheetsConf(schemeInfo).flatMap { sheetsConf =>

@@ -404,37 +404,6 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
   }
 
-  "getSheetCsv" should {
-    def testServiceCreator(sheets: Map[String, SheetInfo]) = new DataGenerator(
-      mockAuditEvents, mockAppConfig
-    ) {
-      override def ersSheetsConf(schemeInfo: SchemeInfo): Either[ErsError, Map[String, SheetInfo]] = Right(sheets)
-    }
-
-    when(mockAuditEvents.fileProcessingErrorAudit(any(), any(), any())(any(), any())).thenReturn(true)
-
-    "return a sheet info if sheetname is found in the sheets" in {
-      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
-      val testService: DataGenerator = testServiceCreator(Map("aName" -> sheetTest))
-
-      val result = testService.getSheetCsv("aName", schemeInfo)
-      assert(result.isRight)
-      result.value mustBe sheetTest
-    }
-
-    "return a left if sheetname is not found in sheets" in {
-      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName", List("aHeader"))
-      val testService: DataGenerator = testServiceCreator(Map("anotherName" -> sheetTest))
-
-      val result = testService.getSheetCsv("aWrongName", schemeInfo)
-      assert(result.isLeft)
-      result.left.value mustBe a[UnknownSheetError]
-      val error = result.left.value.asInstanceOf[UnknownSheetError]
-      error.message mustBe s"${ErrorResponseMessages.dataParserIncorrectSheetName}"
-      error.context mustBe s"${ErrorResponseMessages.dataParserUnidentifiableSheetNameContext}"
-    }
-  }
-
   "csopV5required" should {
     "return InvalidTaxYearError when taxYear format is incorrect" in {
       val badSchemeInfo = schemeInfo.copy(taxYear = "bad-format")
