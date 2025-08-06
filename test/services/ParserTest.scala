@@ -83,26 +83,26 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
 
     "display incorrectSheetName user validation error in identifyAndDefineSheet method" in {
       val result = dataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo, hc, request)
-      result match {
-        case Left(UnknownSheetError(message, context)) =>
-          s"$message, $context" mustBe "Incorrect ERS Template - Sheet Name isn't as expected, Couldn't find config for given SheetName, sheet name may be incorrect"
-        case _ => fail("Expected UnknownSheetError")
-      }
+      val error = result.left.value
+
+      error mustBe a[UnknownSheetError]
+      error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+      error.context mustBe "Couldn't find config for given SheetName, sheet name may be incorrect"
     }
 
     "display incorrectHeader user validation error in validateHeaderRow method" in {
       val result = dataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V4")(schemeInfo, hc, request)
-      result match {
-        case Left(HeaderValidationError(message, context)) =>
-          s"$message, $context" mustBe "Incorrect ERS Template - Header doesn't match, Header doesn't match"
-        case _ => fail("Expected HeaderValidationError")
-      }
+      val error = result.left.value
+
+      error mustBe a[HeaderValidationError]
+      error.message mustBe "Incorrect ERS Template - Header doesn't match"
+      error.context mustBe "Header doesn't match"
     }
 
     "return sheetInfo given a valid sheet name" in {
       val result = dataGenerator.getSheet(ERSTemplatesInfo.emiSheet5Name)(schemeInfo, hc, request)
       result.isRight mustBe true
-      val sheet = result.getOrElse(fail("Expected Right but got Left"))
+      val sheet = result.value
       sheet.schemeType mustBe "EMI"
       sheet.sheetId mustBe 5
     }
@@ -110,7 +110,7 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     "return sheetInfo for CSOP_OptionsGranted_V4" in {
       val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet1Name)(schemeInfo, hc, request)
       result.isRight mustBe true
-      val sheet = result.getOrElse(fail("Expected Right but got Left"))
+      val sheet = result.value
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 1
     }
@@ -118,7 +118,7 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     "return sheetInfo for CSOP_OptionsRCL_V4" in {
       val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet2Name)(schemeInfo, hc, request)
       result.isRight mustBe true
-      val sheet = result.getOrElse(fail("Expected Right but got Left"))
+      val sheet = result.value
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 2
     }
@@ -126,7 +126,7 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     "return sheetInfo for CSOP_OptionsExercised_V4" in {
       val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet3Name)(schemeInfo, hc, request)
       result.isRight mustBe true
-      val sheet = result.getOrElse(fail("Expected Right but got Left"))
+      val sheet = result.value
       sheet.schemeType mustBe "CSOP"
       sheet.sheetId mustBe 3
     }
@@ -134,8 +134,8 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     "return Left for an invalid sheetName" in {
       val result = dataGenerator.getSheet("abc")(schemeInfo, hc, request)
       result.isLeft mustBe true
-      result.swap.getOrElse(fail("Expected Left but got Right")) mustBe a[UnknownSheetError]
-      val Left(error) = result
+      val error = result.left.value
+      error mustBe a[UnknownSheetError]
       error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
     }
 

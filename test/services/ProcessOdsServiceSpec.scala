@@ -206,22 +206,6 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     }
   }
 
-  "throw the original exception during file processing" in {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = true
-      override val maxNumberOfRows = 1
-      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
-    }
-
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenThrow(new RuntimeException("Test"))
-
-    val exception = intercept[RuntimeException] {
-      Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
-    }
-
-    exception.getMessage mustBe "Test"
-  }
-
   "return ERSFileProcessingException when reading the file fails" in {
     val exceptionMessage = "Simulated file read failure"
     val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {

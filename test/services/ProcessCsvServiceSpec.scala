@@ -130,7 +130,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
 
       result.isLeft mustBe true
-      val error = result.swap.getOrElse(fail("Expected Left but got Right"))
+      val error = result.left.value
       error mustBe a[RowValidationError]
       error.message mustBe "Invalid file format"
       error.context mustBe "Could not validate row due to unexpected structure. Error: this validation failed"
@@ -221,12 +221,11 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       val resultFuture = testProcessCsvService.processFiles(callback, returnStubSource(_, data))
 
       val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
-      boolList.head match {
-        case Left(systemError: ERSFileProcessingException) =>
-          systemError.message mustBe "ers.exceptions.dataParser.configFailure"
-          systemError.context mustBe "ers.exceptions.dataParser.validatorError"
-        case _ => fail("Expected result to be a Left with ERSFileProcessingException")
-      }
+      val error = boolList.head.left.value
+
+      error mustBe a[ERSFileProcessingException]
+      error.message mustBe "ers.exceptions.dataParser.configFailure"
+      error.context mustBe "ers.exceptions.dataParser.validatorError"
       assert(boolList.forall(_.isLeft))
     }
 
