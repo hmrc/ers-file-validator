@@ -151,6 +151,15 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
         logger.error(s"[ProcessCsvService][processRow] Validation failed: ${exception.getMessage}", exception)
         Left(RowValidationError("Invalid file format", s"Could not validate row due to unexpected structure. Error: ${exception.getMessage}", None))
       case Success(list) if list.isEmpty => Right(parsedRow)
+      case Success(Some(errors)) =>
+        val messagesString = errors.map {
+          case ValidationError(cell, _, errorId, errorMsg) => s"column - ${cell.column}, error - $errorId : $errorMsg"}
+        logger.warn(s"Validation errors found for ${schemeInfo.schemeRef} : ${messagesString.mkString(" | " )}" )
+        auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
+        Left(RowValidationError(
+          s"${ErrorResponseMessages.dataParserFileInvalid}",
+          s"${ErrorResponseMessages.dataParserValidationFailure}",
+          None))
       case Success(_) =>
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
         logger.warn("[ProcessCsvService][processRow] Row validation found validation errors")
