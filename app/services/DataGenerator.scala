@@ -269,9 +269,9 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         // $COVERAGE-ON$
         err match {
           case Some(errors) if errors.nonEmpty =>
-            val messagesString = errors.map {
+            val errorDetails = errors.map {
               case ValidationError(cell, _, errorId, errorMsg) => s"column - ${cell.column}, error - $errorId : $errorMsg"}
-            logger.warn(s"Validation errors found for ${schemeInfo.schemeRef} : ${messagesString.mkString(" | " )}" )
+            logger.warn(s"Validation errors found for ${schemeInfo.schemeRef} : ${errorDetails.mkString(" | " )}" )
         }
         err.map {
           auditEvents.validationErrorAudit(_, schemeInfo, sheetName)
