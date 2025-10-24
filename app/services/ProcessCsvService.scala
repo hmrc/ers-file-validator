@@ -154,7 +154,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       case Success(Some(errors)) =>
         val errorDetails = errors.map {
           case ValidationError(cell, _, errorId, errorMsg) => s"column - ${cell.column}, error - $errorId : $errorMsg"}
-        logger.warn(s"Validation errors found for ${schemeInfo.schemeRef} : ${errorDetails.mkString(" | " )}" )
+        logger.warn(s"[ProcessCsvService][processRow] Validation errors found for ${schemeInfo.schemeRef} : ${errorDetails.mkString(" | " )}" )
         auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Failure to validate")
         Left(RowValidationError(
           s"${ErrorResponseMessages.dataParserFileInvalid}",

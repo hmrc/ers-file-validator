@@ -271,7 +271,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
           case Some(errors) if errors.nonEmpty =>
             val errorDetails = errors.map {
               case ValidationError(cell, _, errorId, errorMsg) => s"column - ${cell.column}, error - $errorId : $errorMsg"}
-            logger.warn(s"Validation errors found for ${schemeInfo.schemeRef} : ${errorDetails.mkString(" | " )}" )
+            logger.warn(s"[DataGenerator][generateRowData] Validation errors found for ${schemeInfo.schemeRef} : ${errorDetails.mkString(" | " )}" )
         }
         err.map {
           auditEvents.validationErrorAudit(_, schemeInfo, sheetName)
