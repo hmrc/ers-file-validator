@@ -16,9 +16,10 @@
 
 package services
 
+import com.typesafe.config.ConfigException
 import config.ApplicationConfig
 import metrics.Metrics
-import models.{ERSFileProcessingException, ErsError, ErsSystemError, HeaderValidationError, InvalidTaxYearError, NoDataError, RowValidationError, SchemeData, SchemeInfo, SchemeTypeMismatchError, UnknownSheetError}
+import models._
 import play.api.Logging
 import play.api.mvc.Request
 import services.ERSTemplatesInfo.{ersSheetsWithCsopV4, ersSheetsWithCsopV5}
@@ -34,7 +35,6 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
-import com.typesafe.config.ConfigException
 
 @Singleton
 class DataGenerator @Inject()(auditEvents: AuditEvents,
@@ -267,6 +267,12 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
         logger.debug(s"Rowdata is --> ${rowData.map(res => res)}")
         logger.debug(s"Error column data is  ${err.get.map(_.cell.value)}")
         // $COVERAGE-ON$
+        err match {
+          case Some(errors) if errors.nonEmpty =>
+            val errorDetails = errors.map {
+              case ValidationError(cell, _, errorId, errorMsg) => s"column - ${cell.column}, error - $errorId : $errorMsg"}
+            logger.warn(s"[DataGenerator][generateRowData] Validation errors found for ${schemeInfo.schemeRef} : ${errorDetails.mkString(" | " )}" )
+        }
         err.map {
           auditEvents.validationErrorAudit(_, schemeInfo, sheetName)
         }
