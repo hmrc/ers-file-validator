@@ -71,13 +71,17 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
         case e => Left(e)
       }
 
+  private def stripExtension(name: String): String = {
+    val dotIndex = name.lastIndexOf('.')
+    if (dotIndex > 0) name.substring(0, dotIndex) else name
+  }
 
   def processFiles(callback: UpscanCsvFileData, source: String => Source[HttpResponse, _])(
     implicit request: Request[_], hc: HeaderCarrier
   ): List[Future[Either[ErsError, CsvFileSubmissions]]] =
     callback.callbackData map { successUpload =>
 
-      val sheetName = successUpload.name.replace(".csv", "")
+      val sheetName = stripExtension(successUpload.name)
 
       dataGenerator.getValidatorAndSheetInfo(sheetName, callback.schemeInfo) match {
 
