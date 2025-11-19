@@ -54,6 +54,9 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
       Right(ersSheetsWithCsopV4)
     }
   }
+  
+  private def findFirstCaseInsensitiveMatch(value: String, options: Map[String, SheetInfo]): Option[SheetInfo] =
+    options.find(_._1.toLowerCase == value.toLowerCase).map(_._2)
 
   def getErrors(iterator: Iterator[String])(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, ListBuffer[SchemeData]] = {
     var rowNum = 0
@@ -155,7 +158,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   def getValidator(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, DataValidator] = {
     ersSheetsConf(schemeInfo).flatMap { sheetsConf =>
       try {
-        sheetsConf.get(sheetName) match {
+        findFirstCaseInsensitiveMatch(sheetName, sheetsConf) match {
           case Some(sheetInfo) => Right(ERSValidationConfigs.getValidator(sheetInfo.configFileName))
           case None =>
             val errorMsg = s"Sheet name: $sheetName does not match any for scheme types."
@@ -176,7 +179,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
   def getValidatorAndSheetInfo(sheetName: String, schemeInfo: SchemeInfo)(
     implicit hc: HeaderCarrier, request: Request[_]): Either[ErsError, (DataValidator, SheetInfo)] = {
     ersSheetsConf(schemeInfo).flatMap { sheetsConf =>
-      sheetsConf.get(sheetName) match {
+      findFirstCaseInsensitiveMatch(sheetName, sheetsConf) match {
         case Some(sheetInfo) =>
           Try(ERSValidationConfigs.getValidator(sheetInfo.configFileName)) match {
             case Success(validator) => Right((validator, sheetInfo))
@@ -219,7 +222,7 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
 
   def getSheet(sheetName: String)(implicit schemeInfo: SchemeInfo, hc: HeaderCarrier, request: Request[_]): Either[ErsError, SheetInfo] = {
     ersSheetsConf(schemeInfo).flatMap { sheetsConf =>
-      sheetsConf.get(sheetName) match {
+      findFirstCaseInsensitiveMatch(sheetName, sheetsConf) match {
         case Some(sheetInfo) => Right(sheetInfo)
         case None =>
           auditEvents.fileProcessingErrorAudit(schemeInfo, sheetName, "Could not set the validator")
