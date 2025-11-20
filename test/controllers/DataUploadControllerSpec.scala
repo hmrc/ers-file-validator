@@ -23,10 +23,7 @@ import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.testkit.TestKit
 import fixtures.WithMockedAuthActions
-import metrics.Metrics
 import models._
-import models.scheme.SchemeMismatchError
-import models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
@@ -39,7 +36,7 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Action, AnyContent, DefaultActionBuilder, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import services.{ProcessCsvService, ProcessOdsService, SessionCacheService}
+import services.ProcessCsvService
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 
 import scala.collection.mutable.ListBuffer
@@ -48,8 +45,14 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.Application
 import org.scalatest.wordspec.AnyWordSpecLike
-import services.audit.AuditEvents
-import utils.ErrorResponseMessages
+import uk.gov.hmrc.validator.services.{ProcessOdsService, SessionCacheService}
+import uk.gov.hmrc.validator.services.audit.AuditEvents
+import uk.gov.hmrc.validator.services.controllers.DataUploadController
+import uk.gov.hmrc.validator.services.metrics.Metrics
+import uk.gov.hmrc.validator.services.models.{CsvFileLengthInfo, CsvFileSubmissions, ErsSystemError, HeaderValidationError, NoDataError, RowValidationError, SchemeData, SchemeInfo, SchemeTypeMismatchError}
+import uk.gov.hmrc.validator.services.models.scheme.SchemeMismatchError
+import uk.gov.hmrc.validator.services.models.upscan.{UpscanCallback, UpscanCsvFileData, UpscanFileData}
+import uk.gov.hmrc.validator.services.utils.ErrorResponseMessages
 
 import java.time.ZonedDateTime
 

@@ -16,7 +16,6 @@
 
 package services
 
-import models.{SchemeData, SchemeInfo}
 import org.apache.commons.lang3.exception.ExceptionUtils
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito.{times, verify}
@@ -24,12 +23,13 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
-import services.audit.{AuditEvents, AuditService}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.models._
 
 import scala.collection.mutable.ListBuffer
 import org.scalatest.wordspec.AnyWordSpecLike
+import uk.gov.hmrc.validator.services.audit.{AuditEvents, AuditService}
+import uk.gov.hmrc.validator.services.models.{SchemeData, SchemeInfo}
 
 import java.time.ZonedDateTime
 

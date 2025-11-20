@@ -16,8 +16,6 @@
 
 package test.repository
 
-import config.ApplicationConfig
-import models.upscan.UpscanCallback
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -26,9 +24,11 @@ import play.api.libs.json._
 import play.api.mvc.Request
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
-import repository.ERSFileValidatorSessionRepository
 import uk.gov.hmrc.mongo.cache.DataKey
 import uk.gov.hmrc.mongo.{MongoComponent, TimestampSupport}
+import uk.gov.hmrc.validator.services.config.ApplicationConfig
+import uk.gov.hmrc.validator.services.models.upscan.UpscanCallback
+import uk.gov.hmrc.validator.services.repository.ERSFileValidatorSessionRepository
 
 import scala.concurrent.ExecutionContext
 

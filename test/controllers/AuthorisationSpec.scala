@@ -17,7 +17,6 @@
 package controllers
 
 import org.apache.pekko.stream.Materializer
-import controllers.auth.Authorisation
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
@@ -37,6 +36,7 @@ import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.inject.guice.GuiceApplicationBuilder
 import org.scalatest.wordspec.AnyWordSpecLike
+import uk.gov.hmrc.validator.services.controllers.auth.Authorisation
 
 
 class AuthorisationSpec extends AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with BeforeAndAfterEach with GuiceOneAppPerSuite {

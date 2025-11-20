@@ -17,9 +17,7 @@
 package connectors
 
 import org.apache.pekko.stream.Materializer
-import config.ApplicationConfig
 import models._
-import models.upscan.UpscanCallback
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfter, EitherValues}
@@ -31,7 +29,6 @@ import play.api.http.Status
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
-import services.audit.AuditEvents
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 
@@ -39,6 +36,11 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.Application
+import uk.gov.hmrc.validator.services.audit.AuditEvents
+import uk.gov.hmrc.validator.services.config.ApplicationConfig
+import uk.gov.hmrc.validator.services.connectors.ERSFileValidatorConnector
+import uk.gov.hmrc.validator.services.models.{ERSFileProcessingException, SchemeData, SchemeInfo, SubmissionsSchemeData}
+import uk.gov.hmrc.validator.services.models.upscan.UpscanCallback
 
 import java.time.ZonedDateTime
 

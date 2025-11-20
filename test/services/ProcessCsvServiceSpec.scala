@@ -17,11 +17,8 @@
 package services
 
 import com.typesafe.config.{Config, ConfigFactory}
-import config.ApplicationConfig
-import connectors.ERSFileValidatorConnector
 import helpers.MockProcessCsvService
 import models._
-import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
@@ -36,11 +33,16 @@ import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Request
-import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
-import utils.ErrorResponseMessages
+import uk.gov.hmrc.validator.services.{DataGenerator, SheetInfo}
+import uk.gov.hmrc.validator.services.audit.AuditEvents
+import uk.gov.hmrc.validator.services.config.ApplicationConfig
+import uk.gov.hmrc.validator.services.connectors.ERSFileValidatorConnector
+import uk.gov.hmrc.validator.services.models.{CsvFileLengthInfo, CsvFileSubmissions, ERSFileProcessingException, ErsError, NoDataError, RowValidationError, SchemeInfo, SubmissionsSchemeData, UnknownSheetError}
+import uk.gov.hmrc.validator.services.models.upscan.{UpscanCallback, UpscanCsvFileData}
+import uk.gov.hmrc.validator.services.utils.ErrorResponseMessages
 
 import java.time.ZonedDateTime
 import scala.concurrent.ExecutionContext.Implicits.global

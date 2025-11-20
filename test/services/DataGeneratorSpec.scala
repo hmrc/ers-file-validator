@@ -17,8 +17,6 @@
 package services
 
 import com.typesafe.config.ConfigFactory
-import config.ApplicationConfig
-import models.{ERSFileProcessingException, ErsError, ErsSystemError, HeaderValidationError, InvalidTaxYearError, NoDataError, RowValidationError, SchemeInfo, SchemeTypeMismatchError, UnknownSheetError}
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.{BeforeAndAfter, EitherValues}
@@ -26,12 +24,15 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Request
-import services.audit.AuditEvents
 import services.headers.HeaderData
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
-import utils.ErrorResponseMessages
+import uk.gov.hmrc.validator.services.{DataGenerator, SheetInfo}
+import uk.gov.hmrc.validator.services.audit.AuditEvents
+import uk.gov.hmrc.validator.services.config.ApplicationConfig
+import uk.gov.hmrc.validator.services.models.{ERSFileProcessingException, ErsError, ErsSystemError, HeaderValidationError, InvalidTaxYearError, NoDataError, RowValidationError, SchemeInfo, SchemeTypeMismatchError, UnknownSheetError}
+import uk.gov.hmrc.validator.services.utils.ErrorResponseMessages
 
 import java.time.ZonedDateTime
 import scala.collection.immutable.ArraySeq

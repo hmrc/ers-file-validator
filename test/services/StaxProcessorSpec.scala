@@ -18,6 +18,7 @@ package services
 
 import org.scalatestplus.play.PlaySpec
 import services.staxintegrationTestData.CSOPStaxIntegrationTestData
+import uk.gov.hmrc.validator.services.StaxProcessor
 
 import java.io._
 import scala.xml.Elem

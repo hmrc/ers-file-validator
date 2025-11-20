@@ -18,7 +18,6 @@ package controllers
 
 import org.apache.pekko.stream.Materializer
 import fixtures.WithMockedAuthActions
-import models.upscan._
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
@@ -29,8 +28,9 @@ import play.api.libs.json.{JsObject, JsString, Json}
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import services.SessionCacheService
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
+import uk.gov.hmrc.validator.services.SessionCacheService
+import uk.gov.hmrc.validator.services.controllers.FileValidatorController
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 

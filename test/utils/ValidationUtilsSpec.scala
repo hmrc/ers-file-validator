@@ -19,6 +19,7 @@ package utils
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
+import uk.gov.hmrc.validator.services.utils.ValidationUtils
 
 class ValidationUtilsSpec extends AnyWordSpecLike with Matchers with OptionValues{
 

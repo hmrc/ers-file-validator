@@ -10,11 +10,11 @@ object AppDependencies {
   val compile: Seq[ModuleID] = Seq(
     ws,
     "org.scala-lang.modules" %% "scala-xml"                  % "2.4.0",
-    "uk.gov.hmrc"            %% "bootstrap-backend-play-30"  % bootstrapVersion,
+    "uk.gov.hmrc"            %% "bootstrap-backend-play-30"  % bootstrapVersion, // TODO: STILL NEEDED???
     "uk.gov.hmrc"            %% "domain-play-30"             % "11.0.0",
     "uk.gov.hmrc"            %% "tabular-data-validator"     % "1.9.0",
     "commons-codec"           % "commons-codec"              % "1.19.0",
-    "uk.gov.hmrc.mongo"      %% "hmrc-mongo-play-30"         % mongoVersion,
+    "uk.gov.hmrc.mongo"      %% "hmrc-mongo-play-30"         % mongoVersion, // TODO: STILL NEEDED???
     "org.apache.pekko"       %% "pekko-connectors-csv"       % pekkoVersion
   )
 

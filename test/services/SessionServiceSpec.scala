@@ -16,7 +16,6 @@
 
 package services
 
-import models.upscan.{NotStarted, UploadStatus, UploadedSuccessfully, UpscanCallback}
 import org.mockito.ArgumentMatchers.{any, anyString, eq => meq}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
@@ -24,9 +23,11 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.mvc.AnyContentAsEmpty
 import play.api.test.FakeRequest
-import repository.ERSFileValidatorSessionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, SessionKeys}
 import uk.gov.hmrc.mongo.cache.DataKey
+import uk.gov.hmrc.validator.services.SessionCacheService
+import uk.gov.hmrc.validator.services.models.upscan.{NotStarted, UploadStatus, UploadedSuccessfully, UpscanCallback}
+import uk.gov.hmrc.validator.services.repository.ERSFileValidatorSessionRepository
 
 import java.util.UUID
 import scala.concurrent.duration._

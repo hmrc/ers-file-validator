@@ -29,6 +29,7 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 import org.scalatest.wordspec.AnyWordSpecLike
 import uk.gov.hmrc.play.audit.DefaultAuditConnector
+import uk.gov.hmrc.validator.services.audit.AuditService
 
 import java.time.ZonedDateTime
 

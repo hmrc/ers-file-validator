@@ -18,6 +18,7 @@ package services
 
 import services.besIntegrationTestData.BESIntegrationTestData
 import services.headers.HeaderData
+import uk.gov.hmrc.validator.services.StaxProcessor
 
 import java.io.ByteArrayInputStream
 import scala.collection.mutable.ListBuffer

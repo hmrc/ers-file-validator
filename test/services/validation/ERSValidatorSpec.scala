@@ -23,6 +23,7 @@ import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import services.validation.EMITestData.ERSValidationEMIAdjustmentsTestData
 import uk.gov.hmrc.services.validation.DataValidator
+import uk.gov.hmrc.validator.services.validation.ErsValidator
 
 class ERSValidatorSpec extends PlaySpec with ScalaFutures with MockitoSugar with ERSValidationEMIAdjustmentsTestData {
 

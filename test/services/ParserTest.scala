@@ -16,17 +16,18 @@
 
 package services
 
-import config.ApplicationConfig
-import models.{ERSFileProcessingException, HeaderValidationError, SchemeInfo, UnknownSheetError}
 import org.mockito.Mockito.when
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Request
 import services.XMLTestData._
-import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
 import org.scalatest.{BeforeAndAfter, EitherValues}
+import uk.gov.hmrc.validator.services.{DataGenerator, DataParser, ERSTemplatesInfo}
+import uk.gov.hmrc.validator.services.audit.AuditEvents
+import uk.gov.hmrc.validator.services.config.ApplicationConfig
+import uk.gov.hmrc.validator.services.models.{ERSFileProcessingException, HeaderValidationError, SchemeInfo, UnknownSheetError}
 
 import java.time.ZonedDateTime
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}

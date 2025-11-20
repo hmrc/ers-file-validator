@@ -16,10 +16,7 @@
 
 package services
 
-import config.ApplicationConfig
-import connectors.ERSFileValidatorConnector
 import models._
-import models.upscan.UpscanCallback
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
@@ -28,8 +25,13 @@ import org.scalatest.exceptions.TestFailedException
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Request
-import services.audit.AuditEvents
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
+import uk.gov.hmrc.validator.services.{DataGenerator, ProcessOdsService, SessionCacheService}
+import uk.gov.hmrc.validator.services.audit.AuditEvents
+import uk.gov.hmrc.validator.services.config.ApplicationConfig
+import uk.gov.hmrc.validator.services.connectors.ERSFileValidatorConnector
+import uk.gov.hmrc.validator.services.models.{ERSFileProcessingException, ErsSystemError, RowValidationError, SchemeData, SchemeInfo}
+import uk.gov.hmrc.validator.services.models.upscan.UpscanCallback
 
 import java.io.{FileInputStream, FileOutputStream}
 import java.nio.file.Files
