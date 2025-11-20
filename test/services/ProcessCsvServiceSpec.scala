@@ -169,6 +169,30 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       assert(boolList.forall(_.isRight))
     }
 
+    "treat file extension as case-insensitive when processing a valid file" in {
+      val upscanCallback = UpscanCallback("CSOP_OptionsGranted_V4.CSV", "no", noOfRows = Some(1))
+
+      val callback = UpscanCsvFileData(List(upscanCallback), schemeInfo)
+      val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
+
+      val testService: ProcessCsvService = new MockProcessCsvService(
+        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector
+      )(
+        mockExtractBodyOfRequest = Some(_ => Source.single(Right(List(ByteString(data))))),
+        processRow = Some(Right(Seq(data)))
+      )
+
+      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
+        .thenReturn(Right((mock[DataValidator], sheetTest)))
+
+      val resultFuture = testService.processFiles(callback, returnStubSource(_, data))
+
+      val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
+
+      boolList mustBe List(Right(CsvFileSubmissions("CSOP_OptionsGranted_V4", 1, upscanCallback)))
+      assert(boolList.forall(_.isRight))
+    }
+
     "return a user validation error when file is empty" in {
       val testService: ProcessCsvService = new MockProcessCsvService(
         mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector
@@ -425,5 +449,3 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
 
 }
-
-

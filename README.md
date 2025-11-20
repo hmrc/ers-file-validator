@@ -1,7 +1,5 @@
 # ers-file-validator
 
-[![Build Status](https://travis-ci.org/hmrc/ers-file-validator.svg?branch=master)](https://travis-ci.org/hmrc/ers-file-validator) [ ![Download](https://api.bintray.com/packages/hmrc/releases/ers-file-validator/images/download.svg) ](https://bintray.com/hmrc/releases/ers-file-validator/_latestVersion)
-
 Backend microservice to support ERS Frontend microservices in validating data from files, transforming that data
 and sending to protected.
 
