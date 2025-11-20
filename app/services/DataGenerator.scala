@@ -316,4 +316,3 @@ class DataGenerator @Inject()(auditEvents: AuditEvents,
     }
   }
 }
-
