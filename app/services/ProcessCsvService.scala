@@ -72,8 +72,8 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
       }
 
   private def stripExtension(name: String): String = {
-    val dotIndex = name.lastIndexOf('.')
-    if (dotIndex > 0) name.substring(0, dotIndex) else name
+    val dotIndex = Option(name).map(_.lastIndexOf('.')).getOrElse(-1)
+    if (dotIndex == -1) name else name.substring(0, dotIndex)
   }
 
   def processFiles(callback: UpscanCsvFileData, source: String => Source[HttpResponse, _])(
