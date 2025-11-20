@@ -213,12 +213,20 @@ class DataGeneratorSpec extends PlaySpec with CSVTestData with ScalaFutures with
 
       error.message mustBe ErrorResponseMessages.dataParserConfigFailure
       error.context mustBe "Could not set the validator"
-  }
     }
+  }
 
   "identifyAndDefineSheet" should {
     "identify and define the sheet with correct scheme type" in {
       val result = dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(schemeInfo, hc, request)
+      result.isRight must be(true)
+      result.value mustBe "EMI40_Adjustments_V4"
+    }
+
+    "treat scheme type comparison as case-insensitive" in {
+      val lowerCaseSchemeInfo: SchemeInfo = schemeInfo.copy(schemeType = "emi")
+
+      val result = dataGenerator.identifyAndDefineSheet("EMI40_Adjustments_V4")(lowerCaseSchemeInfo, hc, request)
       result.isRight must be(true)
       result.value mustBe "EMI40_Adjustments_V4"
     }
