@@ -39,8 +39,10 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
                                           implicit val ec: ExecutionContext)
   extends Metrics with Logging {
 
+  // $COVERAGE-OFF$
   def upscanFileStream(downloadUrl: String): InputStream =
     new URL(downloadUrl).openStream()
+  // $COVERAGE-ON$
 
   def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, HttpResponse]] = {
     import java.net.URLEncoder
@@ -95,6 +97,8 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
       ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage)
   }
 
+  // $COVERAGE-OFF$
   def deliverSendToSubmissionsMetrics(startTime: Long): Unit =
     metrics.sendToSubmissionsTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
+  // $COVERAGE-ON$
 }

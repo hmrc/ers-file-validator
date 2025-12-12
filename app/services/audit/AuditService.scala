@@ -50,5 +50,7 @@ class AuditService @Inject()(auditConnector: DefaultAuditConnector,
         "dateTime" ->  getDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
       )
 
+  // $COVERAGE-OFF$
   protected def getDateTime: ZonedDateTime = ZonedDateTime.now()
+  // $COVERAGE-ON$
 }

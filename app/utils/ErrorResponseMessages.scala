@@ -24,10 +24,6 @@ object ErrorResponseMessages {
   val fileValidatorConnectorNotFound = "Submissions Service Not Found"
   val fileValidatorConnectorBadRequest = "Submissions Service Bad Request"
   val fileValidatorConnectorServiceUnavailable = "Submissions Service Service Unavailable"
-  val dataParserFileRetrievalFailed = "Parser Exception couldn't retrieve row data"
-  val dataParserParserFailure = "Parser Failure"
-  val dataParserFileParsingError = "Error while Parsing File"
-  val dataParserParsingOfFileData = "Parsing of File Data"
   val dataParserIncorrectSheetName = "Incorrect ERS Template - Sheet Name isn't as expected"
   def dataParserIncorrectSchemeType(expectedSheetName: Option[String] = None, parsedSheetName: Option[String] = None): String = {
     (expectedSheetName, parsedSheetName) match {
@@ -37,14 +33,7 @@ object ErrorResponseMessages {
         "Incorrect ERS Template - Scheme Type isn't as expected"
     }
   }
-  val dataParserUnidentifiableSheetNameContext = "Couldn't find config for given SheetName, sheet name may be incorrect"
-  val dataParserIncorrectHeader = "Incorrect ERS Template - Header doesn't match"
-  val dataParserHeadersDontMatch = "Header doesn't match"
-  val dataParserFileInvalid = "File Invalid, formatting errors present"
-  val dataParserValidationFailure = "Validation Failure"
-  val dataParserConfigFailure = "Failed to find the config file"
-  val dataParserNoData = """The file that you chose doesn’t have any data after row 9. The reportable events data must start in cell A10.<br/><a href="https://www.gov.uk/government/collections/employment-related-securities">Use the ERS guidance documents</a> to help you create error-free files."""
-  def ersCheckCsvFileNoData(sheetName: String = "") = "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload " +
+  def ersCheckCsvFileNoData(sheetName: String = ""): String = "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload " +
     s"$sheetName as part of your annual return."
 
 }

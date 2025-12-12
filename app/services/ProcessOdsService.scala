@@ -25,6 +25,8 @@ import models.upscan.UpscanCallback
 import play.api.Logging
 import play.api.mvc.Request
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
+import uk.gov.hmrc.validator.ODSValidator
+import uk.gov.hmrc.validator.models.ValidDataRow
 import utils.{ErrorResponseMessages, ValidationUtils}
 
 import java.io.InputStream
@@ -37,8 +39,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
-                                  auditEvents: AuditEvents,
+class ProcessOdsService @Inject()(auditEvents: AuditEvents,
                                   ersConnector: ERSFileValidatorConnector,
                                   sessionService: SessionCacheService,
                                   appConfig: ApplicationConfig,
@@ -49,30 +50,33 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
 
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsError, Int]] = {
     val startTime = System.currentTimeMillis()
-
-    Try(readFile(callbackData.downloadUrl)) match {
-      case Success(iterator) =>
-        dataGenerator.getErrors(iterator) match {
-          case Right(result) =>
-            processSchemeData(callbackData, result, startTime, empRef)
-          case Left(ersError) =>
-            ersError match {
-              case userError: UserValidationError =>
-                logger.warn(s"[ProcessOdsService][processFile] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
-                deliverBESMetrics(startTime)
-                Future.successful(Left(userError))
-              case systemError: SystemError =>
-                logger.error(s"[ProcessOdsService][processFile] System error: ${systemError.message}, context: ${systemError.context}, schemeRef: ${schemeInfo.schemeRef}")
-                deliverBESMetrics(startTime)
-                Future.successful(Left(systemError))
-            }
-        }
-      case Failure(exception) =>
+    Try(
+      ODSValidator().generateSchemeData(
+        appConfig.csopV5Enabled,
+        readFile(callbackData.downloadUrl),
+        schemeInfo.schemeType,
+        "" // TODO: Come back to filename arg
+      ).map((validDataRow: ValidDataRow) =>
+        SchemeData(schemeInfo, validDataRow.sheetName, None, validDataRow.data)
+      )
+    ) match {
+      case Failure(exception: Throwable) =>
         logger.error(s"[ProcessOdsService][processFile] Unexpected error reading file: ${exception.getMessage}", exception)
         deliverBESMetrics(startTime)
-        Future.successful(Left(ERSFileProcessingException("Error reading ODS file", exception.getMessage)))
+        Future.successful(
+          Left(
+            RowValidationError(
+              message = s"[ProcessOdsService][processFile]: Error reading ODS file -> ${exception.getMessage}",
+              context = exception.getMessage,
+              rowNumber = None
+            )
+          )
+        )
+      case Success(schemeData: ListBuffer[SchemeData]) =>
+        processSchemeData(callbackData, schemeData, startTime, empRef)
     }
   }
+
 
   private def processSchemeData(callbackData: UpscanCallback,
                                 result: ListBuffer[SchemeData],
@@ -109,7 +113,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
   }
 
   // $COVERAGE-OFF$
-  private[services] def readFile(downloadUrl: String): Iterator[String] = {
+  private[services] def readFile(downloadUrl: String): InputStream = {
     val stream = ersConnector.upscanFileStream(downloadUrl)
     val targetFileName = "content.xml"
     val zipInputStream = new ZipInputStream(stream)
@@ -129,8 +133,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
       }
     }
 
-    val contentInputStream = findFileInZip(zipInputStream)
-    new StaxProcessor(contentInputStream)
+    findFileInZip(zipInputStream)
   }
   // $COVERAGE-ON$
 
@@ -142,7 +145,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
       result match {
         case Right(_) =>
           auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
-        case Left(ex) =>
+        case Left(ex: Throwable) =>
           auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
           logger.error(s"[ProcessOdsService][sendSchemeData] An exception occurred: ${ex.getMessage}", ex)
           throw ERSFileProcessingException(ex.toString, ex.getStackTrace.toString)
@@ -155,7 +158,7 @@ class ProcessOdsService @Inject()(dataGenerator: DataGenerator,
 
       val slices: Int = ValidationUtils.numberOfSlices(schemeData.data.size, maxNumberOfRows)
       for (i <- 0 until slices * maxNumberOfRows by maxNumberOfRows) {
-        val scheme = new SchemeData(schemeData.schemeInfo, schemeData.sheetName, Option(slices), schemeData.data.slice(i, (i + maxNumberOfRows)))
+        val scheme = new SchemeData(schemeData.schemeInfo, schemeData.sheetName, Option(slices), schemeData.data.slice(i, i + maxNumberOfRows))
         logger.debug("The size of the scheme data is " + scheme.data.size + " and i is " + i)
         sendSchemeData(scheme, empRef)
       }

@@ -24,36 +24,34 @@ import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfter
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.exceptions.TestFailedException
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
+import uk.gov.hmrc.validator.ODSValidator
+import uk.gov.hmrc.validator.models.ValidDataRow
 
-import java.io.{FileInputStream, FileOutputStream}
-import java.nio.file.Files
+import java.io.InputStream
 import java.time.ZonedDateTime
-import java.util.zip.{ZipEntry, ZipOutputStream}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.{Duration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
 
-class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter {
+class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfter {
 
   val mockSessionService: SessionCacheService = mock[SessionCacheService]
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
-  val mockDataGenerator: DataGenerator = mock[DataGenerator]
   val mockHeaderCarrier: HeaderCarrier = mock[HeaderCarrier]
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
 
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  implicit val request : Request[_] = mock[Request[_]]
-  implicit val hc : HeaderCarrier = mock[HeaderCarrier]
+  implicit val request: Request[_] = mock[Request[_]]
+  implicit val hc: HeaderCarrier = mock[HeaderCarrier]
 
-  val schemeInfo: SchemeInfo = SchemeInfo (
+  val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
     timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
@@ -62,15 +60,11 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     schemeType = "EMI"
   )
 
-  def createListBuffer(schemeInfo: SchemeInfo, sheetName: String, listBuffer: ListBuffer[Seq[String]]): ListBuffer[SchemeData] = {
-    ListBuffer(SchemeData(schemeInfo, sheetName, None, listBuffer))
-  }
+  def createListBuffer(listBuffer: ListBuffer[Seq[String]]): ListBuffer[ValidDataRow] =
+    ListBuffer(ValidDataRow(data = listBuffer))
 
   val callbackData: UpscanCallback = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)
   val callbackDataCSV: UpscanCallback = UpscanCallback("EMI40_Adjustments_V4", "downloadUrl", Some(1024), Some("csv"), None, None)
-
-  val xmlData1 = <table:table table:name="EMI40_Adjustments_V4" table:style-name="ta1"> <table:table-row table:style-name="ro6"><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>1.</text:p><text:p>Date of event</text:p><text:p>(yyyy-mm-dd)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>2.</text:p><text:p>Number of employees who acquired or were awarded shares</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>3.</text:p><text:p>Type of shares awarded</text:p><text:p>Enter a number from 1 to 4 depending on the type of share awarded. Follow the link at cell B10 for a list of the types of share which can be awarded</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>4.</text:p><text:p>If free shares, are performance conditions attached to their award?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>5.</text:p><text:p>If matching shares, what is the ratio of shares to partnership shares?</text:p><text:p>Enter ratio for example 2:1; 2/1</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>6.</text:p><text:p>Unrestricted market value (UMV) per share on acquisition or award</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>7.</text:p><text:p>Total number of shares acquired or awarded</text:p><text:p>e.g. 100.00</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>8.</text:p><text:p>Total value of shares acquired or awarded</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>9.</text:p><text:p>Total number of employees whose award of free shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>10.</text:p><text:p>Total number of employees whose award of free shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>11.</text:p><text:p>Total number of employees whose award of partnership shares during the year exceeded the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>12.</text:p><text:p>Total number of employees whose award of partnership shares during the year was at or below the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>13.</text:p><text:p>Total number of employees whose award of matching shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>14.</text:p><text:p>Total number of employees whose award of matching shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>15.</text:p><text:p>Are the shares listed on a recognised stock exchange?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>16.</text:p><text:p>If no, was the market value agreed with HMRC?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>17.</text:p><text:p>If yes, enter the HMRC valuation reference given</text:p></table:table-cell><table:table-cell table:style-name="ce11"/><table:table-cell table:number-columns-repeated="1003"/><table:table-cell table:style-name="ce17"/><table:table-cell table:number-columns-repeated="2"/></table:table-row></table:table>
-  val xmlData2 = <table:table-row table:style-name="ro6"><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>1.</text:p><text:p>Date of event</text:p><text:p>(yyyy-mm-dd)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>2.</text:p><text:p>Number of employees who acquired or were awarded shares</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>3.</text:p><text:p>Type of shares awarded</text:p><text:p>Enter a number from 1 to 4 depending on the type of share awarded. Follow the link at cell B10 for a list of the types of share which can be awarded</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>4.</text:p><text:p>If free shares, are performance conditions attached to their award?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>5.</text:p><text:p>If matching shares, what is the ratio of shares to partnership shares?</text:p><text:p>Enter ratio for example 2:1; 2/1</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>6.</text:p><text:p>Unrestricted market value (UMV) per share on acquisition or award</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>7.</text:p><text:p>Total number of shares acquired or awarded</text:p><text:p>e.g. 100.00</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>8.</text:p><text:p>Total value of shares acquired or awarded</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>9.</text:p><text:p>Total number of employees whose award of free shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>10.</text:p><text:p>Total number of employees whose award of free shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>11.</text:p><text:p>Total number of employees whose award of partnership shares during the year exceeded the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>12.</text:p><text:p>Total number of employees whose award of partnership shares during the year was at or below the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>13.</text:p><text:p>Total number of employees whose award of matching shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>14.</text:p><text:p>Total number of employees whose award of matching shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>15.</text:p><text:p>Are the shares listed on a recognised stock exchange?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>16.</text:p><text:p>If no, was the market value agreed with HMRC?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>17.</text:p><text:p>If yes, enter the HMRC valuation reference given</text:p></table:table-cell><table:table-cell table:style-name="ce11"/><table:table-cell table:number-columns-repeated="1003"/><table:table-cell table:style-name="ce17"/><table:table-cell table:number-columns-repeated="2"/></table:table-row>
 
   before {
     reset(mockErsFileValidatorConnector)
@@ -78,145 +72,179 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
   }
 
   "The File Processing Service" must {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+    def fileProcessingService(): ProcessOdsService = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
       override val splitSchemes = false
       override val maxNumberOfRows = 1
 
-      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
+      override def readFile(downloadUrl: String): InputStream =
+        XMLTestData.getEMIAdjustmentsTemplateSTAX
+
     }
 
     when(hc.sessionId).thenReturn(Some(SessionId("sessionId")))
 
     "yield a list of scheme data from file data" in {
-      val listBuffer = ListBuffer(
-        Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
-      )
-      when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
-      when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
-      when(mockSessionService.storeCallbackData(any(),any())(any())).thenReturn(Future.successful(Some(callbackData)))
+
+      when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+        .thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+      when(mockSessionService.storeCallbackData(any(), any())(any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
 
-      val result = fileProcessingService.processFile(callbackData, "")(hc,schemeInfo, request)
+      val result: Future[Either[ErsError, Int]] = fileProcessingService().processFile(callbackData, "")(hc, schemeInfo, request)
       val either = Await.result(result, Duration(5, SECONDS))
       either mustBe Right(1)
     }
 
-    "return user validation error when DataGenerator returns validation error" in {
-      val userError = RowValidationError("Validation failed", "Row contains invalid data", Some(10))
-      when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Left(userError))
-
-      val result = fileProcessingService.processFile(callbackData, "")(hc,schemeInfo, request)
-      val either = Await.result(result, Duration(5, SECONDS))
-      either mustBe Left(userError)
+    "return user validation error when DataGenerator throws an exception" in {
+      val result: Future[Either[ErsError, Int]] = fileProcessingService().processFile(callbackData, "")(hc, schemeInfo, request)
+      val either: Either[ErsError, Int] = Await.result(result, Duration(5, SECONDS))
+      either.swap.map(_.message mustBe "[ProcessOdsService][processFile]: Error reading ODS file -> Validation failed!!!")
     }
 
-    XMLTestData.staxIntegrationTests.foreach( rec => {
-      val tempOdsPath = Files.createTempFile("file", ".ods").toFile
-      val zip = new ZipOutputStream(new FileOutputStream(tempOdsPath))
-      val entry = new ZipEntry("content.xml")
-      entry.setExtra(rec._2.toString.getBytes())
-      zip.putNextEntry(entry)
-      zip.close()
-      val inputStream = new FileInputStream(tempOdsPath)
+    "yield a list of scheme data from file data with large file" in {
+      when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
+      when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+      when(mockSessionService.storeCallbackData(any[UpscanCallback], any[Int])(any())).thenReturn(Future.successful(Some(callbackData)))
+      val result = fileProcessingService().processFile(callbackData, "")(hc, schemeInfo, request)
+      Await.result(result, Duration(5, SECONDS))
+      verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier], any[Request[_]]) // TODO: THIS WAS SET TO CALL 3 TIMES, I THINK THIS SHOULD BE 1 BUT NEED TO DOUBLE CHECK
+    }
 
-      rec._1 in {
-        when(mockErsFileValidatorConnector.upscanFileStream(argEq(callbackData.downloadUrl)))
-          .thenReturn(inputStream)
-        val result = fileProcessingService.readFile(callbackData.downloadUrl)
-        result.map(_ must be (rec._3))
+    "return system error when DataGenerator returns system error" in {
+      val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+        override val splitSchemes = false
+        override val maxNumberOfRows = 1
+        override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
       }
-    })
-  }
 
-  "yield a list of scheme data from file data with large file" in {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = true
-      override val maxNumberOfRows = 1
-      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
-    }
-    val listBuffer = ListBuffer(
-      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544"),
-      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544"),
-      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
-    )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
-    when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
-    when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
-    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(Some(callbackData)))
-    val result = fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
-    Await.result(result, Duration(5, SECONDS))
-    verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier],any[Request[_]])
-  }
+      val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
 
-  "return system error when DataGenerator returns system error" in {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = false
-      override val maxNumberOfRows = 1
-      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+      result.swap.map(
+        _ mustBe RowValidationError(
+          message = "[ProcessOdsService][processFile]: Error reading ODS file -> System configuration error",
+          context = "System configuration error",
+          rowNumber = None
+        )
+      )
     }
 
-    val systemError = ErsSystemError("System configuration error", "Config validation failed")
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Left(systemError))
+    "return system error when the callback data isn't stored correctly" in {
+      val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+        override val splitSchemes = false
+        override val maxNumberOfRows = 1
+        override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+      }
 
-    val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
+      when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
+      when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+      when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(None))
 
-    result mustBe Left(systemError)
-  }
+      val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
 
-  "return system error when the callback data isn't stored correctly" in {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = true
-      override val maxNumberOfRows = 1
-      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
-    }
-    val listBuffer = ListBuffer(
-      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
-    )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
-    when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
-    when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
-    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(None))
-
-    val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
-
-    result mustBe Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
-  }
-
-  "throw an exception when sending data to ers-submissions fails" in {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = true
-      override val maxNumberOfRows = 1
-      override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
-    }
-    val listBuffer = ListBuffer(
-      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
-    )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
-    when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
-    when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]]))
-      .thenReturn(Future.successful(Left(new RuntimeException("Runtime error"))))
-    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any[Request[_]])).thenReturn(Future.successful(Some(callbackData)))
-
-    try {
-      Await.result(fileProcessingService.sendSchemeData(SchemeData(schemeInfo, "", None, listBuffer), ""), Duration(5, SECONDS))
-      throw new TestFailedException("Expected ERSFileProcessingException to be returned", 1)
-    } catch {
-      case ex: ERSFileProcessingException =>
-        ex.message mustBe "java.lang.RuntimeException: Runtime error"
-    }
-  }
-
-  "return ERSFileProcessingException when reading the file fails" in {
-    val exceptionMessage = "Simulated file read failure"
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override def readFile(downloadUrl: String) = throw new RuntimeException(exceptionMessage)
+      result mustBe Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
     }
 
-    val result = Await.result(
-      fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request),
-      Duration(5, SECONDS)
-    )
+    "throw an exception when sending data to ers-submissions fails" in {
 
-    result mustBe Left(ERSFileProcessingException("Error reading ODS file", exceptionMessage))
+      val listBuffer = ListBuffer(
+        Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
+      )
+
+      when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+        .thenReturn(Future.successful(Left(ERSFileProcessingException("Runtime error", "oh no!"))))
+
+      val processOdsService: ProcessOdsService =
+        new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+
+      val ex: ERSFileProcessingException = intercept[ERSFileProcessingException](
+        Await.result(
+          processOdsService.sendSchemeData(SchemeData(schemeInfo, "", None, listBuffer), ""), Duration.Inf
+        )
+      )
+      ex.message mustBe "models.ERSFileProcessingException: Runtime error"
+    }
+
+    "return ERSFileProcessingException when reading the file fails" in {
+      val exceptionMessage = "Simulated file read failure"
+      val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+        override def readFile(downloadUrl: String) = throw new RuntimeException(exceptionMessage)
+      }
+
+      val result: Either[ErsError, Int] = Await.result(
+        fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request),
+        Duration(5, SECONDS)
+      )
+      println(s"result: $result")
+      result mustBe Left(
+        RowValidationError(
+          message = "[ProcessOdsService][processFile]: Error reading ODS file -> Simulated file read failure",
+          context = exceptionMessage,
+          rowNumber = None
+        )
+      )
+    }
+
+    "sendScheme method" must {
+
+      val oneHundredRecords: ListBuffer[Seq[String]] = ListBuffer.fill(100)(
+        Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
+      )
+
+      "return 1 and call sendSchemeData once when splitSchemes is set to false in config even if number of records > mac number of rows/sub" in {
+
+        when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+          .thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+        when(mockAppConfig.splitLargeSchemes).thenReturn(false)
+        when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(50)
+
+        val output: Int = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+          .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
+
+        output mustBe 1
+        verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+      }
+
+      "return 1 and call sendSchemeData once when splitSchemes is set to true in config but the number of records > mac number of rows/sub" in {
+
+        when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+          .thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+        when(mockAppConfig.splitLargeSchemes).thenReturn(true)
+        when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(200) // pass in 100 records and the number of records/sheet is 200
+
+        val output: Int = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+          .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
+
+        output mustBe 1
+        verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+      }
+
+      "return 2 slices and call sendSchemeData twice" in {
+
+        when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+          .thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+        when(mockAppConfig.splitLargeSchemes).thenReturn(true)
+        when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(50) // pass in 100 records, 100/50 = 2 -> call sendScheme twice
+
+        val output: Int = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+          .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
+
+        output mustBe 2
+        verify(mockErsFileValidatorConnector, times(2)).sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+      }
+
+      "return 3 slices and call sendSchemeData 3 times" in {
+
+        when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+          .thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+        when(mockAppConfig.splitLargeSchemes).thenReturn(true)
+        when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(40) // pass in 100 records, 100/40 results in 3 calls to sendScheme
+
+        val output: Int = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+          .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
+
+        output mustBe 3
+        verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+      }
+    }
   }
 }

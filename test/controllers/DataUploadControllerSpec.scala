@@ -180,7 +180,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     "Successfully receive data" in {
       when(mockSessionService.storeCallbackData(any(), any())(any()))
         .thenReturn(Future.successful(Some(callbackData)))
-      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
+      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1,1))))
@@ -192,7 +192,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     "return BAD_REQUEST when UserValidationError occurs in processing" in {
       val userError = RowValidationError("Row validation failed", "Invalid row data", Some(10))
 
-      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
+      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any()))
         .thenReturn(List(Future(Left(userError)), Future(Left(userError))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Left(userError)))
@@ -205,7 +205,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     "return BAD_REQUEST when UserValidationError occurs in extractSchemeData" in {
       val userError = NoDataError("No data found", "File contains no data")
 
-      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
+      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Left(userError)))
@@ -216,7 +216,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     }
 
     "return INTERNAL_SERVER_ERROR when SystemError occurs" in {
-      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
+      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future.successful(Left(ErsSystemError("System configuration error", "Config failure"))))
@@ -228,7 +228,7 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     "return an error when failing to store callback data" in {
       when(mockSessionService.storeCallbackData(any(), any())(any()))
         .thenReturn(Future.successful(None))
-      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
+      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1,1))))

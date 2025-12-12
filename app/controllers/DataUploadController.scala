@@ -107,7 +107,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
           logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
 
-          val processedFiles: List[Future[Either[ErsError, CsvFileSubmissions]]] = processCsvService.processFiles(res, streamFile)
+          val processedFiles: Seq[Future[Either[ErsError, CsvFileSubmissions]]] = processCsvService.processFiles(res, streamFile)
 
           val extractedSchemeData: Seq[Future[Either[ErsError, CsvFileLengthInfo]]] = processedFiles.map { submission =>
             submission.flatMap(processCsvService.extractSchemeData(res.schemeInfo, empRef, _))
