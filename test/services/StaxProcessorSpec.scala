@@ -27,32 +27,34 @@ class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {
   "StaxProcessor" must {
 
     "return true for has next" in {
-      val inputXml = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
+      val inputXml  = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
       val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))
       processor.hasNext must equal(true)
     }
 
     "say that the table name is CSOP_OptionsGranted_V4" in {
-      val inputXml = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
+      val inputXml  = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
       val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))
       processor.hasNext
       processor.next() must equal("CSOP_OptionsGranted_V4")
     }
 
     "say that the table name is CSOP_OptionsGranted_V5" in {
-      val inputXml = xmlHeader + documentHeader + simpleXmlV5.toString() + documentHeaderClosingTag
+      val inputXml  = xmlHeader + documentHeader + simpleXmlV5.toString() + documentHeaderClosingTag
       val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))
       processor.hasNext
       processor.next() must equal("CSOP_OptionsGranted_V5")
     }
 
     "information can be extracted from incoming string" in {
-      val inputXml = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
+      val inputXml  = xmlHeader + documentHeader + simpleXml.toString() + documentHeaderClosingTag
       val processor = new StaxProcessor(new ByteArrayInputStream(inputXml.getBytes("utf-8")))
-      processor.getName("<['urn:oasis:names:tc:opendocument:xmlns:table:1.0']:table:table table:name='EMI40_Adjustments_V4' table:style-name='ta1'>") must equal("EMI40_Adjustments_V4")
+      processor.getName(
+        "<['urn:oasis:names:tc:opendocument:xmlns:table:1.0']:table:table table:name='EMI40_Adjustments_V4' table:style-name='ta1'>"
+      ) must equal("EMI40_Adjustments_V4")
     }
 
-    def constructXmlDocument(elements : Elem*) : InputStream = {
+    def constructXmlDocument(elements: Elem*): InputStream = {
       val inputXml = xmlHeader + documentHeader + elements.foldLeft("")(_ + _.toString) + documentHeaderClosingTag
       new ByteArrayInputStream(inputXml.getBytes("utf-8"))
     }
@@ -70,7 +72,9 @@ class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {
       val processor = new StaxProcessor(constructXmlDocument(simpleTableWithARow))
       processor.hasNext
       processor.next()
-      processor.next() must equal("<table:table-row table:style-name='ro5'><table:table-cell table:style-name='ce6' calcext:value-type='string'><text:p>4.</text:p></table:table-cell></table:table-row>")
+      processor.next() must equal(
+        "<table:table-row table:style-name='ro5'><table:table-cell table:style-name='ce6' calcext:value-type='string'><text:p>4.</text:p></table:table-cell></table:table-row>"
+      )
     }
 
     "return Nothing if xml does not contain table fields and hasNext not been called " in {
@@ -78,4 +82,5 @@ class StaxProcessorSpec extends PlaySpec with CSOPStaxIntegrationTestData {
       processor.next() must equal("--NOT-FOUND--")
     }
   }
+
 }

@@ -41,12 +41,12 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
     implicit val hc: HeaderCarrier = new HeaderCarrier
 
     implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-    val dateTime = ZonedDateTime.now()
-    val mockAuditConnector = mock[DefaultAuditConnector]
-    val auditService = new AuditService(mockAuditConnector, ec) {
+    val dateTime                              = ZonedDateTime.now()
+    val mockAuditConnector                    = mock[DefaultAuditConnector]
+    val auditService                          = new AuditService(mockAuditConnector, ec) {
       override protected def getDateTime: ZonedDateTime = dateTime
     }
-    val details: Map[String, String] = Map("details1" -> "randomDetail")
+    val details: Map[String, String]          = Map("details1" -> "randomDetail")
 
     val dataEvent = DataEvent(
       auditSource = "ers-file-validator",
@@ -55,7 +55,9 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
       detail = details
     )
 
-    when(mockAuditConnector.sendEvent(argEq(dataEvent))(any[HeaderCarrier](), any[ExecutionContext]())).thenReturn(Future.successful(Success))
+    when(mockAuditConnector.sendEvent(argEq(dataEvent))(any[HeaderCarrier](), any[ExecutionContext]()))
+      .thenReturn(Future.successful(Success))
     auditService.sendEvent("source", details)
   }
+
 }

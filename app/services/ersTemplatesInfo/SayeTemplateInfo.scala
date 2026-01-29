@@ -24,13 +24,12 @@ trait SayeTemplateInfo {
   val sayeSheet2Name = "SAYE_RCL_V4"
   val sayeSheet3Name = "SAYE_Exercised_V4"
 
-  val sayeSheet1Desc = "SAYE scheme template – Options granted"
+  val sayeSheet1Desc      = "SAYE scheme template – Options granted"
   val sayeSheet1ValConfig = "ers-saye-granted-validation-config"
-  val sayeSheet2Desc = "SAYE scheme template – Options released (including exchanges), cancelled or lapsed in year"
+  val sayeSheet2Desc      = "SAYE scheme template – Options released (including exchanges), cancelled or lapsed in year"
   val sayeSheet2ValConfig = "ers-saye-rcl-validation-config"
-  val sayeSheet3Desc = "SAYE scheme template – Options exercised"
+  val sayeSheet3Desc      = "SAYE scheme template – Options exercised"
   val sayeSheet3ValConfig = "ers-saye-exercised-validation-config"
-
 
   val sayeGrantedHeaderRow = List(
     "1.Date of grant (yyyy-mm-dd)",
@@ -73,4 +72,5 @@ trait SayeTemplateInfo {
     "15.Does the exercise qualify for tax relief? (yes/no)",
     "16.Were all shares resulting from the exercise sold? (yes/no). Answer yes if they were either sold on the same day as the exercise in connection with the exercise or sale instructions were given for all shares to be sold on exercise"
   )
+
 }

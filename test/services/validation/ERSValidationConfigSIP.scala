@@ -22,7 +22,7 @@ import services.validation.SIPTestData.{ERSValidationSIPAwardsTestData, ERSValid
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 
-class SIPAwardsValidationTest extends PlaySpec with ERSValidationSIPAwardsTestData with ValidationTestRunner{
+class SIPAwardsValidationTest extends PlaySpec with ERSValidationSIPAwardsTestData with ValidationTestRunner {
 
   val validator = new DataValidator(ConfigFactory.load.getConfig("ers-sip-awards-validation-config"))
 
@@ -30,94 +30,103 @@ class SIPAwardsValidationTest extends PlaySpec with ERSValidationSIPAwardsTestDa
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
 
     "when awards Column C is answered with 2, column D is a mandatory field" in {
-      val cellD = Cell("D", rowNumber, "")
-      val cellC = Cell("C", rowNumber, "2")
-      val row = Row(1,Seq(cellD,cellC))
+      val cellD                                 = Cell("D", rowNumber, "")
+      val cellC                                 = Cell("C", rowNumber, "2")
+      val row                                   = Row(1, Seq(cellD, cellC))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must containError(ValidationError(cellD,"mandatoryD","D01","Enter 'yes' or 'no'."))
+      resOpt.get must containError(ValidationError(cellD, "mandatoryD", "D01", "Enter 'yes' or 'no'."))
     }
 
     "when awards Column C is answered 1, column E is a mandatory field" in {
-      val cellE = Cell("E", rowNumber, "")
-      val cellC= Cell("C", rowNumber, "1")
-      val row = Row(1, Seq(cellE, cellC))
+      val cellE                                 = Cell("E", rowNumber, "")
+      val cellC                                 = Cell("C", rowNumber, "1")
+      val row                                   = Row(1, Seq(cellE, cellC))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must containError(ValidationError(cellE, "mandatoryE", "E01", "Enter the ratio of the matching shares (numbers must be separated by a ':' or '/', for example, 2:1 or 2/1)."))
+      resOpt.get must containError(
+        ValidationError(
+          cellE,
+          "mandatoryE",
+          "E01",
+          "Enter the ratio of the matching shares (numbers must be separated by a ':' or '/', for example, 2:1 or 2/1)."
+        )
+      )
     }
 
     "when awards Column O is answered NO, column P is a mandatory field" in {
-      val cellP = Cell("P", rowNumber, "")
-      val cellO= Cell("O", rowNumber, "NO")
-      val row = Row(1, Seq(cellP, cellO))
+      val cellP                                 = Cell("P", rowNumber, "")
+      val cellO                                 = Cell("O", rowNumber, "NO")
+      val row                                   = Row(1, Seq(cellP, cellO))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
       resOpt.get must containError(ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no'."))
     }
 
     "when awards Column P is answered YES, column Q is a mandatory field" in {
-      val cellQ = Cell("Q", rowNumber, "")
-      val cellP= Cell("P", rowNumber, "YES")
-      val row = Row(1, Seq(cellQ, cellP))
+      val cellQ                                 = Cell("Q", rowNumber, "")
+      val cellP                                 = Cell("P", rowNumber, "YES")
+      val row                                   = Row(1, Seq(cellQ, cellP))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must containError(ValidationError(cellQ, "mandatoryQ", "Q01", "Enter the HMRC reference (must be less than 11 characters)."))
+      resOpt.get must containError(
+        ValidationError(cellQ, "mandatoryQ", "Q01", "Enter the HMRC reference (must be less than 11 characters).")
+      )
     }
 
-
   }
+
   "when a valid row of data is provided, no ValidationErrors should be raised" in {
-    val row = Row(1,getValidRowData)
+    val row                                   = Row(1, getValidRowData)
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
     resOpt mustBe None
   }
 
   "when a invalid row of data is provided, a list of ValidationErrors should be raised" in {
-    val row = Row(1,getInvalidRowData)
+    val row                                   = Row(1, getInvalidRowData)
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
     resOpt.get.size mustBe getInvalidRowData.size
   }
 
-
 }
-class SIPOutV4ValidationTest extends PlaySpec with ERSValidationSIPOutTestData with ValidationTestRunner{
+
+class SIPOutV4ValidationTest extends PlaySpec with ERSValidationSIPOutTestData with ValidationTestRunner {
 
   val validator = new DataValidator(ConfigFactory.load.getConfig("ers-sip-out-validation-config"))
 
-  "Ers Validation tests for SIP Out" should {
+  "Ers Validation tests for SIP Out" should
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
-  }
 
   "when awards Column O is answered NO, column P is a mandatory field" in {
-    val cellP = Cell("P", rowNumber, "")
-    val cellO= Cell("O", rowNumber, "NO")
-    val row = Row(1, Seq(cellP, cellO))
+    val cellP                                 = Cell("P", rowNumber, "")
+    val cellO                                 = Cell("O", rowNumber, "NO")
+    val row                                   = Row(1, Seq(cellP, cellO))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt.get must contain (
+    resOpt.get must contain(
       ValidationError(cellP, "mandatoryP", "P01", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated.")
     )
   }
 
   "when awards Column P is answered NO, column Q is a mandatory field" in {
-    val cellQ = Cell("Q", rowNumber, "")
-    val cellP= Cell("P", rowNumber, "NO")
-    val row = Row(1, Seq(cellQ, cellP))
+    val cellQ                                 = Cell("Q", rowNumber, "")
+    val cellP                                 = Cell("P", rowNumber, "NO")
+    val row                                   = Row(1, Seq(cellQ, cellP))
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-    resOpt.get must contain (
+    resOpt.get must contain(
       ValidationError(cellQ, "mandatoryQ", "Q01", "Enter 'yes' or 'no'.")
     )
   }
 
   "when a valid row of data is provided, no ValidationErrors should be raised" in {
-    val row = Row(1,getValidRowData)
+    val row                                   = Row(1, getValidRowData)
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
     resOpt mustBe None
   }
 
   "when a invalid row of data is provided, a list of ValidationErrors should be raised" in {
-    val row = Row(1,getInvalidRowData)
+    val row                                   = Row(1, getInvalidRowData)
     val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
     resOpt.get.size mustBe getInvalidRowData.size
   }
+
 }

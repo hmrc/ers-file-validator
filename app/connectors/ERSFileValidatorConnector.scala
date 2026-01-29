@@ -33,52 +33,71 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
-                                          http: DefaultHttpClient,
-                                          auditEvents: AuditEvents,
-                                          implicit val ec: ExecutionContext)
-  extends Metrics with Logging {
+class ERSFileValidatorConnector @Inject() (
+  appConfig: ApplicationConfig,
+  http: DefaultHttpClient,
+  auditEvents: AuditEvents,
+  implicit val ec: ExecutionContext
+) extends Metrics with Logging {
 
   def upscanFileStream(downloadUrl: String): InputStream =
     new URL(downloadUrl).openStream()
 
-  def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, HttpResponse]] = {
+  def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit
+    hc: HeaderCarrier,
+    request: Request[_]
+  ): Future[Either[Throwable, HttpResponse]] = {
     import java.net.URLEncoder
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
     val startTime = System.currentTimeMillis()
-    http.POST[SchemeData, HttpResponse](s"${appConfig.submissionsUrl}/ers/$encodedEmpRef/submit-presubmission", schemeData).map { response =>
-      deliverSendToSubmissionsMetrics(startTime)
-      Right(response)
-    }.recover {
-      case exception => Left(handleException(exception, startTime, schemeData.schemeInfo, schemeData.sheetName))
-    }
+    http
+      .POST[SchemeData, HttpResponse](
+        s"${appConfig.submissionsUrl}/ers/$encodedEmpRef/submit-presubmission",
+        schemeData
+      )
+      .map { response =>
+        deliverSendToSubmissionsMetrics(startTime)
+        Right(response)
+      }
+      .recover { case exception =>
+        Left(handleException(exception, startTime, schemeData.schemeInfo, schemeData.sheetName))
+      }
   }
 
-  def sendToSubmissionsNew(submissionsSchemeData: SubmissionsSchemeData, empRef: String)(
-    implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, HttpResponse]] = {
+  def sendToSubmissionsNew(submissionsSchemeData: SubmissionsSchemeData, empRef: String)(implicit
+    hc: HeaderCarrier,
+    request: Request[_]
+  ): Future[Either[Throwable, HttpResponse]] = {
 
     import java.net.URLEncoder
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
     val startTime = System.currentTimeMillis()
-    http.POST[SubmissionsSchemeData, HttpResponse](s"${appConfig.submissionsUrl}/ers/v2/$encodedEmpRef/submit-presubmission", submissionsSchemeData).map { response =>
-      deliverSendToSubmissionsMetrics(startTime)
-      Right(response)
-    }.recover {
-      case exception =>
+    http
+      .POST[SubmissionsSchemeData, HttpResponse](
+        s"${appConfig.submissionsUrl}/ers/v2/$encodedEmpRef/submit-presubmission",
+        submissionsSchemeData
+      )
+      .map { response =>
+        deliverSendToSubmissionsMetrics(startTime)
+        Right(response)
+      }
+      .recover { case exception =>
         Left(handleException(exception, startTime, submissionsSchemeData.schemeInfo, submissionsSchemeData.sheetName))
-    }
+      }
   }
 
-  def handleException(exception: Throwable, startTime: Long, schemeInfo: SchemeInfo, sheetName: String)
-                     (implicit hc: HeaderCarrier, request: Request[_]): ERSFileProcessingException = exception match {
-    case nf: BadRequestException =>
+  def handleException(exception: Throwable, startTime: Long, schemeInfo: SchemeInfo, sheetName: String)(implicit
+    hc: HeaderCarrier,
+    request: Request[_]
+  ): ERSFileProcessingException = exception match {
+    case nf: BadRequestException         =>
       deliverSendToSubmissionsMetrics(startTime)
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf)
       auditEvents.auditRunTimeError(nf, nf.toString, schemeInfo, sheetName)
       ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf.getMessage)
-    case nf: NotFoundException =>
+    case nf: NotFoundException           =>
       deliverSendToSubmissionsMetrics(startTime)
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf)
       auditEvents.auditRunTimeError(nf, nf.toString, schemeInfo, sheetName)
@@ -88,7 +107,7 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf)
       auditEvents.auditRunTimeError(nf, nf.toString, schemeInfo, sheetName)
       ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf.getMessage)
-    case e =>
+    case e                               =>
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e)
       deliverSendToSubmissionsMetrics(startTime)
       auditEvents.auditRunTimeError(e, e.toString, schemeInfo, sheetName)
@@ -97,4 +116,5 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
 
   def deliverSendToSubmissionsMetrics(startTime: Long): Unit =
     metrics.sendToSubmissionsTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
+
 }

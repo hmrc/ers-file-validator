@@ -21,23 +21,23 @@ trait CsopTemplateInfo {
   val csop = "CSOP"
 
   val csopSheet1Name = "CSOP_OptionsGranted_V4"
-  val csopSheet2Name =  "CSOP_OptionsRCL_V4"
+  val csopSheet2Name = "CSOP_OptionsRCL_V4"
   val csopSheet3Name = "CSOP_OptionsExercised_V4"
 
   val csopSheet1NameV5 = "CSOP_OptionsGranted_V5"
-  val csopSheet2NameV5 =  "CSOP_OptionsRCL_V5"
+  val csopSheet2NameV5 = "CSOP_OptionsRCL_V5"
   val csopSheet3NameV5 = "CSOP_OptionsExercised_V5"
 
-  val csopSheet1title = "CSOP scheme template – Options granted"
-  val csopSheet1ValConfig = "ers-csop-granted-validation-config"
+  val csopSheet1title       = "CSOP scheme template – Options granted"
+  val csopSheet1ValConfig   = "ers-csop-granted-validation-config"
   val csopSheet1ValConfigV5 = "ers-csop-granted-validation-config-v5"
-  val csopSheet2Title = "CSOP scheme template – Options released (including exchanges) cancelled or lapsed in year"
-  val csopSheet2ValConfig = "ers-csop-rcl-validation"
-  val csopSheet3Title ="CSOP scheme template – Options and replacement options exercised"
-  val csopSheet3ValConfig = "ers-csop-exercised-validation"
+  val csopSheet2Title       = "CSOP scheme template – Options released (including exchanges) cancelled or lapsed in year"
+  val csopSheet2ValConfig   = "ers-csop-rcl-validation"
+  val csopSheet3Title       = "CSOP scheme template – Options and replacement options exercised"
+  val csopSheet3ValConfig   = "ers-csop-exercised-validation"
 
-
-  val csopOptionsGrantedHeaderRow = List("1.Date of grant(yyyy-mm-dd)",
+  val csopOptionsGrantedHeaderRow = List(
+    "1.Date of grant(yyyy-mm-dd)",
     "2.Number of employees granted options",
     "3.Over how many shares in total were CSOP options grantede.g. 100.00",
     "4.Unrestricted market value (UMV) of each share used to determine option exercise price£e.g. 10.1234",
@@ -48,7 +48,8 @@ trait CsopTemplateInfo {
     "9.Using the UMV at the time of each relevant grant, does any employee hold unexercised CSOP options over shares totalling more than £30k, including this grant?(yes/no)"
   )
 
-  val csopOptionsGrantedHeaderRowV5 = List("1.Date of grant(yyyy-mm-dd)",
+  val csopOptionsGrantedHeaderRowV5 = List(
+    "1.Date of grant(yyyy-mm-dd)",
     "2.Number of employees granted options",
     "3.Over how many shares in total were CSOP options grantede.g. 100.00",
     "4.Unrestricted market value (UMV) of each share used to determine option exercise price£e.g. 10.1234",
@@ -59,7 +60,8 @@ trait CsopTemplateInfo {
     "9.Using the UMV at the time of each relevant grant, does any employee hold unexercised CSOP options over shares totalling more than £60k, including this grant?(yes/no)"
   )
 
-  val csopOptionsRCLHeaderRow =  List("1.Date of event(yyyy-mm-dd)",
+  val csopOptionsRCLHeaderRow = List(
+    "1.Date of event(yyyy-mm-dd)",
     "2.Was money or value received by the option holder or anyone else when the option was released, exchanged, cancelled or lapsed? (yes/no) If yes go to question 3, otherwise no further information is needed for this event.",
     "3.If yes, amount or value £ e.g. 10.1234",
     "4.Employee first name",
@@ -67,10 +69,12 @@ trait CsopTemplateInfo {
     "6.Employee last name",
     "7.National Insurance number",
     "8.PAYE reference of employing company",
-    "9.Was PAYE operated?(yes/no)")
+    "9.Was PAYE operated?(yes/no)"
+  )
 
   val csopOptionsExercisedHeaderRow =
-    List("1.Date of event(yyyy-mm-dd)",
+    List(
+      "1.Date of event(yyyy-mm-dd)",
       "2.Employee first name",
       "3.Employee second name(if applicable)",
       "4.Employee last name",

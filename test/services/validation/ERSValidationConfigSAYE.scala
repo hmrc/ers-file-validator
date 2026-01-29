@@ -18,75 +18,93 @@ package services.validation
 
 import com.typesafe.config.ConfigFactory
 import org.scalatestplus.play.PlaySpec
-import services.validation.SAYETestData.{ERSValidationSAYEExercisedTestData, ERSValidationSAYEGrantedTestData, ERSValidationSAYERCLTestData}
+import services.validation.SAYETestData.{
+  ERSValidationSAYEExercisedTestData, ERSValidationSAYEGrantedTestData, ERSValidationSAYERCLTestData
+}
 import uk.gov.hmrc.services.validation.DataValidator
 import uk.gov.hmrc.services.validation.models._
 
-class ERSValidationConfigSAYEGrantedTests extends PlaySpec with ERSValidationSAYEGrantedTestData with ValidationTestRunner {
+class ERSValidationConfigSAYEGrantedTests
+    extends PlaySpec with ERSValidationSAYEGrantedTestData with ValidationTestRunner {
+
   "SAYE Granted V4 scheme config validation" should {
 
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-saye-granted-validation-config"))
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
     "make Q7 a mandatory field when Q6 is answered with no" in {
-      val cellG = Cell("G", rowNumber, "")
-      val cellF = Cell("F", rowNumber, "no")
-      val row = Row(1, Seq(cellG, cellF))
+      val cellG                                 = Cell("G", rowNumber, "")
+      val cellF                                 = Cell("F", rowNumber, "no")
+      val row                                   = Row(1, Seq(cellG, cellF))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
       resOpt.get must containError(ValidationError(cellG, "mandatoryG", "G01", "Enter 'yes' or 'no'."))
     }
 
     "make Q8 mandatory when Q6 is answered with yes" in {
-      val cellH = Cell("H", rowNumber, "")
-      val cellG = Cell("G", rowNumber, "yes")
-      val row = Row(1,Seq(cellH,cellG))
+      val cellH                                 = Cell("H", rowNumber, "")
+      val cellG                                 = Cell("G", rowNumber, "yes")
+      val row                                   = Row(1, Seq(cellH, cellG))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
       assert(resOpt.isDefined)
-      resOpt.get must containError(ValidationError(cellH,"mandatoryH","G02","Enter the HMRC reference (must be less than 11 characters)."))
+      resOpt.get must containError(
+        ValidationError(cellH, "mandatoryH", "G02", "Enter the HMRC reference (must be less than 11 characters).")
+      )
     }
   }
+
 }
 
-class ERSValidationConfig_SAYE_SayeRCLTests extends PlaySpec with ERSValidationSAYERCLTestData with ValidationTestRunner {
+class ERSValidationConfig_SAYE_SayeRCLTests
+    extends PlaySpec with ERSValidationSAYERCLTestData with ValidationTestRunner {
+
   "ERS SAYE RLC Validation Test" should {
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-saye-rcl-validation-config"))
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
 
     "when Column B is answered yes, column C is a mandatory field" in {
-      val cellC = Cell("C", rowNumber, "")
-      val cellB = Cell("B", rowNumber, "yes")
-      val row = Row(1, Seq(cellC, cellB))
+      val cellC                                 = Cell("C", rowNumber, "")
+      val cellB                                 = Cell("B", rowNumber, "yes")
+      val row                                   = Row(1, Seq(cellC, cellB))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt.get must contain (
-        ValidationError(cellC, "mandatoryC", "C01", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it).")
+      resOpt.get must contain(
+        ValidationError(
+          cellC,
+          "mandatoryC",
+          "C01",
+          "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+        )
       )
     }
- }
+  }
+
 }
 
-class ERSValidationConfig_SAYE_ExercisedTests extends PlaySpec with ERSValidationSAYEExercisedTestData with ValidationTestRunner {
+class ERSValidationConfig_SAYE_ExercisedTests
+    extends PlaySpec with ERSValidationSAYEExercisedTestData with ValidationTestRunner {
+
   "SAYE Exercised V4 scheme config validation" should {
     val validator = new DataValidator(ConfigFactory.load.getConfig("ers-saye-exercised-validation-config"))
     runTests(validator, getDescriptions, getTestData, getExpectedResults)
 
     "make Q10 a mandatory field when Q9 is answered with no" in {
-      val cellJ = Cell("J", rowNumber, "")
-      val cellI = Cell("I", rowNumber, "no")
-      val row = Row(1, Seq(cellJ, cellI))
+      val cellJ                                 = Cell("J", rowNumber, "")
+      val cellI                                 = Cell("I", rowNumber, "no")
+      val row                                   = Row(1, Seq(cellJ, cellI))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt.get must contain (
+      resOpt.get must contain(
         ValidationError(cellJ, "mandatoryJ", "J01", "Enter 'yes' or 'no'.")
       )
     }
 
     "make Q11 a mandatory field when Q9 is answered with yes" in {
-      val cellK = Cell("K", rowNumber, "")
-      val cellJ = Cell("J", rowNumber, "yes")
-      val row = Row(1, Seq(cellK, cellJ))
+      val cellK                                 = Cell("K", rowNumber, "")
+      val cellJ                                 = Cell("J", rowNumber, "yes")
+      val row                                   = Row(1, Seq(cellK, cellJ))
       val resOpt: Option[List[ValidationError]] = validator.validateRow(row)
-      resOpt.get must contain (
+      resOpt.get must contain(
         ValidationError(cellK, "mandatoryK", "K01", "Enter the HMRC reference (must be less than 11 characters).")
       )
     }
-   }
+  }
+
 }

@@ -36,105 +36,113 @@ import java.time.ZonedDateTime
 class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
 
   implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-  implicit var hc: HeaderCarrier = new HeaderCarrier()
-  val mockAuditService: AuditService = mock[AuditService]
-  val dateTime = ZonedDateTime.now()
-  val schemeInfo = new SchemeInfo("schemeRef",dateTime,"schemeID","taxYear","schemeName","schemeType")
-  val schemeData = new SchemeData(schemeInfo,"sheetName", None, ListBuffer(Seq("")))
-
+  implicit var hc: HeaderCarrier                            = new HeaderCarrier()
+  val mockAuditService: AuditService                        = mock[AuditService]
+  val dateTime                                              = ZonedDateTime.now()
+  val schemeInfo                                            = new SchemeInfo("schemeRef", dateTime, "schemeID", "taxYear", "schemeName", "schemeType")
+  val schemeData                                            = new SchemeData(schemeInfo, "sheetName", None, ListBuffer(Seq("")))
 
   val auditEvents = new AuditEvents(mockAuditService)
+
   "sendEvent should audit runtime errors" in {
 
     val runtimeException = new AbstractMethodError("")
-    val details = Map("ErrorMessage" -> runtimeException.getMessage,
-      "Context" -> "some context info",
-      "schemeData" -> Map(
-        "schemeRef" -> schemeInfo.schemeRef,
+    val details          = Map(
+      "ErrorMessage" -> runtimeException.getMessage,
+      "Context"      -> "some context info",
+      "schemeData"   -> Map(
+        "schemeRef"  -> schemeInfo.schemeRef,
         "schemeType" -> schemeInfo.schemeType,
         "schemeName" -> schemeInfo.schemeName,
-        "schemeId" -> schemeInfo.schemeId,
-        "taxYear" -> schemeInfo.taxYear,
-        "sheetName" -> "sheetName",
-        "timestamp" -> schemeInfo.timestamp.toString).toString,
-      "StackTrace" -> ExceptionUtils.getStackTrace(runtimeException)
+        "schemeId"   -> schemeInfo.schemeId,
+        "taxYear"    -> schemeInfo.taxYear,
+        "sheetName"  -> "sheetName",
+        "timestamp"  -> schemeInfo.timestamp.toString
+      ).toString,
+      "StackTrace"   -> ExceptionUtils.getStackTrace(runtimeException)
     )
 
     auditEvents.auditRunTimeError(runtimeException, "some context info", schemeData.schemeInfo, schemeData.sheetName)
-    verify(mockAuditService, times(1)).sendEvent(argEq("ERSRunTimeError"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
+    verify(mockAuditService, times(1))
+      .sendEvent(argEq("ERSRunTimeError"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
 
   }
 
   "validationErrorAudit should audit the first validation error" in {
-    val cell = Cell("B",11,"abc")
-    val cell2 = Cell("C",0,"def")
+    val cell    = Cell("B", 11, "abc")
+    val cell2   = Cell("C", 0, "def")
     val details = Map(
-      "Column" -> cell.column,
-      "Row" -> cell.row.toString,
-      "Value" -> cell.value,
+      "Column"       -> cell.column,
+      "Row"          -> cell.row.toString,
+      "Value"        -> cell.value,
       "ErrorMessage" -> "This entry must be a number made up of digits.",
-      "schemeRef" -> schemeInfo.schemeRef,
-      "schemeType" -> schemeInfo.schemeType,
-      "schemeName" -> schemeInfo.schemeName,
-      "schemeId" -> schemeInfo.schemeId,
-      "taxYear" -> schemeInfo.taxYear,
-      "sheetName" -> "sheetName",
-      "timestamp" -> schemeInfo.timestamp.toString
+      "schemeRef"    -> schemeInfo.schemeRef,
+      "schemeType"   -> schemeInfo.schemeType,
+      "schemeName"   -> schemeInfo.schemeName,
+      "schemeId"     -> schemeInfo.schemeId,
+      "taxYear"      -> schemeInfo.taxYear,
+      "sheetName"    -> "sheetName",
+      "timestamp"    -> schemeInfo.timestamp.toString
     )
 
     val validationErrors = List(
-      ValidationError(cell, "error.2","002","This entry must be a number made up of digits."),
-      ValidationError(cell2,"error.3","003","This entry is larger than the maximum number value allowed.")
+      ValidationError(cell, "error.2", "002", "This entry must be a number made up of digits."),
+      ValidationError(cell2, "error.3", "003", "This entry is larger than the maximum number value allowed.")
     )
 
     auditEvents.validationErrorAudit(validationErrors, schemeInfo, "sheetName")(hc, request)
-    verify(mockAuditService, times(1)).sendEvent(argEq("ERSValidationError"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
+    verify(mockAuditService, times(1))
+      .sendEvent(argEq("ERSValidationError"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
 
   }
 
   "ERSFileValidatorAudit should audit schemeInfo" in {
     val details = Map(
-      "schemeRef" -> schemeInfo.schemeRef,
+      "schemeRef"  -> schemeInfo.schemeRef,
       "schemeType" -> schemeInfo.schemeType,
       "schemeName" -> schemeInfo.schemeName,
-      "schemeId" -> schemeInfo.schemeId,
-      "taxYear" -> schemeInfo.taxYear,
-      "sheetName" -> "sheetName",
-      "timestamp" -> schemeInfo.timestamp.toString
+      "schemeId"   -> schemeInfo.schemeId,
+      "taxYear"    -> schemeInfo.taxYear,
+      "sheetName"  -> "sheetName",
+      "timestamp"  -> schemeInfo.timestamp.toString
     )
     auditEvents.fileValidatorAudit(schemeInfo, "sheetName")
-    verify(mockAuditService, times(1)).sendEvent(argEq("ERSFileValidatorAudit"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
+    verify(mockAuditService, times(1))
+      .sendEvent(argEq("ERSFileValidatorAudit"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
 
   }
 
-    "fileProcessingErrorAudit should audit the error" in {
-      val errorMessage = "Could not set the validator"
-      val details = Map(
-        "schemeRef" -> schemeInfo.schemeRef,
-        "schemeType" -> schemeInfo.schemeType,
-        "schemeName" -> schemeInfo.schemeName,
-        "schemeId" -> schemeInfo.schemeId,
-        "taxYear" -> schemeInfo.taxYear,
-        "sheetName" -> "sheetName",
-        "timestamp" -> schemeInfo.timestamp.toString,
-        "ErrorMessage" -> errorMessage
-      )
-      auditEvents.fileProcessingErrorAudit(schemeData.schemeInfo, schemeData.sheetName, errorMessage)
-      verify(mockAuditService, times(1)).sendEvent(argEq("ERSFileProcessingError"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
-    }
+  "fileProcessingErrorAudit should audit the error" in {
+    val errorMessage = "Could not set the validator"
+    val details      = Map(
+      "schemeRef"    -> schemeInfo.schemeRef,
+      "schemeType"   -> schemeInfo.schemeType,
+      "schemeName"   -> schemeInfo.schemeName,
+      "schemeId"     -> schemeInfo.schemeId,
+      "taxYear"      -> schemeInfo.taxYear,
+      "sheetName"    -> "sheetName",
+      "timestamp"    -> schemeInfo.timestamp.toString,
+      "ErrorMessage" -> errorMessage
+    )
+    auditEvents.fileProcessingErrorAudit(schemeData.schemeInfo, schemeData.sheetName, errorMessage)
+    verify(mockAuditService, times(1))
+      .sendEvent(argEq("ERSFileProcessingError"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
+  }
 
-    "totalRows should audit the number of rows" in {
-      val details = Map(
-        "rows" -> "5",
-        "schemeId" -> schemeInfo.schemeId,
-        "schemeName" -> schemeInfo.schemeName,
-        "schemeRef" -> schemeInfo.schemeRef,
-        "schemeType" -> schemeInfo.schemeType,
-        "taxYear" -> schemeInfo.taxYear,
-        "timestamp" -> schemeInfo.timestamp.toString
-      )
+  "totalRows should audit the number of rows" in {
+    val details = Map(
+      "rows"       -> "5",
+      "schemeId"   -> schemeInfo.schemeId,
+      "schemeName" -> schemeInfo.schemeName,
+      "schemeRef"  -> schemeInfo.schemeRef,
+      "schemeType" -> schemeInfo.schemeType,
+      "taxYear"    -> schemeInfo.taxYear,
+      "timestamp"  -> schemeInfo.timestamp.toString
+    )
 
-      auditEvents.totalRows(5, schemeInfo)
-      verify(mockAuditService, times(1)).sendEvent(argEq("ERStotalRowCount"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
-    }
+    auditEvents.totalRows(5, schemeInfo)
+    verify(mockAuditService, times(1))
+      .sendEvent(argEq("ERStotalRowCount"), argEq(details))(any[Request[_]](), any[HeaderCarrier]())
+  }
+
 }

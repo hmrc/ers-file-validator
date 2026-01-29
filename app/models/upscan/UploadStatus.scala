@@ -30,17 +30,18 @@ object UploadedSuccessfully {
 }
 
 object UploadStatus {
+
   implicit val readsUploadStatus: Reads[UploadStatus] = new Reads[UploadStatus] {
     override def reads(json: JsValue): JsResult[UploadStatus] = {
       val jsObject = json.asInstanceOf[JsObject]
       jsObject.value.get("_type") match {
-        case Some(JsString("NotStarted")) => JsSuccess(NotStarted)
-        case Some(JsString("InProgress")) => JsSuccess(InProgress)
-        case Some(JsString("Failed")) => JsSuccess(Failed)
+        case Some(JsString("NotStarted"))           => JsSuccess(NotStarted)
+        case Some(JsString("InProgress"))           => JsSuccess(InProgress)
+        case Some(JsString("Failed"))               => JsSuccess(Failed)
         case Some(JsString("UploadedSuccessfully")) =>
           Json.fromJson[UploadedSuccessfully](jsObject)(UploadedSuccessfully.uploadedSuccessfullyFormat)
-        case Some(value) => JsError(s"Unexpected value of _type: $value")
-        case None => JsError("Missing _type field")
+        case Some(value)                            => JsError(s"Unexpected value of _type: $value")
+        case None                                   => JsError("Missing _type field")
       }
     }
   }
@@ -48,13 +49,14 @@ object UploadStatus {
   implicit val writesUploadStatus: Writes[UploadStatus] = new Writes[UploadStatus] {
     override def writes(status: UploadStatus): JsValue =
       status match {
-        case NotStarted => JsObject(Map("_type" -> JsString("NotStarted")))
-        case InProgress => JsObject(Map("_type" -> JsString("InProgress")))
-        case Failed => JsObject(Map("_type" -> JsString("Failed")))
+        case NotStarted              => JsObject(Map("_type" -> JsString("NotStarted")))
+        case InProgress              => JsObject(Map("_type" -> JsString("InProgress")))
+        case Failed                  => JsObject(Map("_type" -> JsString("Failed")))
         case s: UploadedSuccessfully =>
           Json.toJson(s)(UploadedSuccessfully.uploadedSuccessfullyFormat).as[JsObject] + ("_type" -> JsString(
             "UploadedSuccessfully"
           ))
       }
   }
+
 }

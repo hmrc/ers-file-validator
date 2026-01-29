@@ -16,217 +16,378 @@
 
 package services.validation.SAYETestData
 
-
 import models.ValidationErrorData
 import org.apache.commons.lang3.StringUtils
 import uk.gov.hmrc.services.validation.models._
 
 trait ERSValidationSAYEExercisedTestData {
-  val rowNumber : Int = 1
+  val rowNumber: Int                = 1
+
   def getDescriptions: List[String] = List(
-    //A
-     "not raise ValidationError if dateOfEvent contian yyyy-mm-dd date format",
-     "raise ValidatoinError when dataOfEvent is not matching the date expected format",
-     "raise ValidatoinError when cell is empty",
-    //B
+    // A
+    "not raise ValidationError if dateOfEvent contian yyyy-mm-dd date format",
+    "raise ValidatoinError when dataOfEvent is not matching the date expected format",
+    "raise ValidatoinError when cell is empty",
+    // B
     "not raise ValidationError if individual\\firstName is a valid name format",
     "raise ValidationError if individual\\firstName entry is more than 35 characters",
     "raise a ValidationError if the cell is individual\\firstName is empty",
-    //C
+    // C
     "not raise ValidationError if individual\\secondName is a valid name format",
     "raise ValidationError if individual\\secondName entry is more than 35 characters",
-    //D
+    // D
     "not raise ValidationError if individual\\lastName is a valid format",
     "raise ValidationError if individual\\lastName entry is more than 35 characters",
     "raise a ValidationError if the cell individual\\lastName is empty",
-    //E
+    // E
     "not raise ValidationError if the national insurance number is valid",
     "raise a ValidationError if National Insurance number is not conforming to the expected format",
     "raise a ValidationError if National Insurance number is missing a letter",
     "raise a ValidationError if National Insurance number does not contain any data",
-    //F
+    // F
     "not raise ValidationError individual\\payeReference is valid format",
     "raise a ValidationError if individual\\payeReference is not matching the expected format",
     "raise a ValidationError if individual\\payeReference does not exist",
-    //G
+    // G
     "not raise a ValidationError if dataOfGrant is a valid format",
     "raise ValidationError when dataOfGrant in not matching the date expected format",
     "raise ValidatoinError when dateOfGrant cell is empty",
-    //H
+    // H
     "not raise ValidationError if numberOfSharesAcquired is valid",
     "raise a ValidationError if numberOfSharesAcquired has more than 2 decimal places",
     "raise a ValidationError if numberOfSharesAcquired has none alphaNumerics",
     "raise a ValidationError if numberOfSharesAcquired is more that 11.2 digits",
-    //I
+    // I
     "return None when (yes/no) is received for sharedListedOnSE",
     "return an error when an invalid value for sharesListedOnSE is given",
     "return an error when sharesListedOnSE is blank",
-    //J
+    // J
     "return None when (yes/no) is answered for marketValueAgreedHMRC",
     "raise ValidationError if marketValueAgreedHMRC answer is not valid",
-    //K
+    // K
     "return None when hmrcRef is a valid entry",
     "return ValidationErrors when hrmcRef is invalid",
-    //L
+    // L
     "return None when actualMarketValuePerShareAtAcquisitionDate is answered as expected",
     "Return ValidationErrors when actualMarketValuePerShareAtAcquisitionDate contains other than 4 decimal places",
     "Return ValidationErrors when actualMarketValuePerShareAtAcquisitionDate contains non-numeric characters",
     "Return ValidationErrors when actualMarketValuePerShareAtAcquisitionDate contains a number too large",
-    //M
+    // M
     "Validate valid exerciseValuePerShare data",
     "Return ValidationErrors when exerciseValuePerShare contains other than 4 decimal places",
     "Return ValidationErrors when exerciseValuePerShare contains non-numeric characters",
     "Return ValidationErrors when exerciseValuePerShare contains a number too large",
-    //N
+    // N
     "Validate valid unrestrictedMarketValuePerShareAtExerciseDate data",
     "Return ValidationErrors when unrestrictedMarketValuePerShareAtExerciseDate contains other than 4 decimal places",
     "Return ValidationErrors when unrestrictedMarketValuePerShareAtExerciseDate contains non-numeric characters",
     "Return ValidationErrors when unrestrictedMarketValuePerShareAtExerciseDate contains a number too large",
-    //O
+    // O
     "Validate qualifyForTaxRelief without ValidationErrors for valid data",
     "Return ValidationErrors when qualifyForTaxRelief is given invalid data",
     "Return ValidationErrors when qualifyForTaxRelief is given no data",
-    //P
+    // P
     "Validate valid sharesSoldInConnectionWithTheExercise data",
     "Return ValidationErrors when sharesSoldInConnectionWithTheExercise is not valid",
     "Return ValidationErrors when sharesSoldInConnectionWithTheExercise is empty"
   )
 
-  def getTestData : List[Cell] = List(
-    //A
+  def getTestData: List[Cell] = List(
+    // A
     Cell("A", rowNumber, "2016-04-17"),
     Cell("A", rowNumber, "garbage-date"),
     Cell("A", rowNumber, ""),
-    //B
+    // B
     Cell("B", rowNumber, "Sam"),
     Cell("B", rowNumber, "SamSamSamSamSamSamSamSamSSamSamSamSamSAmSamSSamSa"),
     Cell("B", rowNumber, ""),
-    //C
+    // C
     Cell("C", rowNumber, "Smith"),
     Cell("C", rowNumber, "Smith Smithy blah blah blah blah blah bladdy blah"),
-    //D
+    // D
     Cell("D", rowNumber, "Smooth"),
     Cell("D", rowNumber, "Smooth Smoothy blah blah blah blah bladdy blah"),
     Cell("D", rowNumber, ""),
-    //E
+    // E
     Cell("E", rowNumber, "AA123456A"),
     Cell("E", rowNumber, "AAAA12341.135a"),
     Cell("E", rowNumber, "AA123456"),
     Cell("E", rowNumber, ""),
-    //F
+    // F
     Cell("F", rowNumber, "123/XZ55555555"),
     Cell("F", rowNumber, "1234/12345/12341234"),
     Cell("F", rowNumber, ""),
-    //G
+    // G
     Cell("G", rowNumber, "2016-04-18"),
     Cell("G", rowNumber, "garbage-date"),
     Cell("G", rowNumber, ""),
-    //H
+    // H
     Cell("H", rowNumber, "11.22"),
     Cell("H", rowNumber, "11.2345"),
     Cell("H", rowNumber, "1d2.12"),
     Cell("H", rowNumber, "123235346435623.32"),
-    //I
+    // I
     Cell("I", rowNumber, "Yes"),
     Cell("I", rowNumber, "blah"),
     Cell("I", rowNumber, ""),
-    //J
+    // J
     Cell("J", rowNumber, "No"),
     Cell("J", rowNumber, "n"),
-    //K
+    // K
     Cell("K", rowNumber, "aa12345678"),
     Cell("K", rowNumber, "ab123ab45678901"),
-    //L
+    // L
     Cell("L", rowNumber, "10.1234"),
     Cell("L", rowNumber, "10.12"),
     Cell("L", rowNumber, "abc"),
     Cell("L", rowNumber, StringUtils.leftPad("", 15, "2") + ".3434"),
-    //M
+    // M
     Cell("M", rowNumber, "10.4444"),
     Cell("M", rowNumber, "10.312"),
     Cell("M", rowNumber, "#!"),
     Cell("M", rowNumber, StringUtils.leftPad("", 15, "3") + ".3434"),
-    //N
+    // N
     Cell("N", rowNumber, "10.3412"),
     Cell("N", rowNumber, "10.12122"),
     Cell("N", rowNumber, "abc"),
     Cell("N", rowNumber, StringUtils.leftPad("", 15, "4") + ".3434"),
-    //O
+    // O
     Cell("O", rowNumber, "yes"),
     Cell("O", rowNumber, "ys"),
     Cell("O", rowNumber, ""),
-    //P
+    // P
     Cell("P", rowNumber, "yes"),
     Cell("P", rowNumber, "garbage"),
     Cell("P", rowNumber, "")
   )
 
   def getExpectedResults: List[Option[List[ValidationErrorData]]] = List(
-    //A
+    // A
     None,
     Some(List(ValidationErrorData("error.1", "001", "Enter a date that matches the yyyy-mm-dd pattern."))),
     Some(List(ValidationErrorData("error.1", "001", "Enter a date that matches the yyyy-mm-dd pattern."))),
-    //B
+    // B
     None,
-    Some(List(ValidationErrorData("error.2", "002", "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-    Some(List(ValidationErrorData("error.2", "002", "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-    //C
+    Some(
+      List(
+        ValidationErrorData(
+          "error.2",
+          "002",
+          "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.2",
+          "002",
+          "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+        )
+      )
+    ),
+    // C
     None,
-    Some(List(ValidationErrorData("error.3", "003", "Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."))),
-    //D
+    Some(
+      List(
+        ValidationErrorData(
+          "error.3",
+          "003",
+          "Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."
+        )
+      )
+    ),
+    // D
     None,
-    Some(List(ValidationErrorData("error.4", "004", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-    Some(List(ValidationErrorData("error.4", "004", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-    //E
+    Some(
+      List(
+        ValidationErrorData(
+          "error.4",
+          "004",
+          "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.4",
+          "004",
+          "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+        )
+      )
+    ),
+    // E
     None,
-    Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
-    Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
-    Some(List(ValidationErrorData("error.5", "005", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
-    //F
+    Some(
+      List(
+        ValidationErrorData(
+          "error.5",
+          "005",
+          "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.5",
+          "005",
+          "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.5",
+          "005",
+          "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+        )
+      )
+    ),
+    // F
     None,
     Some(List(ValidationErrorData("error.6", "006", "Enter an employer PAYE reference. For example '123/AB456'."))),
     Some(List(ValidationErrorData("error.6", "006", "Enter an employer PAYE reference. For example '123/AB456'."))),
-    //G
+    // G
     None,
     Some(List(ValidationErrorData("error.7", "007", "Enter a date that matches the yyyy-mm-dd pattern."))),
     Some(List(ValidationErrorData("error.7", "007", "Enter a date that matches the yyyy-mm-dd pattern."))),
-    //H
+    // H
     None,
-    Some(List(ValidationErrorData("error.8", "008", "Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
-    Some(List(ValidationErrorData("error.8", "008", "Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
-    Some(List(ValidationErrorData("error.8", "008", "Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
-    //I
+    Some(
+      List(
+        ValidationErrorData(
+          "error.8",
+          "008",
+          "Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.8",
+          "008",
+          "Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.8",
+          "008",
+          "Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."
+        )
+      )
+    ),
+    // I
     None,
     Some(List(ValidationErrorData("error.9", "009", "Enter 'yes' or 'no'."))),
     Some(List(ValidationErrorData("error.9", "009", "Enter 'yes' or 'no'."))),
-    //J
+    // J
     None,
     Some(List(ValidationErrorData("error.10", "010", "Enter 'yes' or 'no'."))),
-    //K
+    // K
     None,
     Some(List(ValidationErrorData("error.11", "011", "Enter the HMRC reference (must be less than 11 characters)."))),
-    //L
+    // L
     None,
-    Some(List(ValidationErrorData("error.12", "012","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-    Some(List(ValidationErrorData("error.12", "012","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-    Some(List(ValidationErrorData("error.12", "012","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-    //M
+    Some(
+      List(
+        ValidationErrorData(
+          "error.12",
+          "012",
+          "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.12",
+          "012",
+          "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.12",
+          "012",
+          "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+        )
+      )
+    ),
+    // M
     None,
-    Some(List(ValidationErrorData("error.13", "013","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-    Some(List(ValidationErrorData("error.13", "013","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-    Some(List(ValidationErrorData("error.13", "013","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-    //N
+    Some(
+      List(
+        ValidationErrorData(
+          "error.13",
+          "013",
+          "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.13",
+          "013",
+          "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.13",
+          "013",
+          "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+        )
+      )
+    ),
+    // N
     None,
-    Some(List(ValidationErrorData("error.14", "014","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-    Some(List(ValidationErrorData("error.14", "014","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-    Some(List(ValidationErrorData("error.14", "014","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-    //O
+    Some(
+      List(
+        ValidationErrorData(
+          "error.14",
+          "014",
+          "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.14",
+          "014",
+          "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+        )
+      )
+    ),
+    Some(
+      List(
+        ValidationErrorData(
+          "error.14",
+          "014",
+          "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+        )
+      )
+    ),
+    // O
     None,
     Some(List(ValidationErrorData("error.15", "015", "Enter 'yes' or 'no'."))),
     Some(List(ValidationErrorData("error.15", "015", "Enter 'yes' or 'no'."))),
-    //P
+    // P
     None,
     Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'."))),
     Some(List(ValidationErrorData("error.16", "016", "Enter 'yes' or 'no'.")))
   )
+
 }

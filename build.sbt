@@ -17,7 +17,7 @@ ThisBuild / scalaVersion := "2.13.16"
 
 lazy val plugins: Seq[Plugins] = Seq(play.sbt.PlayScala, SbtDistributablesPlugin)
 
-lazy val scoverageSettings = {
+lazy val scoverageSettings =
   Seq(
     ScoverageKeys.coverageExcludedPackages := "<empty>;app.*;config.*;testOnlyDoNotUseInAppConf.*;views.*;uk.gov.hmrc.*;prod.*;models.*;services.ERSRequest",
     ScoverageKeys.coverageMinimumStmtTotal := 94,
@@ -25,7 +25,6 @@ lazy val scoverageSettings = {
     ScoverageKeys.coverageHighlighting := true,
     Test / parallelExecution := false
   )
-}
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(plugins *)
@@ -42,8 +41,8 @@ lazy val microservice = Project(appName, file("."))
   )
   .settings(PlayKeys.playDefaultPort := 9226)
 
-    scalacOptions ++= Seq(
-      "-Wconf:cat=unused-imports&src=routes/.*:s"
+scalacOptions ++= Seq(
+  "-Wconf:cat=unused-imports&src=routes/.*:s"
 )
 
 lazy val it = project
@@ -51,3 +50,5 @@ lazy val it = project
   .dependsOn(microservice % "test->test")
   .settings(DefaultBuildSettings.itSettings())
   .settings(Test / fork := true)
+
+addCommandAlias("scalafmtAll", "all scalafmtSbt scalafmt Test/scalafmt it/Test/scalafmt")

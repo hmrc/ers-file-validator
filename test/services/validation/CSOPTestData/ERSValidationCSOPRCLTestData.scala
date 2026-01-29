@@ -16,52 +16,50 @@
 
 package services.validation.CSOPTestData
 
-
 import models.ValidationErrorData
 import uk.gov.hmrc.services.validation.models._
 
-
 trait ERSValidationCSOPRCLTestData {
 
-  val rowNumber:Int = 1
+  val rowNumber: Int = 1
 
-  def getDescriptions: List[String] ={
+  def getDescriptions: List[String] = {
     val descriptions =
       List(
-        //Column A
+        // Column A
         "When dateOfEvent is correctly formatted no validation error should be raised",
         "Return The date must match the yyyy-mm-dd pattern. For dateOfEvent when an empty field is given",
         "Return The date must match the yyyy-mm-dd pattern. For dateOfEvent when an incorrect date is given",
-        //Column B
+        // Column B
         "When wasMoneyOrValueGiven is Yes or No then no validation error is raised",
         "Return This entry must be 'yes' or 'no'. For wasMoneyOrValueGiven when an empty value is given",
         "Return This entry must be 'yes' or 'no'. For wasMoneyOrValueGiven when any other value is given",
-        //Column C
+        // Column C
         "When amtOrValue is a correctly formatted number, no validation error should be raised.",
         "Return This entry must be a number with 4 digits after the decimal point. For amtOrValue when an incorrect amount of decimal places have been entered.",
         "Return This entry must be a number made up of digits. For amtOrValue when non-number values entered",
         "Return This entry is larger than the maximum number value allowed. For amtOrValue when to many characters",
-        //Column D
+        // Column D
         "When releasedindividualFirstName contains characters and is less the 35 characters, no validation errors should be raised",
         "no validation error should be raised. For releasedindividualFirstName when the user inputs an empty string",
         "Return This entry must contain 35 characters or less. For releasedindividualFirstName when the user inputs too many characters",
-        //Column E
+        // Column E
         "When releasedindividualSecondName contains characters and is less the 35 characters, no validation errors should be raised",
         "Return This entry must contain 35 characters or less. For releasedindividualSecondName when the user inputs too many characters",
-        //Column F
+        // Column F
         "When releasedindividualLastName contains characters and is less the 35 characters, no validation errors should be raised",
         "When the user inputs an empty string no validation error should be raised",
         "Return This entry must contain 35 characters or less. For releasedindividualLastName when the user inputs too many characters",
-        //Column G
+        // Column G
         "When releasedindividualNino matches the expected Nino format, no validation error should be raised",
         "Return Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y). When the submitted text does not match a valid Nino.",
         "Return Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y). When the submitted text is missing a letter.",
         "no validation error should be raised. For individualNino when no nino is provided.",
-        //Column H
+        // Column H
         "When releasedindividualPayeReference matches the expected PAYE reference format, no validation error should be raised",
         "Return Enter an employer PAYE reference. For example '123/AB456'. When the submitted text does not match the PAYE format.",
         "no validation error should be raised. When the submitted text is empty.",
-        //Column I
+        // Column I
         "When payeOperatedApplied is Yes or No, no validation error should be raised",
         "no validation error should be raised. When an empty string is given for payeOperatedApplied.",
         "Return This entry must be 'yes' or 'no'. When the characters entered do not match yes or no for payeOperatedApplied."
@@ -69,14 +67,14 @@ trait ERSValidationCSOPRCLTestData {
     descriptions
   }
 
-  def getTestData: List[Cell] ={
+  def getTestData: List[Cell] = {
     val testData = List(
       Cell("A", rowNumber, "2014-12-10"),
       Cell("A", rowNumber, ""),
       Cell("A", rowNumber, "aaa"),
       Cell("B", rowNumber, "Yes"),
       Cell("B", rowNumber, ""),
-      Cell("B",rowNumber, "yyYeesss"),
+      Cell("B", rowNumber, "yyYeesss"),
       Cell("C", rowNumber, "10.1234"),
       Cell("C", rowNumber, "10.123"),
       Cell("C", rowNumber, "Ten"),
@@ -112,20 +110,84 @@ trait ERSValidationCSOPRCLTestData {
       Some(List(ValidationErrorData("error.2", "002", "Enter 'yes' or 'no'."))),
       Some(List(ValidationErrorData("error.2", "002", "Enter 'yes' or 'no'."))),
       None,
-      Some(List(ValidationErrorData("error.3", "003", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-      Some(List(ValidationErrorData("error.3", "003", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-      Some(List(ValidationErrorData("error.3", "003", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.3",
+            "003",
+            "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.3",
+            "003",
+            "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.3",
+            "003",
+            "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+          )
+        )
+      ),
       None,
       None,
-      Some(List(ValidationErrorData("error.4", "004", "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.4",
+            "004",
+            "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.5", "005", "Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.5",
+            "005",
+            "Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."
+          )
+        )
+      ),
       None,
       None,
-      Some(List(ValidationErrorData("error.6", "006", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.6",
+            "006",
+            "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.7", "007", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
-      Some(List(ValidationErrorData("error.7", "007", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.7",
+            "007",
+            "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.7",
+            "007",
+            "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+          )
+        )
+      ),
       None,
       None,
       Some(List(ValidationErrorData("error.8", "008", "Enter an employer PAYE reference. For example '123/AB456'."))),
@@ -138,20 +200,21 @@ trait ERSValidationCSOPRCLTestData {
     expectedResults
   }
 
-  def getValidRowData:Seq[Cell] = {
+  def getValidRowData: Seq[Cell] = {
     val rowData = Seq(
       Cell("A", rowNumber, "2014-12-10")
     )
     rowData
   }
 
-  def getInvalidRowData:Seq[Cell] = {
+  def getInvalidRowData: Seq[Cell]   = {
     val rowData = Seq(
       Cell("A", rowNumber, "20-12-2011")
     )
     rowData
   }
-  def getRequiredCellData:Seq[Cell] = {
+
+  def getRequiredCellData: Seq[Cell] = {
     val rowData = Seq(
       Cell("A", rowNumber, "2014-12-10"),
       Cell("B", rowNumber, "no"),
@@ -160,7 +223,8 @@ trait ERSValidationCSOPRCLTestData {
     )
     rowData
   }
-  def getAllCellData:Seq[Cell] = {
+
+  def getAllCellData: Seq[Cell]      = {
     val rowData = Seq(
       Cell("A", rowNumber, "2014-12-10"),
       Cell("B", rowNumber, "yes"),
@@ -175,7 +239,7 @@ trait ERSValidationCSOPRCLTestData {
     rowData
   }
 
-  def getWronglyEnteredCellData:Seq[Cell] = {
+  def getWronglyEnteredCellData: Seq[Cell] = {
     val rowData = Seq(
       Cell("A", rowNumber, "2014-12-10"),
       Cell("B", rowNumber, "yes"),
@@ -189,4 +253,5 @@ trait ERSValidationCSOPRCLTestData {
     )
     rowData
   }
+
 }

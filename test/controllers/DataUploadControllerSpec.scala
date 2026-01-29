@@ -53,19 +53,26 @@ import utils.ErrorResponseMessages
 
 import java.time.ZonedDateTime
 
-class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadControllerSpec"))
-  with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with GuiceOneAppPerSuite with WithMockedAuthActions with ScalaFutures {
+class DataUploadControllerSpec
+    extends TestKit(ActorSystem("DataUploadControllerSpec"))
+    with AnyWordSpecLike
+    with Matchers
+    with OptionValues
+    with MockitoSugar
+    with GuiceOneAppPerSuite
+    with WithMockedAuthActions
+    with ScalaFutures {
 
-  val empRef: String = "1234/ABCD"
-  val mockSessionService: SessionCacheService = mock[SessionCacheService]
-  val mockProcessOdsService: ProcessOdsService = mock[ProcessOdsService]
-  val mockProcessCsvService: ProcessCsvService = mock[ProcessCsvService]
-  val mockAuthConnector: DefaultAuthConnector = mock[DefaultAuthConnector]
-  val mockAuditEvents: AuditEvents = mock[AuditEvents]
-  val metrics: Metrics = mock[Metrics]
-  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  override implicit lazy val app: Application = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
-  implicit def materializer: Materializer = Play.materializer
+  val empRef: String                             = "1234/ABCD"
+  val mockSessionService: SessionCacheService    = mock[SessionCacheService]
+  val mockProcessOdsService: ProcessOdsService   = mock[ProcessOdsService]
+  val mockProcessCsvService: ProcessCsvService   = mock[ProcessCsvService]
+  val mockAuthConnector: DefaultAuthConnector    = mock[DefaultAuthConnector]
+  val mockAuditEvents: AuditEvents               = mock[AuditEvents]
+  val metrics: Metrics                           = mock[Metrics]
+  implicit val ec: ExecutionContextExecutor      = ExecutionContext.global
+  implicit override lazy val app: Application    = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
+  implicit def materializer: Materializer        = Play.materializer
   val defaultActionBuilder: DefaultActionBuilder = app.injector.instanceOf(classOf[DefaultActionBuilder])
 
   val dataUploadController: DataUploadController = new DataUploadController(
@@ -83,12 +90,13 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
       mockAuthorisedActionWithBody(empRef: String)(body: AsyncRequestJson)
 
-    val mockSource: Source[HttpResponse, NotUsed] = Source.fromIterator(() => List(HttpResponse(StatusCodes.OK)).iterator)
+    val mockSource: Source[HttpResponse, NotUsed] =
+      Source.fromIterator(() => List(HttpResponse(StatusCodes.OK)).iterator)
 
     override private[controllers] def streamFile(downloadUrl: String): Source[HttpResponse, _] = mockSource
   }
 
-  val schemeInfo: SchemeInfo = SchemeInfo (
+  val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11000001231275",
     timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
@@ -97,23 +105,26 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     schemeType = "EMI"
   )
 
-  val request = FakeRequest()
-  val l:ListBuffer[SchemeData] = new ListBuffer()
+  val request                   = FakeRequest()
+  val l: ListBuffer[SchemeData] = new ListBuffer()
 
   val metaData: JsObject = Json.obj(
-    "scon" -> "S1401234Z",
-    "nino" ->"CB433298A",
-    "surname" -> "Smith",
-    "firstForename" ->"Bill",
-    "calcType" -> "1",
+    "scon"                   -> "S1401234Z",
+    "nino"                   -> "CB433298A",
+    "surname"                -> "Smith",
+    "firstForename"          -> "Bill",
+    "calcType"               -> "1",
     "dualCalculationRequest" -> false,
-    "contsEarningsRequest" -> false,
-    "inflationProofRequest" -> false
+    "contsEarningsRequest"   -> false,
+    "inflationProofRequest"  -> false
   )
 
-  val callbackData: UpscanCallback = UpscanCallback("John", "downloadUrl", Some(1000L), Some("content-type"), Some(metaData), None)
-  val d: UpscanFileData = UpscanFileData(callbackData, schemeInfo)
-  val csvData: UpscanCsvFileData = UpscanCsvFileData(
+  val callbackData: UpscanCallback =
+    UpscanCallback("John", "downloadUrl", Some(1000L), Some("content-type"), Some(metaData), None)
+
+  val d: UpscanFileData            = UpscanFileData(callbackData, schemeInfo)
+
+  val csvData: UpscanCsvFileData   = UpscanCsvFileData(
     List(
       callbackData,
       callbackData
@@ -123,16 +134,19 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
 
   "processFileDataFromFrontend" must {
     "Successfully receive data" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(Future.successful(Right(l.size)))
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
+        .thenReturn(Future.successful(Right(l.size)))
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
       status(result) shouldBe OK
     }
 
     "return errors when an incorrect json object is sent to process-file" in {
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(),any[SchemeInfo](),any())).thenReturn(Future.successful(Right(l.size)))
-      val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(metaData)))
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
+        .thenReturn(Future.successful(Right(l.size)))
+      val result =
+        dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(metaData)))
       status(result) shouldBe BAD_REQUEST
-      }
+    }
 
     "Return INTERNAL_SERVER_ERROR when other SystemError occurs" in {
       val systemError = ErsSystemError("System configuration error", "Config failure")
@@ -144,9 +158,9 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     }
 
     "Return BAD_REQUEST when SchemeTypeMismatchError occurs" in {
-      val errorMessage = ErrorResponseMessages.dataParserIncorrectSheetName
+      val errorMessage       = ErrorResponseMessages.dataParserIncorrectSheetName
       val expectedSchemeType = "EMI"
-      val requestSchemeType = "CSOP"
+      val requestSchemeType  = "CSOP"
 
       val userError = SchemeTypeMismatchError(
         errorMessage,
@@ -155,23 +169,25 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
         requestSchemeType
       )
 
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any())).thenReturn(Future.successful(Left(userError)))
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
+        .thenReturn(Future.successful(Left(userError)))
 
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
       status(result) shouldBe BAD_REQUEST
       val mismatchError = contentAsJson(result).as[SchemeMismatchError]
 
-      mismatchError.errorMessage shouldBe errorMessage
+      mismatchError.errorMessage       shouldBe errorMessage
       mismatchError.expectedSchemeType shouldBe expectedSchemeType
-      mismatchError.requestSchemeType shouldBe requestSchemeType
+      mismatchError.requestSchemeType  shouldBe requestSchemeType
     }
 
     "Return BAD_REQUEST when other UserValidationError occurs" in {
       val userError = HeaderValidationError("Header error", "Invalid header format")
 
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any())).thenReturn(Future.successful(Left(userError)))
+      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
+        .thenReturn(Future.successful(Left(userError)))
       val result = dataUploadController.processFileDataFromFrontend(empRef).apply(request.withJsonBody(Json.toJson(d)))
-      status(result) shouldBe BAD_REQUEST
+      status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "Header error"
     }
   }
@@ -183,9 +199,10 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
-        .thenReturn(Future(Right(CsvFileLengthInfo(1,1))))
+        .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
 
-      val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result =
+        dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
       status(result) shouldBe OK
     }
 
@@ -197,8 +214,9 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Left(userError)))
 
-      val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result) shouldBe BAD_REQUEST
+      val result =
+        dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
+      status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "Row validation failed"
     }
 
@@ -210,8 +228,9 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Left(userError)))
 
-      val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result) shouldBe BAD_REQUEST
+      val result =
+        dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
+      status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "No data found"
     }
 
@@ -221,7 +240,8 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future.successful(Left(ErsSystemError("System configuration error", "Config failure"))))
 
-      val result = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result =
+        dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
@@ -231,15 +251,17 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any())(any(), any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
-        .thenReturn(Future(Right(CsvFileLengthInfo(1,1))))
+        .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
 
-      val result: Future[Result] = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result) shouldBe ACCEPTED
+      val result: Future[Result] =
+        dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson(csvData)))
+      status(result)          shouldBe ACCEPTED
       contentAsString(result) shouldBe "csv callback data storage in sessioncache failed"
     }
 
     "return a 400 if the body cannot be parsed into an UpscanCsvFileData object" in {
-      val result: Future[Result] = dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson("bad json")))
+      val result: Future[Result] =
+        dataUploadController.processCsvFileDataFromFrontendV2(empRef).apply(request.withBody(Json.toJson("bad json")))
       status(result) shouldBe BAD_REQUEST
     }
   }
@@ -251,33 +273,38 @@ class DataUploadControllerSpec extends TestKit(ActorSystem("DataUploadController
     mockProcessCsvService,
     mockAuthConnector,
     stubControllerComponents(),
-    defaultActionBuilder) {
-      override def authorisedAction(empRef: String)(body: AsyncRequest): Action[AnyContent] =
-        mockAuthorisedAction(empRef: String)(body: AsyncRequest)
+    defaultActionBuilder
+  ) {
+    override def authorisedAction(empRef: String)(body: AsyncRequest): Action[AnyContent] =
+      mockAuthorisedAction(empRef: String)(body: AsyncRequest)
 
-      override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
-        mockAuthorisedActionWithBody(empRef: String)(body: AsyncRequestJson)
+    override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
+      mockAuthorisedActionWithBody(empRef: String)(body: AsyncRequestJson)
 
-      override private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] = Future.successful(HttpResponse(StatusCodes.OK))
-    }
+    override private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] =
+      Future.successful(HttpResponse(StatusCodes.OK))
+  }
 
   "Calling streamFile" should {
     "process the response" in {
-      val result: Future[Seq[HttpResponse]] = secondDataUploadController.streamFile("http://www.test.com").runWith(Sink.seq)
+      val result: Future[Seq[HttpResponse]] =
+        secondDataUploadController.streamFile("http://www.test.com").runWith(Sink.seq)
 
       val responses = Await.result(result, Duration.Inf)
       responses.length shouldBe 1
-      responses.head shouldBe HttpResponse(StatusCodes.OK)
+      responses.head   shouldBe HttpResponse(StatusCodes.OK)
 
     }
 
     "process streamFile" in {
-      val result: Future[Seq[HttpResponse]] = secondDataUploadController.streamFile("http://www.test.com").runWith(Sink.seq)
+      val result: Future[Seq[HttpResponse]] =
+        secondDataUploadController.streamFile("http://www.test.com").runWith(Sink.seq)
 
       val responses = Await.result(result, Duration.Inf)
       responses.length shouldBe 1
-      responses.head shouldBe HttpResponse(StatusCodes.OK)
+      responses.head   shouldBe HttpResponse(StatusCodes.OK)
 
     }
   }
+
 }

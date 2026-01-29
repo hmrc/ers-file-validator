@@ -32,15 +32,15 @@ import java.time.ZonedDateTime
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.xml._
 
-
-class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with TimeLimits {
+class ParserTest
+    extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfter with EitherValues with TimeLimits {
 
   object TestDataParser extends DataParser
 
-  val mockAuditEvents: AuditEvents = mock[AuditEvents]
-  val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
+  val mockAuditEvents: AuditEvents          = mock[AuditEvents]
+  val mockAppConfig: ApplicationConfig      = mock[ApplicationConfig]
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  def dataGenerator = new DataGenerator(mockAuditEvents, mockAppConfig)
+  def dataGenerator                         = new DataGenerator(mockAuditEvents, mockAppConfig)
 
   when(mockAppConfig.csopV5Enabled).thenReturn(true)
 
@@ -53,8 +53,8 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     schemeType = "EMI"
   )
 
-  implicit val schemeName: String = schemeInfo.schemeName
-  implicit val hc: HeaderCarrier = mock[HeaderCarrier]
+  implicit val schemeName: String  = schemeInfo.schemeName
+  implicit val hc: HeaderCarrier   = mock[HeaderCarrier]
   implicit val request: Request[_] = mock[Request[_]]
 
   val FileSystemReadXxePayload = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" +
@@ -68,87 +68,85 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
     result.value._1.size must equal(17)
   }
 
-  besParserTests.foreach(rec => {
+  besParserTests.foreach(rec =>
     rec._1 in {
       val result = TestDataParser.parse(rec._2.toString)
       result.value._1.toList.take(rec._3.size) must be(rec._3)
     }
-  })
+  )
 
   "parse row with repeats" in {
     val result = TestDataParser.parse(emiAdjustmentsRepeatXMLRow1.toString)
     result.value._1.size must equal(17)
-    result.value._2 must equal(3)
+    result.value._2      must equal(3)
   }
 
-    "display incorrectSheetName user validation error in identifyAndDefineSheet method" in {
-      val result = dataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo, hc, request)
-      val error = result.left.value
+  "display incorrectSheetName user validation error in identifyAndDefineSheet method" in {
+    val result = dataGenerator.identifyAndDefineSheet("EMI40_Taxable")(schemeInfo, hc, request)
+    val error  = result.left.value
 
-      error mustBe a[UnknownSheetError]
-      error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
-      error.context mustBe "Couldn't find config for given SheetName, sheet name may be incorrect"
+    error         mustBe a[UnknownSheetError]
+    error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+    error.context mustBe "Couldn't find config for given SheetName, sheet name may be incorrect"
+  }
+
+  "display incorrectHeader user validation error in validateHeaderRow method" in {
+    val result = dataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V4")(schemeInfo, hc, request)
+    val error  = result.left.value
+
+    error         mustBe a[HeaderValidationError]
+    error.message mustBe "Incorrect ERS Template - Header doesn't match"
+    error.context mustBe "Header doesn't match"
+  }
+
+  "return sheetInfo given a valid sheet name" in {
+    val result = dataGenerator.getSheet(ERSTemplatesInfo.emiSheet5Name)(schemeInfo, hc, request)
+    result.isRight mustBe true
+    val sheet = result.value
+    sheet.schemeType mustBe "EMI"
+    sheet.sheetId    mustBe 5
+  }
+
+  "return sheetInfo for CSOP_OptionsGranted_V4" in {
+    val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet1Name)(schemeInfo, hc, request)
+    result.isRight mustBe true
+    val sheet = result.value
+    sheet.schemeType mustBe "CSOP"
+    sheet.sheetId    mustBe 1
+  }
+
+  "return sheetInfo for CSOP_OptionsRCL_V4" in {
+    val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet2Name)(schemeInfo, hc, request)
+    result.isRight mustBe true
+    val sheet = result.value
+    sheet.schemeType mustBe "CSOP"
+    sheet.sheetId    mustBe 2
+  }
+
+  "return sheetInfo for CSOP_OptionsExercised_V4" in {
+    val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet3Name)(schemeInfo, hc, request)
+    result.isRight mustBe true
+    val sheet = result.value
+    sheet.schemeType mustBe "CSOP"
+    sheet.sheetId    mustBe 3
+  }
+
+  "return Left for an invalid sheetName" in {
+    val result = dataGenerator.getSheet("abc")(schemeInfo, hc, request)
+    result.isLeft mustBe true
+    val error = result.left.value
+    error         mustBe a[UnknownSheetError]
+    error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+  }
+
+  "Show that scala.xml.XML tries to access file system with malicious payload " in
+    intercept[SAXParseException] {
+      XML.loadString(FileSystemReadXxePayload)
     }
 
-    "display incorrectHeader user validation error in validateHeaderRow method" in {
-      val result = dataGenerator.validateHeaderRow(Seq("", ""), "CSOP_OptionsRCL_V4")(schemeInfo, hc, request)
-      val error = result.left.value
-
-      error mustBe a[HeaderValidationError]
-      error.message mustBe "Incorrect ERS Template - Header doesn't match"
-      error.context mustBe "Header doesn't match"
-    }
-
-    "return sheetInfo given a valid sheet name" in {
-      val result = dataGenerator.getSheet(ERSTemplatesInfo.emiSheet5Name)(schemeInfo, hc, request)
-      result.isRight mustBe true
-      val sheet = result.value
-      sheet.schemeType mustBe "EMI"
-      sheet.sheetId mustBe 5
-    }
-
-    "return sheetInfo for CSOP_OptionsGranted_V4" in {
-      val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet1Name)(schemeInfo, hc, request)
-      result.isRight mustBe true
-      val sheet = result.value
-      sheet.schemeType mustBe "CSOP"
-      sheet.sheetId mustBe 1
-    }
-
-    "return sheetInfo for CSOP_OptionsRCL_V4" in {
-      val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet2Name)(schemeInfo, hc, request)
-      result.isRight mustBe true
-      val sheet = result.value
-      sheet.schemeType mustBe "CSOP"
-      sheet.sheetId mustBe 2
-    }
-
-    "return sheetInfo for CSOP_OptionsExercised_V4" in {
-      val result = dataGenerator.getSheet(ERSTemplatesInfo.csopSheet3Name)(schemeInfo, hc, request)
-      result.isRight mustBe true
-      val sheet = result.value
-      sheet.schemeType mustBe "CSOP"
-      sheet.sheetId mustBe 3
-    }
-
-    "return Left for an invalid sheetName" in {
-      val result = dataGenerator.getSheet("abc")(schemeInfo, hc, request)
-      result.isLeft mustBe true
-      val error = result.left.value
-      error mustBe a[UnknownSheetError]
-      error.message mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
-    }
-
-    "Show that scala.xml.XML tries to access file system with malicious payload " in {
-      intercept[SAXParseException] {
-        XML.loadString(FileSystemReadXxePayload)
-      }
-    }
-
-    "Show that scala.xml.XML can protect against file access when securely configured" in {
-      intercept[SAXParseException] {
-        XML.withSAXParser(TestDataParser.secureSAXParser).loadString(FileSystemReadXxePayload)
-      }
+  "Show that scala.xml.XML can protect against file access when securely configured" in
+    intercept[SAXParseException] {
+      XML.withSAXParser(TestDataParser.secureSAXParser).loadString(FileSystemReadXxePayload)
     }
 
   "Throw ERSFileProcessingException if an exception occurs while parsing a column" in {
@@ -159,4 +157,5 @@ class ParserTest extends PlaySpec with ScalaFutures with MockitoSugar with Befor
       TestDataParser2.parse(emiAdjustmentsRepeatXMLRow1.toString)
     }
   }
+
 }

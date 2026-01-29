@@ -33,13 +33,17 @@ trait ERSMetrics {
 object ERSMetrics extends ERSMetrics {
   val registry = new MetricRegistry
 
-  override def fileProcessingTimer(diff: Long, unit: TimeUnit): Unit = registry.timer("file-processing-time").update(diff, unit)
+  override def fileProcessingTimer(diff: Long, unit: TimeUnit): Unit =
+    registry.timer("file-processing-time").update(diff, unit)
 
   override def besTimer(diff: Long, unit: TimeUnit): Unit = registry.timer("bes-processing-time").update(diff, unit)
 
-  override def sendToSubmissionsTimer(diff: Long, unit: TimeUnit): Unit = registry.timer("send-to-submissions-time").update(diff, unit)
+  override def sendToSubmissionsTimer(diff: Long, unit: TimeUnit): Unit =
+    registry.timer("send-to-submissions-time").update(diff, unit)
 
-  override def dataIteratorTimer(diff: Long, unit: TimeUnit): Unit = registry.timer("data-iterator-time").update(diff, unit)
+  override def dataIteratorTimer(diff: Long, unit: TimeUnit): Unit =
+    registry.timer("data-iterator-time").update(diff, unit)
+
 }
 
 trait Metrics {

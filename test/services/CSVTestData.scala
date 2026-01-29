@@ -18,21 +18,31 @@ package services
 
 trait CSVTestData {
 
-  val emiAdjustmentsCSV:String = "no,no,yes,3,2015-12-09,John,Barry,Doe,AB123456C,123/XZ55555555,10.1234,100.12,10.1234,10.1234"
-  val emiAdjustmentsCollection:String = "no,no,yes,3,2015-12-09,John,Barry,Doe,AB123456C,123/XZ55555555,10.1234,100.12,10.1234,10.1234"
-  val emiAdjustmentsOptionalEnd:String = "no,no,yes,3,2015-12-09,John,Barry,Doe,AB123456C,123/XZ55555555"
-  val emiAdjustmentsTooLong:String = "no,no,yes,3,2015-12-09,John,Barry,Doe,AB123456C,123/XZ55555555,10.1234,100.12,10.1234,10.1234,,,,,"
+  val emiAdjustmentsCSV: String         =
+    "no,no,yes,3,2015-12-09,John,Barry,Doe,AB123456C,123/XZ55555555,10.1234,100.12,10.1234,10.1234"
 
-  val csopOptionsExercisedCSV:String = "2015-07-23,Joe,Jim,Smith,AB123456C,123/CD1234,2015-08-29,123.12,yes,no,12.1234,12.1234,12.1234,yes,AB12345678,yes,yes,12.1234,yes,yes"
-  val csopOptionsExercisedCollection:String = "2015-07-23,Joe,Jim,Smith,AB123456C,123/CD1234,2015-08-29,123.12,yes,no,12.1234,12.1234,12.1234,yes,AB12345678,yes,yes,12.1234,yes,yes"
+  val emiAdjustmentsCollection: String  =
+    "no,no,yes,3,2015-12-09,John,Barry,Doe,AB123456C,123/XZ55555555,10.1234,100.12,10.1234,10.1234"
 
-  val csvList:List[String] = List(
+  val emiAdjustmentsOptionalEnd: String = "no,no,yes,3,2015-12-09,John,Barry,Doe,AB123456C,123/XZ55555555"
+
+  val emiAdjustmentsTooLong: String     =
+    "no,no,yes,3,2015-12-09,John,Barry,Doe,AB123456C,123/XZ55555555,10.1234,100.12,10.1234,10.1234,,,,,"
+
+  val csopOptionsExercisedCSV: String        =
+    "2015-07-23,Joe,Jim,Smith,AB123456C,123/CD1234,2015-08-29,123.12,yes,no,12.1234,12.1234,12.1234,yes,AB12345678,yes,yes,12.1234,yes,yes"
+
+  val csopOptionsExercisedCollection: String =
+    "2015-07-23,Joe,Jim,Smith,AB123456C,123/CD1234,2015-08-29,123.12,yes,no,12.1234,12.1234,12.1234,yes,AB12345678,yes,yes,12.1234,yes,yes"
+
+  val csvList: List[String] = List(
     emiAdjustmentsCSV,
     csopOptionsExercisedCSV
   )
 
-  val expectedDataList:List[String]= List(
+  val expectedDataList: List[String] = List(
     emiAdjustmentsCollection,
     csopOptionsExercisedCollection
   )
+
 }

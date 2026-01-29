@@ -42,23 +42,22 @@ import play.api.Application
 
 import java.time.ZonedDateTime
 
-class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with BeforeAndAfter with EitherValues with GuiceOneAppPerSuite {
+class ERSFileValidatorConnectorSpec
+    extends PlaySpec with MockitoSugar with BeforeAndAfter with EitherValues with GuiceOneAppPerSuite {
 
-  override lazy implicit val app: Application = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
-  implicit def materializer: Materializer = Play.materializer
-  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  implicit val hc: HeaderCarrier = new HeaderCarrier
-  val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
-  val mockHttpClient: DefaultHttpClient = mock[DefaultHttpClient]
+  implicit override lazy val app: Application = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
+  implicit def materializer: Materializer     = Play.materializer
+  implicit val ec: ExecutionContextExecutor   = ExecutionContext.global
+  implicit val hc: HeaderCarrier              = new HeaderCarrier
+  val mockAppConfig: ApplicationConfig        = mock[ApplicationConfig]
+  val mockHttpClient: DefaultHttpClient       = mock[DefaultHttpClient]
 
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
 
-  val ersFileValidatorConnector = new ERSFileValidatorConnector(mockAppConfig,
-    mockHttpClient,
-    mockAuditEvents,
-    ec)
-  val data: ListBuffer[Seq[String]] = ListBuffer[Seq[String]](Seq("abc"))
-  val schemeInfo: SchemeInfo = SchemeInfo(
+  val ersFileValidatorConnector                   = new ERSFileValidatorConnector(mockAppConfig, mockHttpClient, mockAuditEvents, ec)
+  val data: ListBuffer[Seq[String]]               = ListBuffer[Seq[String]](Seq("abc"))
+
+  val schemeInfo: SchemeInfo                      = SchemeInfo(
     schemeRef = "XA11000001231275",
     timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
@@ -66,63 +65,98 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
     schemeName = "MyScheme",
     schemeType = "EMI"
   )
-  val submissionData: SchemeData = SchemeData(schemeInfo, "sheetOne", None, data: ListBuffer[Seq[String]])
-  val submissionSchemeData: SubmissionsSchemeData = SubmissionsSchemeData(
-    schemeInfo, "sheetOne", UpscanCallback("name", "https://www.test.com/url"), numberOfRows = 1)
-  val mockSubmissionsUrl = "/test-submissions-url"
-  val mockEncodedSubmissionsUrl = "/test-submissions-url/ers/1234%2FABCD/submit-presubmission"
-  val mockEncodedSubmissionsUrlV2 = "/test-submissions-url/ers/v2/1234%2FABCD/submit-presubmission"
-  val empRef = "1234/ABCD"
+
+  val submissionData: SchemeData                  = SchemeData(schemeInfo, "sheetOne", None, data: ListBuffer[Seq[String]])
+
+  val submissionSchemeData: SubmissionsSchemeData =
+    SubmissionsSchemeData(schemeInfo, "sheetOne", UpscanCallback("name", "https://www.test.com/url"), numberOfRows = 1)
+
+  val mockSubmissionsUrl                          = "/test-submissions-url"
+  val mockEncodedSubmissionsUrl                   = "/test-submissions-url/ers/1234%2FABCD/submit-presubmission"
+  val mockEncodedSubmissionsUrlV2                 = "/test-submissions-url/ers/v2/1234%2FABCD/submit-presubmission"
+  val empRef                                      = "1234/ABCD"
 
   "The ERSFileValidator Connector" must {
     "return a positive response on sending sheet data" in {
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       when(mockAppConfig.submissionsUrl).thenReturn(mockSubmissionsUrl)
-      when(mockHttpClient.POST[SchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrl), argEq[SchemeData](submissionData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
+      when(
+        mockHttpClient.POST[SchemeData, HttpResponse](
+          argEq[String](mockEncodedSubmissionsUrl),
+          argEq[SchemeData](submissionData),
+          any()
+        )(any(), any(), any[HeaderCarrier](), any[ExecutionContext]())
+      )
         .thenReturn(Future.successful(HttpResponse(Status.OK, "Please check for me!")))
-      val response = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
+      val response                                              = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
       assert(response.isRight)
       response.value.status must equal(Status.OK)
-      response.value.body must equal("Please check for me!")
+      response.value.body   must equal("Please check for me!")
     }
 
     "return a ERSFileProcessingException when receiving a BadRequestException" in {
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-      val badRequestException = new BadRequestException("This is a BadRequestException")
+      val badRequestException                                   = new BadRequestException("This is a BadRequestException")
       when(mockAppConfig.submissionsUrl).thenReturn(mockSubmissionsUrl)
-      when(mockHttpClient.POST[SchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrl), argEq[SchemeData](submissionData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
+      when(
+        mockHttpClient.POST[SchemeData, HttpResponse](
+          argEq[String](mockEncodedSubmissionsUrl),
+          argEq[SchemeData](submissionData),
+          any()
+        )(any(), any(), any[HeaderCarrier](), any[ExecutionContext]())
+      )
         .thenReturn(Future.failed(badRequestException))
-      val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
+      val result                                                = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
       result mustBe Left(ERSFileProcessingException("Submissions Service Bad Request", badRequestException.getMessage))
     }
 
     "return a ERSFileProcessingException when receiving a NotFoundException" in {
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-      val notFoundException = new NotFoundException("This is a NotFoundException")
+      val notFoundException                                     = new NotFoundException("This is a NotFoundException")
       when(mockAppConfig.submissionsUrl).thenReturn(mockSubmissionsUrl)
-      when(mockHttpClient.POST[SchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrl), argEq[SchemeData](submissionData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
+      when(
+        mockHttpClient.POST[SchemeData, HttpResponse](
+          argEq[String](mockEncodedSubmissionsUrl),
+          argEq[SchemeData](submissionData),
+          any()
+        )(any(), any(), any[HeaderCarrier](), any[ExecutionContext]())
+      )
         .thenReturn(Future.failed(notFoundException))
-      val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
+      val result                                                = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
       result mustBe Left(ERSFileProcessingException("Submissions Service Not Found", notFoundException.getMessage))
     }
 
     "return a ERSFileProcessingException when receiving a ServiceUnavailableException" in {
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-      val serviceUnavailableException = new ServiceUnavailableException("This is a ServiceUnavailableException")
+      val serviceUnavailableException                           = new ServiceUnavailableException("This is a ServiceUnavailableException")
       when(mockAppConfig.submissionsUrl).thenReturn(mockSubmissionsUrl)
-      when(mockHttpClient.POST[SchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrl), argEq[SchemeData](submissionData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
+      when(
+        mockHttpClient.POST[SchemeData, HttpResponse](
+          argEq[String](mockEncodedSubmissionsUrl),
+          argEq[SchemeData](submissionData),
+          any()
+        )(any(), any(), any[HeaderCarrier](), any[ExecutionContext]())
+      )
         .thenReturn(Future.failed(serviceUnavailableException))
-      val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
-      result mustBe Left(ERSFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage))
+      val result                                                = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
+      result mustBe Left(
+        ERSFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage)
+      )
     }
 
     "return a ERSFileProcessingException when receiving an Exception" in {
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-      val genericException = new MethodNotAllowedException("This is a MethodNotAllowedException")
+      val genericException                                      = new MethodNotAllowedException("This is a MethodNotAllowedException")
       when(mockAppConfig.submissionsUrl).thenReturn(mockSubmissionsUrl)
-      when(mockHttpClient.POST[SchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrl), argEq[SchemeData](submissionData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
+      when(
+        mockHttpClient.POST[SchemeData, HttpResponse](
+          argEq[String](mockEncodedSubmissionsUrl),
+          argEq[SchemeData](submissionData),
+          any()
+        )(any(), any(), any[HeaderCarrier](), any[ExecutionContext]())
+      )
         .thenReturn(Future.failed(genericException))
-      val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
+      val result                                                = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
       result mustBe Left(ERSFileProcessingException("Failed sending data", genericException.getMessage))
     }
   }
@@ -131,52 +165,85 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with MockitoSugar with Befo
     "return a positive response on sending sheet data" in {
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
       when(mockAppConfig.submissionsUrl).thenReturn(mockSubmissionsUrl)
-      when(mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrlV2), argEq[SubmissionsSchemeData](submissionSchemeData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
+      when(
+        mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](
+          argEq[String](mockEncodedSubmissionsUrlV2),
+          argEq[SubmissionsSchemeData](submissionSchemeData),
+          any()
+        )(any(), any(), any[HeaderCarrier](), any[ExecutionContext]())
+      )
         .thenReturn(Future.successful(HttpResponse(Status.OK, "Please check for me!")))
-      val response = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
+      val response                                              = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
       assert(response.isRight)
       response.value.status must equal(Status.OK)
-      response.value.body must equal("Please check for me!")
+      response.value.body   must equal("Please check for me!")
     }
 
     "return a ERSFileProcessingException when receiving a BadRequestException" in {
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-      val badRequestException = new BadRequestException("This is a BadRequestException")
+      val badRequestException                                   = new BadRequestException("This is a BadRequestException")
       when(mockAppConfig.submissionsUrl).thenReturn(mockSubmissionsUrl)
-      when(mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrlV2), argEq[SubmissionsSchemeData](submissionSchemeData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
+      when(
+        mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](
+          argEq[String](mockEncodedSubmissionsUrlV2),
+          argEq[SubmissionsSchemeData](submissionSchemeData),
+          any()
+        )(any(), any(), any[HeaderCarrier](), any[ExecutionContext]())
+      )
         .thenReturn(Future.failed(badRequestException))
-      val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
+      val result                                                = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
       result mustBe Left(ERSFileProcessingException("Submissions Service Bad Request", badRequestException.getMessage))
     }
 
     "return a ERSFileProcessingException when receiving a NotFoundException" in {
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-      val notFoundException = new NotFoundException("This is a NotFoundException")
+      val notFoundException                                     = new NotFoundException("This is a NotFoundException")
       when(mockAppConfig.submissionsUrl).thenReturn(mockSubmissionsUrl)
-      when(mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrlV2), argEq[SubmissionsSchemeData](submissionSchemeData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
+      when(
+        mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](
+          argEq[String](mockEncodedSubmissionsUrlV2),
+          argEq[SubmissionsSchemeData](submissionSchemeData),
+          any()
+        )(any(), any(), any[HeaderCarrier](), any[ExecutionContext]())
+      )
         .thenReturn(Future.failed(notFoundException))
-      val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
+      val result                                                = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
       result mustBe Left(ERSFileProcessingException("Submissions Service Not Found", notFoundException.getMessage))
     }
 
     "return a ERSFileProcessingException when receiving a ServiceUnavailableException" in {
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-      val serviceUnavailableException = new ServiceUnavailableException("This is a ServiceUnavailableException")
+      val serviceUnavailableException                           = new ServiceUnavailableException("This is a ServiceUnavailableException")
       when(mockAppConfig.submissionsUrl).thenReturn(mockSubmissionsUrl)
-      when(mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrlV2), argEq[SubmissionsSchemeData](submissionSchemeData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
+      when(
+        mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](
+          argEq[String](mockEncodedSubmissionsUrlV2),
+          argEq[SubmissionsSchemeData](submissionSchemeData),
+          any()
+        )(any(), any(), any[HeaderCarrier](), any[ExecutionContext]())
+      )
         .thenReturn(Future.failed(serviceUnavailableException))
-      val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
-      result mustBe Left(ERSFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage))
+      val result                                                = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
+      result mustBe Left(
+        ERSFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage)
+      )
     }
 
     "return a ERSFileProcessingException when receiving an Exception" in {
       implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-      val genericException = new MethodNotAllowedException("This is a MethodNotAllowedException")
+      val genericException                                      = new MethodNotAllowedException("This is a MethodNotAllowedException")
       when(mockAppConfig.submissionsUrl).thenReturn(mockSubmissionsUrl)
-      when(mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](argEq[String](mockEncodedSubmissionsUrlV2), argEq[SubmissionsSchemeData](submissionSchemeData), any())(any(), any(), any[HeaderCarrier](), any[ExecutionContext]()))
+      when(
+        mockHttpClient.POST[SubmissionsSchemeData, HttpResponse](
+          argEq[String](mockEncodedSubmissionsUrlV2),
+          argEq[SubmissionsSchemeData](submissionSchemeData),
+          any()
+        )(any(), any(), any[HeaderCarrier](), any[ExecutionContext]())
+      )
         .thenReturn(Future.failed(genericException))
-      val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
+      val result                                                = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
       result mustBe Left(ERSFileProcessingException("Failed sending data", genericException.getMessage))
     }
   }
+
 }

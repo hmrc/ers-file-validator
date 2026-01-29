@@ -16,7 +16,6 @@
 
 package services.validation.EMITestData
 
-
 import models.ValidationErrorData
 import uk.gov.hmrc.services.validation.models._
 
@@ -24,79 +23,79 @@ import uk.gov.hmrc.services.validation.models._
  * Created by matt on 16/02/16.
  */
 trait ERSValidationEMIReplacedTestData {
-  val rowNumber:Int = 1
+  val rowNumber: Int = 1
 
-  def getDescriptions: List[String] ={
+  def getDescriptions: List[String] = {
     val descriptions =
       List(
-        //A
+        // A
         "When grantDateOfOldOption conforms to the expected date format, no validation error should be raised",
         "Return an error message when grantDateOfOldOption does not conform to the expect date format",
         "Return an error message when grantDateOfOldOption has been left empty",
-        //B
+        // B
         "When grantDateOfNewOption conforms to the expected date format, no validation error should be raised",
         "Return an error message when grantDateOfNewOption does not conform to the expect date format",
         "Return an error message when grantDateOfNewOption has been left empty",
-        //C
+        // C
         "When individualReleased\\firstName conforms to the expected name format, no validation error should be raised",
         "Return an error message individualReleased\\firstName exceeds 35 characters",
         "Return an error message when individualReleased\\firstName is left empty",
-        //D
+        // D
         "When individualReleased\\secondName conforms to the expected name format, no validation error should be raised",
         "Return an error message when individualReleased\\secondName exceeds 35 characters",
-        //E
+        // E
         "When individualReleased\\surname conforms to the expected name format, no validation error should be raised",
         "Return an error message individualReleased\\surname exceeds 35 characters",
         "Return an error message when individualReleased\\surname is left empty",
-        //F
+        // F
         "When individualReleased\\nino is a correctly formatted NINO, no validation error should be raised",
         "Return an error message if individualReleased\\nino is not a correctly formatted NINO",
         "Return an error message if individualReleased\\nino is missing a letter",
         "Return an error message if individualReleased\\nino is empty",
-        //G
+        // G
         "When individualReleased\\payeReference conforms to the expected PAYE ref format, no validation error should be raised",
         "Return an error message if individualReleased\\payeReference does not conform to the expected PAYE Ref format.",
         "Return an error message if individualReleased\\payeReference is empty.",
-        //H
+        // H
         "When actualMarketValuePerShareReplacementAtDate conforms to the expected money format, no validation error should be raised",
         "Return an error message when actualMarketValuePerShareReplacementAtDate does not have 4 digits after the decimal point",
         "Return an error message when actualMarketValuePerShareReplacementAtDate is not a number",
         "Return an error message when actualMarketValuePerShareReplacementAtDate is larger than the maximum allowed value",
-        //I
+        // I
         "When snopCompany\\companyName is a correctly formatted company name, no validation errors should be returned",
         "Return an error message when snopCompany\\companyName exceeds the maximum amount of characters allowed",
         "Return an error message when snopCompany\\companyName is left empty",
-        //J
+        // J
         "When snopCompany\\companyAddress\\addressLine1 is a correctly formatted address, no validation error should be raised",
         "Return an error message when snopCompany\\companyAddress\\addressLine1 exceeds the maximum character limit",
         "Return an error message when snopCompany\\companyAddress\\addressLine1 is left empty",
-        //K
+        // K
         "When snopCompany\\companyAddress\\addressLine2 is a correctly formatted address, no validation error should be raised",
         "Return an error message when snopCompany\\companyAddress\\addressLine2 exceeds the maximum character limit",
-        //L
+        // L
         "When snopCompany\\companyAddress\\addressLine3 is a correctly formatted address, no validation error should be raised",
         "Return an error message when snopCompany\\companyAddress\\addressLine3 exceeds the maximum character limit",
-        //M
+        // M
         "When snopCompany\\companyAddress\\addressLine4 is a correctly formatted address, no validation error should be raised",
         "Return an error message when snopCompany\\companyAddress\\addressLine4 exceeds the maximum character limit",
-        //N
+        // N
         "When snopCompany\\companyAddress\\country is a correctly formatted country name, no validation error should be raised",
         "Return an error message when snopCompany\\companyAddress\\country exceeds the maximum character limit for countries",
-        //O
+        // O
         "When snopCompany\\companyAddress\\postCode is a correctly formatted postcode, no validation error should be raised",
         "Return an error when snopCompany\\companyAddress\\postCode exceeds the character limit for postcodes",
         "Return an error when snopCompany\\companyAddress\\postCode is left empty",
-        //P
+        // P
         "When snopCompany\\companyCTRef is a correctly formatted Company CT Ref, no validation error should be raised",
         "Return an error when snopCompany\\companyCTRef is not a 10 digit number",
-        //Q
+        // Q
         "When snopCompany\\companyCRN is a valid company reference number, no validation error should be raised",
         "Return an error when snopCompany\\companyCRN does not conform to the expected Company Reference Number format"
       )
     descriptions
   }
 
-  def getTestData: List[Cell] ={
+  def getTestData: List[Cell] = {
     val testData = List(
       Cell("A", rowNumber, "2014-12-10"),
       Cell("A", rowNumber, "12-2014-10"),
@@ -124,7 +123,11 @@ trait ERSValidationEMIReplacedTestData {
       Cell("H", rowNumber, "one point one"),
       Cell("H", rowNumber, "12345678901234567890.1234"),
       Cell("I", rowNumber, "company"),
-      Cell("I", rowNumber, "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij"),
+      Cell(
+        "I",
+        rowNumber,
+        "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij"
+      ),
       Cell("I", rowNumber, ""),
       Cell("J", rowNumber, "1 Beth Street"),
       Cell("J", rowNumber, "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefgh"),
@@ -144,7 +147,6 @@ trait ERSValidationEMIReplacedTestData {
       Cell("P", rowNumber, "12345678901"),
       Cell("Q", rowNumber, "AC097609"),
       Cell("Q", rowNumber, "AAC0A9976009")
-
     )
     testData
   }
@@ -158,52 +160,227 @@ trait ERSValidationEMIReplacedTestData {
       Some(List(ValidationErrorData("error.2", "002", "Enter a date that matches the yyyy-mm-dd pattern."))),
       Some(List(ValidationErrorData("error.2", "002", "Enter a date that matches the yyyy-mm-dd pattern."))),
       None,
-      Some(List(ValidationErrorData("error.3", "003", "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("error.3", "003", "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.3",
+            "003",
+            "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.3",
+            "003",
+            "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.4", "004", "Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.4",
+            "004",
+            "Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.5", "005", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("error.5", "005", "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.5",
+            "005",
+            "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.5",
+            "005",
+            "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.6", "006", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
-      Some(List(ValidationErrorData("error.6", "006", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
-      Some(List(ValidationErrorData("error.6", "006", "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.6",
+            "006",
+            "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.6",
+            "006",
+            "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.6",
+            "006",
+            "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+          )
+        )
+      ),
       None,
       Some(List(ValidationErrorData("error.7", "007", "Enter an employer PAYE reference. For example '123/AB456'."))),
       Some(List(ValidationErrorData("error.7", "007", "Enter an employer PAYE reference. For example '123/AB456'."))),
       None,
-      Some(List(ValidationErrorData("error.8", "008", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-      Some(List(ValidationErrorData("error.8", "008", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-      Some(List(ValidationErrorData("error.8", "008", "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.8",
+            "008",
+            "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.8",
+            "008",
+            "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.8",
+            "008",
+            "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.9", "009", "Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("error.9", "009", "Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.9",
+            "009",
+            "Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.9",
+            "009",
+            "Enter the company name (must be less than 121 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.10", "010", "Enter the first line of the address (must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands)."))),
-      Some(List(ValidationErrorData("error.10", "010", "Enter the first line of the address (must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.10",
+            "010",
+            "Enter the first line of the address (must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.10",
+            "010",
+            "Enter the first line of the address (must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands)."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.11", "011", "Must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands." ))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.11",
+            "011",
+            "Must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.12", "012", "Must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands." ))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.12",
+            "012",
+            "Must be less than 28 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.13", "013", "Must be less than 19 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.13",
+            "013",
+            "Must be less than 19 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.14", "014", "Must be less than 19 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.14",
+            "014",
+            "Must be less than 19 characters and can only have letters, numbers, hyphens, apostrophes, forward slashes, commas or ampersands."
+          )
+        )
+      ),
       None,
-      Some(List(ValidationErrorData("error.15", "015", "Enter the postcode (must be 6 to 8 characters and only have capital letters)."))),
-      Some(List(ValidationErrorData("error.15", "015", "Enter the postcode (must be 6 to 8 characters and only have capital letters)."))),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.15",
+            "015",
+            "Enter the postcode (must be 6 to 8 characters and only have capital letters)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.15",
+            "015",
+            "Enter the postcode (must be 6 to 8 characters and only have capital letters)."
+          )
+        )
+      ),
       None,
       Some(List(ValidationErrorData("error.16", "016", "Corporation Tax reference must be a 10 digit number."))),
       None,
-      Some(List(ValidationErrorData("error.17", "017", "Company Reference Number must be less than 11 characters (numbers and letters).")))
-
+      Some(
+        List(
+          ValidationErrorData(
+            "error.17",
+            "017",
+            "Company Reference Number must be less than 11 characters (numbers and letters)."
+          )
+        )
+      )
     )
 
     expectedResults
   }
 
-  def getValidRowData:Seq[Cell] = {
+  def getValidRowData: Seq[Cell] = {
     val rowData = Seq(
       Cell("A", rowNumber, "2014-12-10"),
       Cell("B", rowNumber, "2014-12-10"),
@@ -225,7 +402,7 @@ trait ERSValidationEMIReplacedTestData {
     rowData
   }
 
-  def getInvalidRowData:Seq[Cell] = {
+  def getInvalidRowData: Seq[Cell] = {
     val rowData = Seq(
       Cell("A", rowNumber, "20-12-2011"),
       Cell("A", rowNumber, ""),
@@ -241,7 +418,11 @@ trait ERSValidationEMIReplacedTestData {
       Cell("H", rowNumber, "123.12345"),
       Cell("H", rowNumber, "one point one"),
       Cell("H", rowNumber, "12345678901234567890.1234"),
-      Cell("I", rowNumber, "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij"),
+      Cell(
+        "I",
+        rowNumber,
+        "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefghij"
+      ),
       Cell("I", rowNumber, ""),
       Cell("J", rowNumber, "abcdefghijabcdefghijabcdefghijabcdefghijabcdefghijabcdefgh"),
       Cell("J", rowNumber, ""),
@@ -255,4 +436,5 @@ trait ERSValidationEMIReplacedTestData {
     )
     rowData
   }
+
 }

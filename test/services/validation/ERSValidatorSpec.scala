@@ -16,7 +16,6 @@
 
 package services.validation
 
-
 import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
@@ -26,8 +25,26 @@ import uk.gov.hmrc.services.validation.DataValidator
 
 class ERSValidatorSpec extends PlaySpec with ScalaFutures with MockitoSugar with ERSValidationEMIAdjustmentsTestData {
 
-  val validator: DataValidator = new DataValidator(ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config"))
-  val testData =  Seq("yes", "yes", "yes", "4", "2011-10-13", "Mia", "Iam", "Aim", "AB123456C", "123/XZ55555555", "10.1234", "10.14", "10.1324", "10.1244")
+  val validator: DataValidator = new DataValidator(
+    ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config")
+  )
+
+  val testData                 = Seq(
+    "yes",
+    "yes",
+    "yes",
+    "4",
+    "2011-10-13",
+    "Mia",
+    "Iam",
+    "Aim",
+    "AB123456C",
+    "123/XZ55555555",
+    "10.1234",
+    "10.14",
+    "10.1324",
+    "10.1244"
+  )
 
   "getCells" should {
     "should return valid cells" in {
@@ -37,10 +54,11 @@ class ERSValidatorSpec extends PlaySpec with ScalaFutures with MockitoSugar with
 
   "validateRow" should {
     "pass a row of valid EMI adjustments data without failure" in {
-      ErsValidator.validateRow(getValidRowData.map(_.value),10,validator) mustBe None
+      ErsValidator.validateRow(getValidRowData.map(_.value), 10, validator) mustBe None
     }
     "pass a row of invalid EMI adjustments data with failure" in {
-      ErsValidator.validateRow(getInvalidRowData.map(_.value),10,validator).get.size mustBe 14
+      ErsValidator.validateRow(getInvalidRowData.map(_.value), 10, validator).get.size mustBe 14
     }
   }
+
 }

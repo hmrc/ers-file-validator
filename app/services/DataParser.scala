@@ -28,7 +28,7 @@ import scala.xml._
 trait DataParser extends Logging {
 
   val repeatColumnsAttr = "table:number-columns-repeated"
-  val repeatTableAttr = "table:number-rows-repeated"
+  val repeatTableAttr   = "table:number-rows-repeated"
 
   def secureSAXParser = {
     val saxParserFactory = SAXParserFactory.newInstance()
@@ -40,20 +40,22 @@ trait DataParser extends Logging {
 
   def parse(row: String): Either[String, (Seq[String], Int)] = {
     logger.debug("DataParser: Parse: About to parse row: " + row)
-    val xmlRow = Try(Option(XML.withSAXParser(secureSAXParser)loadString(row))).getOrElse(None)
+    val xmlRow = Try(Option(XML.withSAXParser(secureSAXParser) loadString row)).getOrElse(None)
     xmlRow match {
-      case None => logger.debug("3.1 Parse row left "); Left(row)
-      case elem: Option[Elem] => logger.debug("3.2 Parse row right ")
+      case None               => logger.debug("3.1 Parse row left "); Left(row)
+      case elem: Option[Elem] =>
+        logger.debug("3.2 Parse row right ")
         val cols = Try(Right(xmlRow.get.child.flatMap(parseColumn))).getOrElse {
           logger.warn(s"${ErrorResponseMessages.dataParserFileRetrievalFailed}");
           throw ERSFileProcessingException(
             s"${ErrorResponseMessages.dataParserFileRetrievalFailed}",
-            s"${ErrorResponseMessages.dataParserParserFailure}")
+            s"${ErrorResponseMessages.dataParserParserFailure}"
+          )
         }
 
         cols match {
           case Right(r: Seq[String]) if !isBlankRow(r) => Right((r, repeated(xmlRow)))
-          case Right(s: Seq[String]) => Right((s, 1))
+          case Right(s: Seq[String])                   => Right((s, 1))
         }
     }
   }
@@ -62,8 +64,7 @@ trait DataParser extends Logging {
     val rowsRepeated = xmlRow.get.attributes.asAttrMap.get(repeatTableAttr)
     if (rowsRepeated.isDefined) {
       rowsRepeated.get.toInt
-    }
-    else {
+    } else {
       1
     }
   }
@@ -75,8 +76,7 @@ trait DataParser extends Logging {
       val cols: ListBuffer[String] = ListBuffer()
       for (_ <- 1 to colsRepeated.get.toInt) cols += col.text
       cols.toSeq
-    }
-    else {
+    } else {
       Seq(col.text)
     }
   }

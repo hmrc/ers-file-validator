@@ -18,7 +18,7 @@ package services.ersTemplatesInfo
 
 trait OtherTemplateInfo {
 
-  val other="OTHER"
+  val other = "OTHER"
 
   val otherSheet1Name = "Other_Grants_V4"
   val otherSheet2Name = "Other_Options_V4"
@@ -30,24 +30,34 @@ trait OtherTemplateInfo {
   val otherSheet8Name = "Other_Enhancement_V4"
   val otherSheet9Name = "Other_Sold_V4"
 
+  val otherSheet1Desc      =
+    "Other ERS schemes or arrangements – Grant of securities options, including Restricted Stock Units (RSUs)"
 
-  val otherSheet1Desc = "Other ERS schemes or arrangements – Grant of securities options, including Restricted Stock Units (RSUs)"
   val otherSheet1ValConfig = "ers-other-grants-validation-config"
-  val otherSheet2Desc = "Other ERS schemes or arrangements – Other option events, including conditional awards.  Options lapsed for nil consideration should not be included"
+
+  val otherSheet2Desc      =
+    "Other ERS schemes or arrangements – Other option events, including conditional awards.  Options lapsed for nil consideration should not be included"
+
   val otherSheet2ValConfig = "ers-other-options-validation-config"
-  val otherSheet3Desc = "Other ERS schemes or arrangements – Acquisition of securities"
+  val otherSheet3Desc      = "Other ERS schemes or arrangements – Acquisition of securities"
   val otherSheet3ValConfig = "ers-other-acquisition-validation-config"
-  val otherSheet4Desc = "Other ERS schemes or arrangements – Restricted securities post acquisition events"
+  val otherSheet4Desc      = "Other ERS schemes or arrangements – Restricted securities post acquisition events"
   val otherSheet4ValConfig = "ers-other-restrictedsecurities-validation-config"
-  val otherSheet5Desc = "Other ERS schemes or arrangements – Receipt of other benefits from securities post acquisition"
+  val otherSheet5Desc      = "Other ERS schemes or arrangements – Receipt of other benefits from securities post acquisition"
   val otherSheet5ValConfig = "ers-other-other-benefits-validation-config"
-  val otherSheet6Desc = "Other ERS schemes or arrangements – Convertible securities post-acquisition"
+  val otherSheet6Desc      = "Other ERS schemes or arrangements – Convertible securities post-acquisition"
   val otherSheet6ValConfig = "ers-other-convertible-validation-config"
-  val otherSheet7Desc = "Other ERS schemes or arrangements – Discharge of notional loans post-acquisition"
+  val otherSheet7Desc      = "Other ERS schemes or arrangements – Discharge of notional loans post-acquisition"
   val otherSheet7ValConfig = "ers-other-notional-validation-config"
-  val otherSheet8Desc = "Other ERS schemes or arrangements – Artificial enhancement of market value. Value of securities post acquisition"
+
+  val otherSheet8Desc      =
+    "Other ERS schemes or arrangements – Artificial enhancement of market value. Value of securities post acquisition"
+
   val otherSheet8ValConfig = "ers-other-enhancement-validation-config"
-  val otherSheet9Desc = "Other ERS schemes and arrangements – Securities sold for more than market value post acquisition"
+
+  val otherSheet9Desc      =
+    "Other ERS schemes and arrangements – Securities sold for more than market value post acquisition"
+
   val otherSheet9ValConfig = "ers-other-sold-validation-config"
 
   val otherGrantsHeaderRow = List(
@@ -55,8 +65,7 @@ trait OtherTemplateInfo {
     "2.Number of employees granted options",
     "3.Unrestricted market value of a security at date of grant £ e.g. 10.1234",
     "4.Number of securities over which options grantede.g. 100.00"
-  )//.map(_.replaceAll(otherHeaderFormat,""))
-
+  ) // .map(_.replaceAll(otherHeaderFormat,""))
 
   val otherOptionsHeaderRow = List(
     "1.Date of event yyyy-mm-dd",
@@ -101,7 +110,7 @@ trait OtherTemplateInfo {
     "40.Was a NICs election or agreement operated? (yes/no)",
     "41.Was PAYE operated? (yes/no)",
     "42.Was any adjustment made for amounts subject to apportionment for residence or duties outside the UK (yes/no)"
-  )//.map(_.replaceAll(otherHeaderFormat,""))
+  ) // .map(_.replaceAll(otherHeaderFormat,""))
 
   val otherAcquisitionHeaderRow = List(
     "1.Date of event (yyyy-mm-dd)",
@@ -144,7 +153,7 @@ trait OtherTemplateInfo {
     "38.If shares were acquired under an employee shareholder arrangement, was the total actual market value (AMV) of shares £2,000 or more? (yes/no)",
     "39.Was PAYE operated? (yes/no)",
     "40.Was any adjustment made for amounts subject to apportionment for residence or duties outside the UK (yes/no)"
-  )//.map(_.replaceAll(otherHeaderFormat,""))
+  ) // .map(_.replaceAll(otherHeaderFormat,""))
 
   val otherRestrictedSecuritiesHeaderRow = List(
     "1.Date of event (yyyy-mm-dd)",
@@ -167,7 +176,7 @@ trait OtherTemplateInfo {
     "18.Has a National Insurance Contribution election or agreement been operated (yes/no)",
     "19.Was PAYE operated? (yes/no)",
     "20.Was any adjustment made for amounts subject to apportionment for residence or duties outside the UK (yes/no)"
-  )//.map(_.replaceAll(otherHeaderFormat,""))
+  ) // .map(_.replaceAll(otherHeaderFormat,""))
 
   val otherBenefitsHeaderRow = List(
     "1.Date of event (yyyy-mm-dd)",
@@ -183,7 +192,7 @@ trait OtherTemplateInfo {
     "11.Amount or market value of the benefit £ e.g. 10.1234",
     "12.Was PAYE operated? (yes/no)",
     "13.Was any adjustment made for amounts subject to apportionment for residence or duties outside the UK (yes/no)"
-  )//.map(_.replaceAll(otherHeaderFormat,""))
+  ) // .map(_.replaceAll(otherHeaderFormat,""))
 
   val otherConvertibleHeaderRow = List(
     "1.Date of event (yyyy-mm-dd)",
@@ -201,7 +210,7 @@ trait OtherTemplateInfo {
     "13.Has a National Insurance Contribution election or agreement been operated (yes/no)",
     "14.Was PAYE operated? (yes/no)",
     "15.Was any adjustment made for amounts subject to apportionment for residence or duties outside the UK? (yes/no)"
-  )//.map(_.replaceAll(otherHeaderFormat,""))
+  ) // .map(_.replaceAll(otherHeaderFormat,""))
 
   val otherNotionalHeaderRow = List(
     "1.Date of event (yyyy-mm-dd)",
@@ -217,7 +226,7 @@ trait OtherTemplateInfo {
     "11.Amount of notional loan discharged £ e.g. 10.1234",
     "12.Was PAYE operated? (yes/no)",
     "13.Was any adjustment made for amounts subject to apportionment for residence or duties outside the UK? (yes/no)"
-  )//.map(_.replaceAll(otherHeaderFormat,""))
+  ) // .map(_.replaceAll(otherHeaderFormat,""))
 
   val otherEnhancementHeaderRow = List(
     "1.Date of event (yyyy-mm-dd)",
@@ -234,7 +243,7 @@ trait OtherTemplateInfo {
     "12.Total UMV ignoring effect of artificial increase on date of taxable event £ e.g. 10.1234",
     "13.Was PAYE operated? (yes/no)",
     "14.Was any adjustment made for amounts subject to apportionment for residence or duties outside the UK? (yes/no)"
-  )//.map(_.replaceAll(otherHeaderFormat,""))
+  ) // .map(_.replaceAll(otherHeaderFormat,""))
 
   val otherSoldHeaderRow = List(
     "1.Date of event (yyyy-mm-dd)",
@@ -251,6 +260,6 @@ trait OtherTemplateInfo {
     "12.Expenses incurred £ e.g. 10.1234",
     "13.Was PAYE operated? (yes/no)",
     "14.Was any adjustment made for amounts subject to apportionment for residence or duties outside the UK? (yes/no)"
-  )//.map(_.replaceAll(otherHeaderFormat,""))
+  ) // .map(_.replaceAll(otherHeaderFormat,""))
 
 }

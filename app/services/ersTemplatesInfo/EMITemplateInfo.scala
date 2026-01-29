@@ -18,7 +18,7 @@ package services.ersTemplatesInfo
 
 trait EMITemplateInfo {
 
-  val emi="EMI"
+  val emi = "EMI"
 
   val emiSheet1Name = "EMI40_Adjustments_V4"
   val emiSheet2Name = "EMI40_Replaced_V4"
@@ -26,17 +26,18 @@ trait EMITemplateInfo {
   val emiSheet4Name = "EMI40_NonTaxable_V4"
   val emiSheet5Name = "EMI40_Taxable_V4"
 
-  val emiSheet1Desc = "EMI template - Adjustment of options"
+  val emiSheet1Desc      = "EMI template - Adjustment of options"
   val emiSheet1ValConfig = "ers-emi-adjustments-validation-config"
-  val emiSheet2Desc = "EMI template – Replacement of options"
+  val emiSheet2Desc      = "EMI template – Replacement of options"
   val emiSheet2ValConfig = "ers-emi-replaced-validation-config"
-  val emiSheet3Desc = "EMI template - Options released, lapsed or cancelled"
+  val emiSheet3Desc      = "EMI template - Options released, lapsed or cancelled"
   val emiSheet3ValConfig = "ers-emi-rlc-validation-config"
-  val emiSheet4Desc = "EMI template - Non-taxable exercise of options"
+  val emiSheet4Desc      = "EMI template - Non-taxable exercise of options"
   val emiSheet4ValConfig = "ers-emi-nontaxable-validation-config"
-  val emiSheet5Desc = "EMI template - Taxable exercise of options"
+  val emiSheet5Desc      = "EMI template - Taxable exercise of options"
 
-  val emiSheet5ValConfig = "ers-emi-taxable-validation-config"
+  val emiSheet5ValConfig                    = "ers-emi-taxable-validation-config"
+
   val emiAdjustmentsHeaderRow: List[String] = List(
     "1.Has there been any adjustment of options following a variation in the share capital of the company?(yes/no)",
     "2.Has there been a change to the description of the shares under option?(yes/no)",
@@ -52,7 +53,7 @@ trait EMITemplateInfo {
     "12.Number of shares under the option after adjustmente.g. 100.00",
     "13.Exercise price per share under option after the adjustment £e.g. 10.1234",
     "14.Actual market value of a share at the date of grant£e.g. 10.1234"
-  )//.map(_.replaceAll(headerFormat,""))
+  ) // .map(_.replaceAll(headerFormat,""))
 
   val emiReplacedHeaderRow: List[String] = List(
     "1.Date of grant of old option(yyyy-mm-dd)",
@@ -72,7 +73,7 @@ trait EMITemplateInfo {
     "15.Postcode",
     "16.Corporation Tax reference(Unique Taxpayer Reference)",
     "17.Company Reference Number (CRN)"
-  )//.map(_.replaceAll(headerFormat,""))
+  ) // .map(_.replaceAll(headerFormat,""))
 
   val emiRCLHeaderRow: List[String] = List(
     "1.Date of event(yyyy-mm-dd)",
@@ -87,7 +88,7 @@ trait EMITemplateInfo {
     "10.Was money or value received?(yes/no)If yes go to question 11, otherwise no more information is needed for this event.",
     "11.If yes enter the amount£e.g. 10.1234",
     "12.PAYE operated?(yes/no)"
-  )//.map(_.replaceAll(headerFormat,""))
+  ) // .map(_.replaceAll(headerFormat,""))
 
   val emiNonTaxableHeaderRow: List[String] = List(
     "1.Date of option exercise(yyyy-mm-dd)",
@@ -105,7 +106,7 @@ trait EMITemplateInfo {
     "13.If yes, enter the HMRC valuation reference given",
     "14.Total amount paid for shares£e.g. 10.1234",
     "15.Were all shares resulting from the exercise sold? (yes/no). Answer yes if they were either sold on the same day as the exercise in connection with the exercise or sale instructions were given for all shares to be sold on exercise"
-  )//.map(_.replaceAll(headerFormat,""))
+  ) // .map(_.replaceAll(headerFormat,""))
 
   val emiTaxableHeaderRow: List[String] = List(
     "1.Date option exercised(yyyy-mm-dd)",
@@ -128,6 +129,6 @@ trait EMITemplateInfo {
     "18.Has an election under Section 431(1) been made to disregard restrictions?(yes/ no)",
     "19.Has a National Insurance Contribution election or agreement been operated (yes/no)",
     "20.Amount subjected to PAYE£e.g. 10.1234"
-  )//.map(_.replaceAll(headerFormat,""))
+  ) // .map(_.replaceAll(headerFormat,""))
 
 }

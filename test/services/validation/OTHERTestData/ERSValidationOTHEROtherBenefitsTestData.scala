@@ -16,64 +16,63 @@
 
 package services.validation.OTHERTestData
 
-
 import models.ValidationErrorData
 import org.apache.commons.lang3.StringUtils
 import uk.gov.hmrc.services.validation.models._
 
 trait ERSValidationOTHEROtherBenefitsTestData {
 
-  val rowNumber:Int = 1
+  val rowNumber: Int = 1
 
   def getDescriptions: List[String] = {
     val descriptions =
       List(
-        //A
+        // A
         "validate dateOfEvent without ValidationErrors for valid data",
         "validate dateOfEvent with ValidationErrors for invalid data",
         "validate dateOfEvent with ValidationErrors for an empty field",
-        //B
+        // B
         "validate inRelationToASchemeWithADOTASRef without ValidationErrors for valid data",
         "validate inRelationToASchemeWithADOTASRef with ValidationErrors for a invalid data",
         "validate inRelationToASchemeWithADOTASRef with ValidationErrors for an empty field",
-        //C
+        // C
         "validate dotasRef without ValidationErrors for a valid data",
         "validate dotasRef with ValidationErrors for a invalid data",
-        //D,
+        // D,
         "validate individualPAO\\firstName without ValidationErrors for valid data",
         "validate individualPAO\\firstName with ValidationErrors for a string too long",
         "validate individualPAO\\firstName with ValidationErrors for an empty field",
-        //E
+        // E
         "validate individualPAO\\secondName without ValidationErrors for valid data",
         "validate individualPAO\\secondName without ValidationErrors for a string too long",
-        //F
+        // F
         "validate individualPAO\\surname without ValidationErrors for valid data",
         "validate individualPAO\\surname with ValidationErrors for a string too long",
         "validate individualPAO\\surname with ValidationErrors for an empty field",
-        //G
+        // G
         "validate individualPAO\\nino without ValidationErrors for valid data",
         "validate individualPAO\\nino with ValidationErrors for invalid data",
         "validate individualPAO\\nino with ValidationErrors for missing a letter",
         "validate individualPAO\\nino with ValidationErrors for no data",
-        //H
+        // H
         "validate individualPAO\\payeReference without ValidationErrors for valid data",
         "validate individualPAO\\payeReference with ValidationErrors for invalid data",
         "validate individualPAO\\payeReference with ValidationErrors for empty data",
-        //I
+        // I
         "validate dateSecuritiesOriginallyAcquired without ValidationErrors for valid data",
         "validate dateSecuritiesOriginallyAcquired with ValidationErrors for invalid data",
         "validate dateSecuritiesOriginallyAcquired with ValidationErrors for an empty field",
-        //J
+        // J
         "validate numberOfSecuritiesOriginallyAcquiredamountOrMarketValueOfTheBenefit without ValidationErrors for valid data",
         "validate numberOfSecuritiesOriginallyAcquiredamountOrMarketValueOfTheBenefit with ValidationErrors for invalid data",
-        //K
+        // K
         "validate amountOrMarketValueOfTheBenefit without ValidationErrors for valid data",
         "validate amountOrMarketValueOfTheBenefit with ValidationErrors for invalid data",
-        //L
+        // L
         "validate payeOperatedApplied without ValidationErrors for valid data",
         "validate payeOperatedApplied with ValidationErrors for a invalid data",
         "validate payeOperatedApplied with ValidationErrors for an empty field",
-        //M
+        // M
         "validate adjusmentMadeForUKDuties without ValidationErrors for valid data",
         "validate adjusmentMadeForUKDuties with ValidationErrors for a invalid data",
         "validate adjusmentMadeForUKDuties with ValidationErrors for an empty field"
@@ -83,108 +82,192 @@ trait ERSValidationOTHEROtherBenefitsTestData {
 
   def getTestData: List[Cell] = {
     val testData = List(
-      Cell("A",rowNumber,"2014-08-30"),
-      Cell("A",rowNumber,"2014-08/30"),
-      Cell("A",rowNumber,""),
-      Cell("B",rowNumber,"yes"),
-      Cell("B",rowNumber,"yav"),
-      Cell("B",rowNumber,""),
-      Cell("C",rowNumber,"12345678"),
-      Cell("C",rowNumber,"123481231232435"),
-      Cell("D",rowNumber,"Guss"),
-      Cell("D",rowNumber,StringUtils.leftPad("",45, "A")),
-      Cell("D",rowNumber,""),
-      Cell("E",rowNumber,"Bob"),
-      Cell("E",rowNumber,StringUtils.leftPad("",45, "A")),
-      Cell("F",rowNumber,"Thornton"),
-      Cell("F",rowNumber,StringUtils.leftPad("",45, "A")),
-      Cell("F",rowNumber,""),
-      Cell("G",rowNumber,"AB123456A"),
-      Cell("G",rowNumber,"AB1234A"),
-      Cell("G",rowNumber,"AB123456"),
-      Cell("G",rowNumber,""),
-      Cell("H",rowNumber,"123/XZ55555555"),
-      Cell("H",rowNumber,"123XZ55555555///"),
-      Cell("H",rowNumber,""),
-      Cell("I",rowNumber,"2014-08-30"),
-      Cell("I",rowNumber,"2014-08/30"),
-      Cell("I",rowNumber,""),
-      Cell("J",rowNumber,"12345678911.12"),
-      Cell("J",rowNumber,"123456789111.123"),
-      Cell("K",rowNumber,"1234567891123.1234"),
-      Cell("K",rowNumber,"12345678911235.12345"),
-      Cell("L",rowNumber,"yes"),
-      Cell("L",rowNumber,"yav"),
-      Cell("L",rowNumber,""),
-      Cell("M",rowNumber,"yes"),
-      Cell("M",rowNumber,"yav"),
-      Cell("M",rowNumber,"")
+      Cell("A", rowNumber, "2014-08-30"),
+      Cell("A", rowNumber, "2014-08/30"),
+      Cell("A", rowNumber, ""),
+      Cell("B", rowNumber, "yes"),
+      Cell("B", rowNumber, "yav"),
+      Cell("B", rowNumber, ""),
+      Cell("C", rowNumber, "12345678"),
+      Cell("C", rowNumber, "123481231232435"),
+      Cell("D", rowNumber, "Guss"),
+      Cell("D", rowNumber, StringUtils.leftPad("", 45, "A")),
+      Cell("D", rowNumber, ""),
+      Cell("E", rowNumber, "Bob"),
+      Cell("E", rowNumber, StringUtils.leftPad("", 45, "A")),
+      Cell("F", rowNumber, "Thornton"),
+      Cell("F", rowNumber, StringUtils.leftPad("", 45, "A")),
+      Cell("F", rowNumber, ""),
+      Cell("G", rowNumber, "AB123456A"),
+      Cell("G", rowNumber, "AB1234A"),
+      Cell("G", rowNumber, "AB123456"),
+      Cell("G", rowNumber, ""),
+      Cell("H", rowNumber, "123/XZ55555555"),
+      Cell("H", rowNumber, "123XZ55555555///"),
+      Cell("H", rowNumber, ""),
+      Cell("I", rowNumber, "2014-08-30"),
+      Cell("I", rowNumber, "2014-08/30"),
+      Cell("I", rowNumber, ""),
+      Cell("J", rowNumber, "12345678911.12"),
+      Cell("J", rowNumber, "123456789111.123"),
+      Cell("K", rowNumber, "1234567891123.1234"),
+      Cell("K", rowNumber, "12345678911235.12345"),
+      Cell("L", rowNumber, "yes"),
+      Cell("L", rowNumber, "yav"),
+      Cell("L", rowNumber, ""),
+      Cell("M", rowNumber, "yes"),
+      Cell("M", rowNumber, "yav"),
+      Cell("M", rowNumber, "")
     )
     testData
   }
 
   def getExpectedResults: List[Option[List[ValidationErrorData]]] = {
     val expectedResults = List(
-      //A
+      // A
       None,
-      Some(List(ValidationErrorData("error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))),
-      Some(List(ValidationErrorData("error.1","001","Enter a date that matches the yyyy-mm-dd pattern."))),
-      //B
+      Some(List(ValidationErrorData("error.1", "001", "Enter a date that matches the yyyy-mm-dd pattern."))),
+      Some(List(ValidationErrorData("error.1", "001", "Enter a date that matches the yyyy-mm-dd pattern."))),
+      // B
       None,
-      Some(List(ValidationErrorData("error.2","002","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.2","002","Enter 'yes' or 'no'."))),
-      //C
+      Some(List(ValidationErrorData("error.2", "002", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.2", "002", "Enter 'yes' or 'no'."))),
+      // C
       None,
-      Some(List(ValidationErrorData("error.3","003","Enter the scheme reference number (it should be an 8 digit number)."))),
-      //D
+      Some(
+        List(
+          ValidationErrorData("error.3", "003", "Enter the scheme reference number (it should be an 8 digit number).")
+        )
+      ),
+      // D
       None,
-      Some(List(ValidationErrorData("error.4","004","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("error.4","004","Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      //E
+      Some(
+        List(
+          ValidationErrorData(
+            "error.4",
+            "004",
+            "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.4",
+            "004",
+            "Enter a first name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
+      // E
       None,
-      Some(List(ValidationErrorData("error.5","005","Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."))),
-      //F
+      Some(
+        List(
+          ValidationErrorData(
+            "error.5",
+            "005",
+            "Must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes."
+          )
+        )
+      ),
+      // F
       None,
-      Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      Some(List(ValidationErrorData("error.6","006","Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."))),
-      //G
+      Some(
+        List(
+          ValidationErrorData(
+            "error.6",
+            "006",
+            "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.6",
+            "006",
+            "Enter a last name (must be less than 36 characters and can only have letters, numbers, hyphens or apostrophes)."
+          )
+        )
+      ),
+      // G
       None,
-      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
-      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
-      Some(List(ValidationErrorData("error.7","007","Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."))),
-      //H
+      Some(
+        List(
+          ValidationErrorData(
+            "error.7",
+            "007",
+            "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.7",
+            "007",
+            "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+          )
+        )
+      ),
+      Some(
+        List(
+          ValidationErrorData(
+            "error.7",
+            "007",
+            "Enter a National Insurance number (for example QQ123456C) or an ERS reference (for example TN010181Y)."
+          )
+        )
+      ),
+      // H
       None,
-      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
-      Some(List(ValidationErrorData("error.8","008","Enter an employer PAYE reference. For example '123/AB456'."))),
-      //I
+      Some(List(ValidationErrorData("error.8", "008", "Enter an employer PAYE reference. For example '123/AB456'."))),
+      Some(List(ValidationErrorData("error.8", "008", "Enter an employer PAYE reference. For example '123/AB456'."))),
+      // I
       None,
-      Some(List(ValidationErrorData("error.9","009","Enter a date that matches the yyyy-mm-dd pattern."))),
-      Some(List(ValidationErrorData("error.9","009","Enter a date that matches the yyyy-mm-dd pattern."))),
-      //J
+      Some(List(ValidationErrorData("error.9", "009", "Enter a date that matches the yyyy-mm-dd pattern."))),
+      Some(List(ValidationErrorData("error.9", "009", "Enter a date that matches the yyyy-mm-dd pattern."))),
+      // J
       None,
-      Some(List(ValidationErrorData("error.10","010","Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."))),
-      //K
+      Some(
+        List(
+          ValidationErrorData(
+            "error.10",
+            "010",
+            "Must be a number with 2 digits after the decimal point (and no more than 11 digits in front of it)."
+          )
+        )
+      ),
+      // K
       None,
-      Some(List(ValidationErrorData("error.11","011","Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."))),
-      //L
+      Some(
+        List(
+          ValidationErrorData(
+            "error.11",
+            "011",
+            "Must be a number with 4 digits after the decimal point (and no more than 13 digits in front of it)."
+          )
+        )
+      ),
+      // L
       None,
-      Some(List(ValidationErrorData("error.12","012","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
-      Some(List(ValidationErrorData("error.12","012","Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
-      //M|
+      Some(List(ValidationErrorData("error.12", "012", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      Some(List(ValidationErrorData("error.12", "012", "Enter 'yes' or 'no' to tell HMRC if PAYE was operated."))),
+      // M|
       None,
-      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'."))),
-      Some(List(ValidationErrorData("error.13","013","Enter 'yes' or 'no'.")))
+      Some(List(ValidationErrorData("error.13", "013", "Enter 'yes' or 'no'."))),
+      Some(List(ValidationErrorData("error.13", "013", "Enter 'yes' or 'no'.")))
     )
     expectedResults
   }
 
-  def getValidRowData:Seq[Cell] = {
+  def getValidRowData: Seq[Cell] = {
     val rowData = Seq(
     )
     rowData
   }
 
-  def getInvalidRowData:Seq[Cell] = {
+  def getInvalidRowData: Seq[Cell] = {
     val rowData = Seq(
     )
     rowData

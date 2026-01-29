@@ -19,4 +19,9 @@ package services.besIntegrationTestData
 /**
  * Created by matt on 25/01/16.
  */
-trait BESIntegrationTestData extends SIPBESIntegrationTestData with SAYEBESIntegrationTestData with EMIBESIntegrationTestData with OtherBESIntegrationTestData with CSOPBESIntegrationTestData
+trait BESIntegrationTestData
+    extends SIPBESIntegrationTestData
+    with SAYEBESIntegrationTestData
+    with EMIBESIntegrationTestData
+    with OtherBESIntegrationTestData
+    with CSOPBESIntegrationTestData

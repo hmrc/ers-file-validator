@@ -39,21 +39,20 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.{Duration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
-
 class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures with MockitoSugar with BeforeAndAfter {
 
-  val mockSessionService: SessionCacheService = mock[SessionCacheService]
+  val mockSessionService: SessionCacheService                  = mock[SessionCacheService]
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
-  val mockDataGenerator: DataGenerator = mock[DataGenerator]
-  val mockHeaderCarrier: HeaderCarrier = mock[HeaderCarrier]
-  val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
-  val mockAuditEvents: AuditEvents = mock[AuditEvents]
+  val mockDataGenerator: DataGenerator                         = mock[DataGenerator]
+  val mockHeaderCarrier: HeaderCarrier                         = mock[HeaderCarrier]
+  val mockAppConfig: ApplicationConfig                         = mock[ApplicationConfig]
+  val mockAuditEvents: AuditEvents                             = mock[AuditEvents]
 
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  implicit val request : Request[_] = mock[Request[_]]
-  implicit val hc : HeaderCarrier = mock[HeaderCarrier]
+  implicit val request: Request[_]          = mock[Request[_]]
+  implicit val hc: HeaderCarrier            = mock[HeaderCarrier]
 
-  val schemeInfo: SchemeInfo = SchemeInfo (
+  val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
     timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
@@ -62,15 +61,23 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
     schemeType = "EMI"
   )
 
-  def createListBuffer(schemeInfo: SchemeInfo, sheetName: String, listBuffer: ListBuffer[Seq[String]]): ListBuffer[SchemeData] = {
+  def createListBuffer(
+    schemeInfo: SchemeInfo,
+    sheetName: String,
+    listBuffer: ListBuffer[Seq[String]]
+  ): ListBuffer[SchemeData] =
     ListBuffer(SchemeData(schemeInfo, sheetName, None, listBuffer))
-  }
 
-  val callbackData: UpscanCallback = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)
-  val callbackDataCSV: UpscanCallback = UpscanCallback("EMI40_Adjustments_V4", "downloadUrl", Some(1024), Some("csv"), None, None)
+  val callbackData: UpscanCallback    = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)
 
-  val xmlData1 = <table:table table:name="EMI40_Adjustments_V4" table:style-name="ta1"> <table:table-row table:style-name="ro6"><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>1.</text:p><text:p>Date of event</text:p><text:p>(yyyy-mm-dd)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>2.</text:p><text:p>Number of employees who acquired or were awarded shares</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>3.</text:p><text:p>Type of shares awarded</text:p><text:p>Enter a number from 1 to 4 depending on the type of share awarded. Follow the link at cell B10 for a list of the types of share which can be awarded</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>4.</text:p><text:p>If free shares, are performance conditions attached to their award?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>5.</text:p><text:p>If matching shares, what is the ratio of shares to partnership shares?</text:p><text:p>Enter ratio for example 2:1; 2/1</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>6.</text:p><text:p>Unrestricted market value (UMV) per share on acquisition or award</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>7.</text:p><text:p>Total number of shares acquired or awarded</text:p><text:p>e.g. 100.00</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>8.</text:p><text:p>Total value of shares acquired or awarded</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>9.</text:p><text:p>Total number of employees whose award of free shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>10.</text:p><text:p>Total number of employees whose award of free shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>11.</text:p><text:p>Total number of employees whose award of partnership shares during the year exceeded the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>12.</text:p><text:p>Total number of employees whose award of partnership shares during the year was at or below the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>13.</text:p><text:p>Total number of employees whose award of matching shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>14.</text:p><text:p>Total number of employees whose award of matching shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>15.</text:p><text:p>Are the shares listed on a recognised stock exchange?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>16.</text:p><text:p>If no, was the market value agreed with HMRC?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>17.</text:p><text:p>If yes, enter the HMRC valuation reference given</text:p></table:table-cell><table:table-cell table:style-name="ce11"/><table:table-cell table:number-columns-repeated="1003"/><table:table-cell table:style-name="ce17"/><table:table-cell table:number-columns-repeated="2"/></table:table-row></table:table>
-  val xmlData2 = <table:table-row table:style-name="ro6"><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>1.</text:p><text:p>Date of event</text:p><text:p>(yyyy-mm-dd)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>2.</text:p><text:p>Number of employees who acquired or were awarded shares</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>3.</text:p><text:p>Type of shares awarded</text:p><text:p>Enter a number from 1 to 4 depending on the type of share awarded. Follow the link at cell B10 for a list of the types of share which can be awarded</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>4.</text:p><text:p>If free shares, are performance conditions attached to their award?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>5.</text:p><text:p>If matching shares, what is the ratio of shares to partnership shares?</text:p><text:p>Enter ratio for example 2:1; 2/1</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>6.</text:p><text:p>Unrestricted market value (UMV) per share on acquisition or award</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>7.</text:p><text:p>Total number of shares acquired or awarded</text:p><text:p>e.g. 100.00</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>8.</text:p><text:p>Total value of shares acquired or awarded</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>9.</text:p><text:p>Total number of employees whose award of free shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>10.</text:p><text:p>Total number of employees whose award of free shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>11.</text:p><text:p>Total number of employees whose award of partnership shares during the year exceeded the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>12.</text:p><text:p>Total number of employees whose award of partnership shares during the year was at or below the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>13.</text:p><text:p>Total number of employees whose award of matching shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>14.</text:p><text:p>Total number of employees whose award of matching shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>15.</text:p><text:p>Are the shares listed on a recognised stock exchange?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>16.</text:p><text:p>If no, was the market value agreed with HMRC?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>17.</text:p><text:p>If yes, enter the HMRC valuation reference given</text:p></table:table-cell><table:table-cell table:style-name="ce11"/><table:table-cell table:number-columns-repeated="1003"/><table:table-cell table:style-name="ce17"/><table:table-cell table:number-columns-repeated="2"/></table:table-row>
+  val callbackDataCSV: UpscanCallback =
+    UpscanCallback("EMI40_Adjustments_V4", "downloadUrl", Some(1024), Some("csv"), None, None)
+
+  val xmlData1 =
+    <table:table table:name="EMI40_Adjustments_V4" table:style-name="ta1"> <table:table-row table:style-name="ro6"><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>1.</text:p><text:p>Date of event</text:p><text:p>(yyyy-mm-dd)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>2.</text:p><text:p>Number of employees who acquired or were awarded shares</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>3.</text:p><text:p>Type of shares awarded</text:p><text:p>Enter a number from 1 to 4 depending on the type of share awarded. Follow the link at cell B10 for a list of the types of share which can be awarded</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>4.</text:p><text:p>If free shares, are performance conditions attached to their award?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>5.</text:p><text:p>If matching shares, what is the ratio of shares to partnership shares?</text:p><text:p>Enter ratio for example 2:1; 2/1</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>6.</text:p><text:p>Unrestricted market value (UMV) per share on acquisition or award</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>7.</text:p><text:p>Total number of shares acquired or awarded</text:p><text:p>e.g. 100.00</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>8.</text:p><text:p>Total value of shares acquired or awarded</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>9.</text:p><text:p>Total number of employees whose award of free shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>10.</text:p><text:p>Total number of employees whose award of free shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>11.</text:p><text:p>Total number of employees whose award of partnership shares during the year exceeded the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>12.</text:p><text:p>Total number of employees whose award of partnership shares during the year was at or below the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>13.</text:p><text:p>Total number of employees whose award of matching shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>14.</text:p><text:p>Total number of employees whose award of matching shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>15.</text:p><text:p>Are the shares listed on a recognised stock exchange?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>16.</text:p><text:p>If no, was the market value agreed with HMRC?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>17.</text:p><text:p>If yes, enter the HMRC valuation reference given</text:p></table:table-cell><table:table-cell table:style-name="ce11"/><table:table-cell table:number-columns-repeated="1003"/><table:table-cell table:style-name="ce17"/><table:table-cell table:number-columns-repeated="2"/></table:table-row></table:table>
+
+  val xmlData2 =
+    <table:table-row table:style-name="ro6"><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>1.</text:p><text:p>Date of event</text:p><text:p>(yyyy-mm-dd)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>2.</text:p><text:p>Number of employees who acquired or were awarded shares</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>3.</text:p><text:p>Type of shares awarded</text:p><text:p>Enter a number from 1 to 4 depending on the type of share awarded. Follow the link at cell B10 for a list of the types of share which can be awarded</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>4.</text:p><text:p>If free shares, are performance conditions attached to their award?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>5.</text:p><text:p>If matching shares, what is the ratio of shares to partnership shares?</text:p><text:p>Enter ratio for example 2:1; 2/1</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>6.</text:p><text:p>Unrestricted market value (UMV) per share on acquisition or award</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>7.</text:p><text:p>Total number of shares acquired or awarded</text:p><text:p>e.g. 100.00</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>8.</text:p><text:p>Total value of shares acquired or awarded</text:p><text:p>£</text:p><text:p>e.g. 10.1234</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>9.</text:p><text:p>Total number of employees whose award of free shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>10.</text:p><text:p>Total number of employees whose award of free shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>11.</text:p><text:p>Total number of employees whose award of partnership shares during the year exceeded the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>12.</text:p><text:p>Total number of employees whose award of partnership shares during the year was at or below the limit of £1,800</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>13.</text:p><text:p>Total number of employees whose award of matching shares during the year exceeded the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>14.</text:p><text:p>Total number of employees whose award of matching shares during the year was at or below the limit of £3,600</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>15.</text:p><text:p>Are the shares listed on a recognised stock exchange?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>16.</text:p><text:p>If no, was the market value agreed with HMRC?</text:p><text:p>(yes/no)</text:p></table:table-cell><table:table-cell table:style-name="ce6" office:value-type="string" calcext:value-type="string"><text:p>17.</text:p><text:p>If yes, enter the HMRC valuation reference given</text:p></table:table-cell><table:table-cell table:style-name="ce11"/><table:table-cell table:number-columns-repeated="1003"/><table:table-cell table:style-name="ce17"/><table:table-cell table:number-columns-repeated="2"/></table:table-row>
 
   before {
     reset(mockErsFileValidatorConnector)
@@ -78,8 +85,15 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
   }
 
   "The File Processing Service" must {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = false
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(
+      mockDataGenerator,
+      mockAuditEvents,
+      mockErsFileValidatorConnector,
+      mockSessionService,
+      mockAppConfig,
+      ec
+    ) {
+      override val splitSchemes    = false
       override val maxNumberOfRows = 1
 
       override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateSTAX
@@ -89,31 +103,52 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
 
     "yield a list of scheme data from file data" in {
       val listBuffer = ListBuffer(
-        Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
+        Seq(
+          "yes",
+          "yes",
+          "yes",
+          "4",
+          "1989-10-20",
+          "Anthony",
+          "Joe",
+          "Jones",
+          "AA123456A",
+          "123/XZ55555555",
+          "10.1232",
+          "100.00",
+          "10.2585",
+          "10.2544"
+        )
       )
-      when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
-      when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
-      when(mockSessionService.storeCallbackData(any(),any())(any())).thenReturn(Future.successful(Some(callbackData)))
+      when(mockDataGenerator.getErrors(any())(any(), any(), any()))
+        .thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
+      when(
+        mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(
+          any[HeaderCarrier],
+          any[Request[_]]
+        )
+      ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+      when(mockSessionService.storeCallbackData(any(), any())(any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
 
-      val result = fileProcessingService.processFile(callbackData, "")(hc,schemeInfo, request)
+      val result = fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
       val either = Await.result(result, Duration(5, SECONDS))
       either mustBe Right(1)
     }
 
     "return user validation error when DataGenerator returns validation error" in {
       val userError = RowValidationError("Validation failed", "Row contains invalid data", Some(10))
-      when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Left(userError))
+      when(mockDataGenerator.getErrors(any())(any(), any(), any())).thenReturn(Left(userError))
 
-      val result = fileProcessingService.processFile(callbackData, "")(hc,schemeInfo, request)
+      val result = fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
       val either = Await.result(result, Duration(5, SECONDS))
       either mustBe Left(userError)
     }
 
-    XMLTestData.staxIntegrationTests.foreach( rec => {
+    XMLTestData.staxIntegrationTests.foreach { rec =>
       val tempOdsPath = Files.createTempFile("file", ".ods").toFile
-      val zip = new ZipOutputStream(new FileOutputStream(tempOdsPath))
-      val entry = new ZipEntry("content.xml")
+      val zip         = new ZipOutputStream(new FileOutputStream(tempOdsPath))
+      val entry       = new ZipEntry("content.xml")
       entry.setExtra(rec._2.toString.getBytes())
       zip.putNextEntry(entry)
       zip.close()
@@ -123,82 +158,211 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
         when(mockErsFileValidatorConnector.upscanFileStream(argEq(callbackData.downloadUrl)))
           .thenReturn(inputStream)
         val result = fileProcessingService.readFile(callbackData.downloadUrl)
-        result.map(_ must be (rec._3))
+        result.map(_ must be(rec._3))
       }
-    })
+    }
   }
 
   "yield a list of scheme data from file data with large file" in {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = true
-      override val maxNumberOfRows = 1
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(
+      mockDataGenerator,
+      mockAuditEvents,
+      mockErsFileValidatorConnector,
+      mockSessionService,
+      mockAppConfig,
+      ec
+    ) {
+      override val splitSchemes                  = true
+      override val maxNumberOfRows               = 1
       override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
     }
-    val listBuffer = ListBuffer(
-      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544"),
-      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544"),
-      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
+    val listBuffer                               = ListBuffer(
+      Seq(
+        "yes",
+        "yes",
+        "yes",
+        "4",
+        "1989-10-20",
+        "Anthony",
+        "Joe",
+        "Jones",
+        "AA123456A",
+        "123/XZ55555555",
+        "10.1232",
+        "100.00",
+        "10.2585",
+        "10.2544"
+      ),
+      Seq(
+        "yes",
+        "yes",
+        "yes",
+        "4",
+        "1989-10-20",
+        "Anthony",
+        "Joe",
+        "Jones",
+        "AA123456A",
+        "123/XZ55555555",
+        "10.1232",
+        "100.00",
+        "10.2585",
+        "10.2544"
+      ),
+      Seq(
+        "yes",
+        "yes",
+        "yes",
+        "4",
+        "1989-10-20",
+        "Anthony",
+        "Joe",
+        "Jones",
+        "AA123456A",
+        "123/XZ55555555",
+        "10.1232",
+        "100.00",
+        "10.2585",
+        "10.2544"
+      )
     )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
+    when(mockDataGenerator.getErrors(any())(any(), any(), any()))
+      .thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
-    when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
-    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(Some(callbackData)))
-    val result = fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
+    when(
+      mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(
+        any[HeaderCarrier],
+        any[Request[_]]
+      )
+    ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+    when(mockSessionService.storeCallbackData(any[UpscanCallback], any[Int])(any()))
+      .thenReturn(Future.successful(Some(callbackData)))
+    val result                                   = fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request)
     Await.result(result, Duration(5, SECONDS))
-    verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier],any[Request[_]])
+    verify(mockErsFileValidatorConnector, times(3))
+      .sendToSubmissions(any(), any[String]())(any[HeaderCarrier], any[Request[_]])
   }
 
   "return system error when DataGenerator returns system error" in {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = false
-      override val maxNumberOfRows = 1
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(
+      mockDataGenerator,
+      mockAuditEvents,
+      mockErsFileValidatorConnector,
+      mockSessionService,
+      mockAppConfig,
+      ec
+    ) {
+      override val splitSchemes                  = false
+      override val maxNumberOfRows               = 1
       override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
     }
 
     val systemError = ErsSystemError("System configuration error", "Config validation failed")
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Left(systemError))
+    when(mockDataGenerator.getErrors(any())(any(), any(), any())).thenReturn(Left(systemError))
 
-    val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
+    val result =
+      Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
 
     result mustBe Left(systemError)
   }
 
   "return system error when the callback data isn't stored correctly" in {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = true
-      override val maxNumberOfRows = 1
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(
+      mockDataGenerator,
+      mockAuditEvents,
+      mockErsFileValidatorConnector,
+      mockSessionService,
+      mockAppConfig,
+      ec
+    ) {
+      override val splitSchemes                  = true
+      override val maxNumberOfRows               = 1
       override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
     }
-    val listBuffer = ListBuffer(
-      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
+    val listBuffer                               = ListBuffer(
+      Seq(
+        "yes",
+        "yes",
+        "yes",
+        "4",
+        "1989-10-20",
+        "Anthony",
+        "Joe",
+        "Jones",
+        "AA123456A",
+        "123/XZ55555555",
+        "10.1232",
+        "100.00",
+        "10.2585",
+        "10.2544"
+      )
     )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
+    when(mockDataGenerator.getErrors(any())(any(), any(), any()))
+      .thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
-    when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
-    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(None))
+    when(
+      mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(
+        any[HeaderCarrier],
+        any[Request[_]]
+      )
+    ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+    when(mockSessionService.storeCallbackData(any[UpscanCallback], any[Int])(any())).thenReturn(Future.successful(None))
 
-    val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
+    val result =
+      Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
 
-    result mustBe Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
+    result mustBe Left(
+      ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data")
+    )
   }
 
   "throw an exception when sending data to ers-submissions fails" in {
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = true
-      override val maxNumberOfRows = 1
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(
+      mockDataGenerator,
+      mockAuditEvents,
+      mockErsFileValidatorConnector,
+      mockSessionService,
+      mockAppConfig,
+      ec
+    ) {
+      override val splitSchemes                  = true
+      override val maxNumberOfRows               = 1
       override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
     }
-    val listBuffer = ListBuffer(
-      Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
+    val listBuffer                               = ListBuffer(
+      Seq(
+        "yes",
+        "yes",
+        "yes",
+        "4",
+        "1989-10-20",
+        "Anthony",
+        "Joe",
+        "Jones",
+        "AA123456A",
+        "123/XZ55555555",
+        "10.1232",
+        "100.00",
+        "10.2585",
+        "10.2544"
+      )
     )
-    when(mockDataGenerator.getErrors(any())(any(),any(),any())).thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
+    when(mockDataGenerator.getErrors(any())(any(), any(), any()))
+      .thenReturn(Right(createListBuffer(schemeInfo, "EMI40_Adjustments_V4", listBuffer)))
     when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
-    when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]]))
+    when(
+      mockErsFileValidatorConnector
+        .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+    )
       .thenReturn(Future.successful(Left(new RuntimeException("Runtime error"))))
-    when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any[Request[_]])).thenReturn(Future.successful(Some(callbackData)))
+    when(mockSessionService.storeCallbackData(any[UpscanCallback], any[Int])(any[Request[_]]))
+      .thenReturn(Future.successful(Some(callbackData)))
 
     try {
-      Await.result(fileProcessingService.sendSchemeData(SchemeData(schemeInfo, "", None, listBuffer), ""), Duration(5, SECONDS))
+      Await.result(
+        fileProcessingService.sendSchemeData(SchemeData(schemeInfo, "", None, listBuffer), ""),
+        Duration(5, SECONDS)
+      )
       throw new TestFailedException("Expected ERSFileProcessingException to be returned", 1)
     } catch {
       case ex: ERSFileProcessingException =>
@@ -207,8 +371,15 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
   }
 
   "return ERSFileProcessingException when reading the file fails" in {
-    val exceptionMessage = "Simulated file read failure"
-    val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockDataGenerator, mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+    val exceptionMessage                         = "Simulated file read failure"
+    val fileProcessingService: ProcessOdsService = new ProcessOdsService(
+      mockDataGenerator,
+      mockAuditEvents,
+      mockErsFileValidatorConnector,
+      mockSessionService,
+      mockAppConfig,
+      ec
+    ) {
       override def readFile(downloadUrl: String) = throw new RuntimeException(exceptionMessage)
     }
 
@@ -219,4 +390,5 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
 
     result mustBe Left(ERSFileProcessingException("Error reading ODS file", exceptionMessage))
   }
+
 }

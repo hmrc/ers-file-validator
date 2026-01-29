@@ -23,7 +23,7 @@ import scala.util.control.Breaks._
 
 class StaxProcessor(inputStream: InputStream) extends Iterator[String] {
 
-  val xif : XMLInputFactory = XMLInputFactory.newDefaultFactory();
+  val xif: XMLInputFactory = XMLInputFactory.newDefaultFactory();
   xif.setProperty(XMLInputFactory.SUPPORT_DTD, false)
   xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false)
   xif.setProperty(XMLInputFactory.IS_NAMESPACE_AWARE, false)
@@ -38,8 +38,7 @@ class StaxProcessor(inputStream: InputStream) extends Iterator[String] {
         val name = xmlevent.asStartElement().getName.getLocalPart
         if (name == "table:table" || name == "table:table-row") {
           return true
-        }
-        else {
+        } else {
           eventReader.nextEvent()
         }
       } else {
@@ -51,41 +50,35 @@ class StaxProcessor(inputStream: InputStream) extends Iterator[String] {
 
   override def next(): String = {
     val nextValue = eventReader.nextEvent()
-    if(nextValue.isStartElement) {
-      if (nextValue.asStartElement().getName.getLocalPart == "table:table-row")
-      {
+    if (nextValue.isStartElement) {
+      if (nextValue.asStartElement().getName.getLocalPart == "table:table-row") {
         val a = getStringToEndElement("table:table-row")
         val b = nextValue.toString
         b + a
-      }
-      else {
+      } else {
         getName(nextValue.toString)
       }
-    }
-    else {
+    } else {
       "--NOT-FOUND--"
     }
   }
 
-  def getName(message : String) : String = {
+  def getName(message: String): String = {
     val sheetNameRegEx = "(table:name=)\\'(\\w+)\\'".r
     sheetNameRegEx.findFirstMatchIn(message).map(_ group 2).getOrElse("--NOT-FOUND--")
   }
 
-  def getStringToEndElement(endelement: String): String =
-  {
+  def getStringToEndElement(endelement: String): String = {
     val buffer: StringBuilder = new StringBuilder
 
-    def foundelement(  event: XMLEvent,elementName: String): Boolean = {
-      if(event.isEndElement) {
+    def foundelement(event: XMLEvent, elementName: String): Boolean =
+      if (event.isEndElement) {
         event.asEndElement().getName.getLocalPart == elementName
-      }
-      else {
+      } else {
         false
       }
-    }
     breakable {
-    while(eventReader.hasNext) {
+      while (eventReader.hasNext) {
         val thenextEvent = eventReader.nextEvent()
         buffer.append(thenextEvent.toString)
         if (foundelement(thenextEvent, endelement)) {
@@ -95,4 +88,5 @@ class StaxProcessor(inputStream: InputStream) extends Iterator[String] {
     }
     buffer.toString
   }
+
 }

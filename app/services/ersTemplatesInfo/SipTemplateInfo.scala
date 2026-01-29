@@ -23,11 +23,10 @@ trait SipTemplateInfo {
   val sipSheet1Name = "SIP_Awards_V4"
   val sipSheet2Name = "SIP_Out_V4"
 
-  val sipSheet1Desc = "SIP template – Share awards"
+  val sipSheet1Desc      = "SIP template – Share awards"
   val sipSheet1ValConfig = "ers-sip-awards-validation-config"
-  val sipSheet2Desc = "SIP template – Shares ceasing to be part of the plan"
+  val sipSheet2Desc      = "SIP template – Shares ceasing to be part of the plan"
   val sipSheet2ValConfig = "ers-sip-out-validation-config"
-
 
   val sipAwardsHeaderRow = List(
     "1.Date of event (yyyy-mm-dd)",
@@ -47,8 +46,7 @@ trait SipTemplateInfo {
     "15.Are the shares listed on a recognised stock exchange? (yes/no)",
     "16.If no, was the market value agreed with HMRC? (yes/no)",
     "17.If yes, enter the HMRC valuation reference given"
-  )//.map(_.replaceAll(sipHeaderFormat,""))
-
+  ) // .map(_.replaceAll(sipHeaderFormat,""))
 
   val sipOutHeaderRow = List(
     "1.Date of event (yyyy-mm-dd)",
@@ -68,6 +66,6 @@ trait SipTemplateInfo {
     "15.Have all the shares been held in the plan for 5 years or more at the date they ceased to be part of the plan? (yes/no) If yes, no more information is needed for this event.If no, go to question 16",
     "16.If no, for other than dividend shares, was PAYE operated? (yes/no)",
     "17.If no, does this withdrawal of shares qualify for tax relief? (yes/no)"
-  )//.map(_.replaceAll(sipHeaderFormat,""))
+  ) // .map(_.replaceAll(sipHeaderFormat,""))
 
 }

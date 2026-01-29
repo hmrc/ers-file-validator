@@ -35,37 +35,36 @@ import scala.language.postfixOps
 
 class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
-  val sessionPair: (String, String) = SessionKeys.sessionId -> UUID.randomUUID.toString
-  val mockSessionCache: ERSFileValidatorSessionRepository = mock[ERSFileValidatorSessionRepository]
-  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  val sessionService = new SessionCacheService(mockSessionCache, ec)
+  val sessionPair: (String, String)                         = SessionKeys.sessionId -> UUID.randomUUID.toString
+  val mockSessionCache: ERSFileValidatorSessionRepository   = mock[ERSFileValidatorSessionRepository]
+  implicit val ec: ExecutionContextExecutor                 = ExecutionContext.global
+  val sessionService                                        = new SessionCacheService(mockSessionCache, ec)
   implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-  val hc: HeaderCarrier = HeaderCarrier()
-  val CALLBACK_DATA_KEY = "callback_data_key"
+  val hc: HeaderCarrier                                     = HeaderCarrier()
+  val CALLBACK_DATA_KEY                                     = "callback_data_key"
 
   "storeCallbackData" must {
     "successfully store attachments callback post data" in {
       val postData: UpscanCallback = UpscanCallback("thefilename", "downloadUrl", Some(1000L))
 
-      when(mockSessionCache.putSession(DataKey(anyString()), any())
-      (any(), any()))
+      when(mockSessionCache.putSession(DataKey(anyString()), any())(any(), any()))
         .thenReturn(Future.successful(sessionPair))
 
-      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(request), 10 seconds)
+      val result: Option[UpscanCallback] =
+        Await.result(sessionService.storeCallbackData(postData, 1000)(request), 10 seconds)
 
-      result.get.length must be(Some(1000L))
-      result.get.noOfRows must be (Some(1000))
+      result.get.length   must be(Some(1000L))
+      result.get.noOfRows must be(Some(1000))
     }
 
     "return a None when cache can't be returned" in {
       val postData: UpscanCallback = UpscanCallback("thefilename", "downloadUrl", Some(1000L))
 
-      when(mockSessionCache.putSession
-      (DataKey(anyString()), any())
-        (any(), any()))
+      when(mockSessionCache.putSession(DataKey(anyString()), any())(any(), any()))
         .thenReturn(Future.failed(new Exception("")))
 
-      val result: Option[UpscanCallback] = Await.result(sessionService.storeCallbackData(postData, 1000)(request), 10 seconds)
+      val result: Option[UpscanCallback] =
+        Await.result(sessionService.storeCallbackData(postData, 1000)(request), 10 seconds)
       result mustBe None
     }
   }
@@ -109,4 +108,5 @@ class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
       verify(mockSessionCache).putSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)), meq(newStatus))(any(), any())
     }
   }
+
 }
