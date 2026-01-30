@@ -68,7 +68,7 @@ class ProcessOdsServiceSpec extends PlaySpec with CSVTestData with ScalaFutures 
   ): ListBuffer[SchemeData] =
     ListBuffer(SchemeData(schemeInfo, sheetName, None, listBuffer))
 
-  val callbackData: UpscanCallback    = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)
+  val callbackData: UpscanCallback = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)
 
   val callbackDataCSV: UpscanCallback =
     UpscanCallback("EMI40_Adjustments_V4", "downloadUrl", Some(1024), Some("csv"), None, None)

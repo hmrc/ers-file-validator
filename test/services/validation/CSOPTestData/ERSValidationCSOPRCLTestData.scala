@@ -207,7 +207,7 @@ trait ERSValidationCSOPRCLTestData {
     rowData
   }
 
-  def getInvalidRowData: Seq[Cell]   = {
+  def getInvalidRowData: Seq[Cell] = {
     val rowData = Seq(
       Cell("A", rowNumber, "20-12-2011")
     )
@@ -224,7 +224,7 @@ trait ERSValidationCSOPRCLTestData {
     rowData
   }
 
-  def getAllCellData: Seq[Cell]      = {
+  def getAllCellData: Seq[Cell] = {
     val rowData = Seq(
       Cell("A", rowNumber, "2014-12-10"),
       Cell("B", rowNumber, "yes"),

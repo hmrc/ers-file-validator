@@ -30,12 +30,12 @@ trait OtherTemplateInfo {
   val otherSheet8Name = "Other_Enhancement_V4"
   val otherSheet9Name = "Other_Sold_V4"
 
-  val otherSheet1Desc      =
+  val otherSheet1Desc =
     "Other ERS schemes or arrangements – Grant of securities options, including Restricted Stock Units (RSUs)"
 
   val otherSheet1ValConfig = "ers-other-grants-validation-config"
 
-  val otherSheet2Desc      =
+  val otherSheet2Desc =
     "Other ERS schemes or arrangements – Other option events, including conditional awards.  Options lapsed for nil consideration should not be included"
 
   val otherSheet2ValConfig = "ers-other-options-validation-config"
@@ -50,12 +50,12 @@ trait OtherTemplateInfo {
   val otherSheet7Desc      = "Other ERS schemes or arrangements – Discharge of notional loans post-acquisition"
   val otherSheet7ValConfig = "ers-other-notional-validation-config"
 
-  val otherSheet8Desc      =
+  val otherSheet8Desc =
     "Other ERS schemes or arrangements – Artificial enhancement of market value. Value of securities post acquisition"
 
   val otherSheet8ValConfig = "ers-other-enhancement-validation-config"
 
-  val otherSheet9Desc      =
+  val otherSheet9Desc =
     "Other ERS schemes and arrangements – Securities sold for more than market value post acquisition"
 
   val otherSheet9ValConfig = "ers-other-sold-validation-config"

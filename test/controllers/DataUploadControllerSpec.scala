@@ -122,9 +122,9 @@ class DataUploadControllerSpec
   val callbackData: UpscanCallback =
     UpscanCallback("John", "downloadUrl", Some(1000L), Some("content-type"), Some(metaData), None)
 
-  val d: UpscanFileData            = UpscanFileData(callbackData, schemeInfo)
+  val d: UpscanFileData = UpscanFileData(callbackData, schemeInfo)
 
-  val csvData: UpscanCsvFileData   = UpscanCsvFileData(
+  val csvData: UpscanCsvFileData = UpscanCsvFileData(
     List(
       callbackData,
       callbackData

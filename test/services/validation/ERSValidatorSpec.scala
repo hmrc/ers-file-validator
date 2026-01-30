@@ -29,7 +29,7 @@ class ERSValidatorSpec extends PlaySpec with ScalaFutures with MockitoSugar with
     ConfigFactory.load.getConfig("ers-emi-adjustments-validation-config")
   )
 
-  val testData                 = Seq(
+  val testData = Seq(
     "yes",
     "yes",
     "yes",

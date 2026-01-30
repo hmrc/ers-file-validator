@@ -54,10 +54,10 @@ class ERSFileValidatorConnectorSpec
 
   val mockAuditEvents: AuditEvents = mock[AuditEvents]
 
-  val ersFileValidatorConnector                   = new ERSFileValidatorConnector(mockAppConfig, mockHttpClient, mockAuditEvents, ec)
-  val data: ListBuffer[Seq[String]]               = ListBuffer[Seq[String]](Seq("abc"))
+  val ersFileValidatorConnector     = new ERSFileValidatorConnector(mockAppConfig, mockHttpClient, mockAuditEvents, ec)
+  val data: ListBuffer[Seq[String]] = ListBuffer[Seq[String]](Seq("abc"))
 
-  val schemeInfo: SchemeInfo                      = SchemeInfo(
+  val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11000001231275",
     timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
@@ -66,15 +66,15 @@ class ERSFileValidatorConnectorSpec
     schemeType = "EMI"
   )
 
-  val submissionData: SchemeData                  = SchemeData(schemeInfo, "sheetOne", None, data: ListBuffer[Seq[String]])
+  val submissionData: SchemeData = SchemeData(schemeInfo, "sheetOne", None, data: ListBuffer[Seq[String]])
 
   val submissionSchemeData: SubmissionsSchemeData =
     SubmissionsSchemeData(schemeInfo, "sheetOne", UpscanCallback("name", "https://www.test.com/url"), numberOfRows = 1)
 
-  val mockSubmissionsUrl                          = "/test-submissions-url"
-  val mockEncodedSubmissionsUrl                   = "/test-submissions-url/ers/1234%2FABCD/submit-presubmission"
-  val mockEncodedSubmissionsUrlV2                 = "/test-submissions-url/ers/v2/1234%2FABCD/submit-presubmission"
-  val empRef                                      = "1234/ABCD"
+  val mockSubmissionsUrl          = "/test-submissions-url"
+  val mockEncodedSubmissionsUrl   = "/test-submissions-url/ers/1234%2FABCD/submit-presubmission"
+  val mockEncodedSubmissionsUrlV2 = "/test-submissions-url/ers/v2/1234%2FABCD/submit-presubmission"
+  val empRef                      = "1234/ABCD"
 
   "The ERSFileValidator Connector" must {
     "return a positive response on sending sheet data" in {

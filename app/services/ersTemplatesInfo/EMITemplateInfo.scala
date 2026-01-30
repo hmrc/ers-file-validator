@@ -36,7 +36,7 @@ trait EMITemplateInfo {
   val emiSheet4ValConfig = "ers-emi-nontaxable-validation-config"
   val emiSheet5Desc      = "EMI template - Taxable exercise of options"
 
-  val emiSheet5ValConfig                    = "ers-emi-taxable-validation-config"
+  val emiSheet5ValConfig = "ers-emi-taxable-validation-config"
 
   val emiAdjustmentsHeaderRow: List[String] = List(
     "1.Has there been any adjustment of options following a variation in the share capital of the company?(yes/no)",
