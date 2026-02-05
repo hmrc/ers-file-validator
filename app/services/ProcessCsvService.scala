@@ -29,11 +29,9 @@ import play.api.Logging
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.services.validation.DataValidator
-import uk.gov.hmrc.services.validation.models.ValidationError
-import uk.gov.hmrc.validator.CsvValidator.{setValidatorAndValidateCsvRow, validateCsvRow}
-import uk.gov.hmrc.validator.models.RowValidationResults
-import uk.gov.hmrc.validator.DataGenerator
+import uk.gov.hmrc.validator.csv.CsvValidator
+import uk.gov.hmrc.validator.models.ValidationError
+import uk.gov.hmrc.validator.models.csv.RowValidationResults
 import utils.{ErrorResponseMessages, ValidationUtils}
 
 import javax.inject.{Inject, Singleton}
@@ -66,7 +64,7 @@ class ProcessCsvService @Inject()(auditEvents: AuditEvents,
   def extractBodyOfRequestAndValidate(csopV5Enabled: Boolean, sheetName: String): Source[HttpResponse, _] => Source[Either[Throwable, RowValidationResults], _] =
     _.flatMapConcat(extractEntityData)
       .via(CsvParsing.lineScanner())
-      .via(Flow.fromFunction(setValidatorAndValidateCsvRow(csopV5Enabled, _, sheetName)))
+      .via(Flow.fromFunction( CsvValidator.setValidatorAndValidateCsvRow(csopV5Enabled, _, sheetName)))
       .via(Flow.fromFunction(Right(_)))
       .map(_.flatMap(identity))
       .takeWhile(_.map(_.validationErrors.isEmpty).getOrElse(true), inclusive = true)

@@ -18,7 +18,7 @@ package services
 
 import services.besIntegrationTestData.EMIBESIntegrationTestData
 
-import java.io.{ByteArrayInputStream, InputStream}
+import java.io.ByteArrayInputStream
 import scala.collection.mutable.ListBuffer
 import scala.xml.Elem
 

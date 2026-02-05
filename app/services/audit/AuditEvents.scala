@@ -20,7 +20,7 @@ import models.SchemeInfo
 import org.apache.commons.lang3.exception.ExceptionUtils
 import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.services.validation.models.ValidationError
+import uk.gov.hmrc.validator.models.ValidationError
 
 import javax.inject.{Inject, Singleton}
 

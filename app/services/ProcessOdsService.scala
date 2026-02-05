@@ -25,8 +25,8 @@ import models.upscan.UpscanCallback
 import play.api.Logging
 import play.api.mvc.Request
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
-import uk.gov.hmrc.validator.ODSValidator
-import uk.gov.hmrc.validator.models.ValidDataRow
+import uk.gov.hmrc.validator.models.ods.ValidDataRow
+import uk.gov.hmrc.validator.ods.OdsValidator
 import utils.{ErrorResponseMessages, ValidationUtils}
 
 import java.io.InputStream
@@ -51,7 +51,7 @@ class ProcessOdsService @Inject()(auditEvents: AuditEvents,
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsError, Int]] = {
     val startTime = System.currentTimeMillis()
     Try(
-      ODSValidator().generateSchemeData(
+      OdsValidator.generateSchemeData(
         appConfig.csopV5Enabled,
         readFile(callbackData.downloadUrl),
         schemeInfo.schemeType,

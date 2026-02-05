@@ -16,7 +16,7 @@
 
 package services
 
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
 import models._
@@ -30,19 +30,17 @@ import org.apache.pekko.util.ByteString
 import org.eclipse.jetty.http2.generator.DataGenerator
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.{EitherValues, OptionValues}
 import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.{EitherValues, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.services.validation.DataValidator
-import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
-import uk.gov.hmrc.validator.models.RowValidationResults
-import uk.gov.hmrc.validator.{CsvValidator, DataGenerator, ERSValidationConfigs, SheetInfo}
-import utils.ErrorResponseMessages
+import uk.gov.hmrc.validator.models.csv.RowValidationResults
+import uk.gov.hmrc.validator.models.{Cell, ValidationError}
+import uk.gov.hmrc.validator.{DataEngine, SheetInfo}
 
 import java.time.ZonedDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -78,7 +76,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
   def processCsvService(extractBodyOfRequestAndValidateOverride: Option[Source[HttpResponse, _] => Source[Either[Throwable, RowValidationResults], _]] = None,
                         extractEntityDataOverride: Option[HttpResponse => Source[ByteString, _]] = None,
                         sendSchemeCsvNewOverride: Option[Future[Option[Throwable]]] = None): ProcessCsvService =
-    new ProcessCsvService(mockAuditEvents, mockAppConfig, mockErsFileValidatorConnector){
+    new ProcessCsvService(mockAuditEvents, mockAppConfig, mockErsFileValidatorConnector) {
       override def extractBodyOfRequestAndValidate(csopV5Enabled: Boolean, sheetName: String): Source[HttpResponse, _] => Source[Either[Throwable, RowValidationResults], _] = { // TODO: COME BACK TO
         extractBodyOfRequestAndValidateOverride
           .getOrElse(super.extractBodyOfRequestAndValidate(csopV5Enabled, sheetName))
@@ -159,7 +157,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       val result: Seq[Either[ErsError, CsvFileSubmissions]] = Await.result(Future.sequence(resultFuture), Duration.Inf)
       result.size mustBe 1
-      result.head.swap.map{(error: ErsError) =>
+      result.head.swap.map { (error: ErsError) =>
         error mustBe a[RowValidationError]
         error.message mustBe errorMessage
         error.context mustBe context
@@ -177,7 +175,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
       error mustBe a[models.ErsSystemError]
       error.message mustBe "Failed to set validator"
-      error.context mustBe "Error processing CSV file: NOT A VALID SHEET  "
+      error.context mustBe "Error processing CSV file: NOT A VALID SHEET"
       assert(boolList.forall(_.isLeft))
     }
   }
@@ -208,8 +206,8 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         .single(
           HttpResponse(
             entity = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
-            "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
-            "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
+              "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
+              "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
           )
         )
 
@@ -241,7 +239,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
       ("100 invalid rows", Seq.fill(100)(invalidDataRow).mkString("\n"), Seq(invalidRow))
     )
 
-    validationTestCases.foreach{
+    validationTestCases.foreach {
       case (testDescription: String, sourceData: String, validationResult: Seq[Either[Throwable, RowValidationResults]]) =>
         s"when parsed $testDescription generate the correct validation result" in {
           val source: Source[HttpResponse, NotUsed] = Source.single(HttpResponse(entity = sourceData))
@@ -266,7 +264,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
         extractEntityDataOverride = Some(_ => Source.failed(ERSFileProcessingException("a message!", "with contents!")))
       )
 
-      val dataValidator: DataValidator = new DataValidator(ConfigFactory.load.getConfig("ers-csop-granted-validation-config"))
+      val dataValidator: DataEngine = new DataEngine(ConfigFactory.load.getConfig("ers-csop-granted-validation-config"))
 
       val resultFuture = testService
         .extractBodyOfRequestAndValidate(csopV5Enabled = true, sheetName = "CSOP_OptionsGranted_V4")(source)

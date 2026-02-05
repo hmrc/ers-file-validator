@@ -26,10 +26,10 @@ import play.api.mvc.{AnyContentAsEmpty, Request}
 import play.api.test.FakeRequest
 import services.audit.{AuditEvents, AuditService}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.services.validation.models._
 
 import scala.collection.mutable.ListBuffer
 import org.scalatest.wordspec.AnyWordSpecLike
+import uk.gov.hmrc.validator.models.{Cell, ValidationError}
 
 import java.time.ZonedDateTime
 

@@ -29,8 +29,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
-import uk.gov.hmrc.validator.ODSValidator
-import uk.gov.hmrc.validator.models.ValidDataRow
+import uk.gov.hmrc.validator.models.ods.ValidDataRow
 
 import java.io.InputStream
 import java.time.ZonedDateTime
@@ -72,7 +71,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
   }
 
   "The File Processing Service" must {
-    def fileProcessingService(): ProcessOdsService = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+    def processOdsService(): ProcessOdsService = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
       override val splitSchemes = false
       override val maxNumberOfRows = 1
 
@@ -90,13 +89,13 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       when(mockSessionService.storeCallbackData(any(), any())(any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
 
-      val result: Future[Either[ErsError, Int]] = fileProcessingService().processFile(callbackData, "")(hc, schemeInfo, request)
+      val result: Future[Either[ErsError, Int]] = processOdsService().processFile(callbackData, "")(hc, schemeInfo, request)
       val either = Await.result(result, Duration(5, SECONDS))
       either mustBe Right(1)
     }
 
     "return user validation error when DataGenerator throws an exception" in {
-      val result: Future[Either[ErsError, Int]] = fileProcessingService().processFile(callbackData, "")(hc, schemeInfo, request)
+      val result: Future[Either[ErsError, Int]] = processOdsService().processFile(callbackData, "")(hc, schemeInfo, request)
       val either: Either[ErsError, Int] = Await.result(result, Duration(5, SECONDS))
       either.swap.map(_.message mustBe "[ProcessOdsService][processFile]: Error reading ODS file -> Validation failed!!!")
     }
@@ -105,7 +104,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
       when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
       when(mockSessionService.storeCallbackData(any[UpscanCallback], any[Int])(any())).thenReturn(Future.successful(Some(callbackData)))
-      val result = fileProcessingService().processFile(callbackData, "")(hc, schemeInfo, request)
+      val result = processOdsService().processFile(callbackData, "")(hc, schemeInfo, request)
       Await.result(result, Duration(5, SECONDS))
       verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier], any[Request[_]]) // TODO: THIS WAS SET TO CALL 3 TIMES, I THINK THIS SHOULD BE 1 BUT NEED TO DOUBLE CHECK
     }
