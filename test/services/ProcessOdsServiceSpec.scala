@@ -37,18 +37,17 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.duration.{Duration, SECONDS}
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
-
 class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar with BeforeAndAfter {
 
-  val mockSessionService: SessionCacheService = mock[SessionCacheService]
+  val mockSessionService: SessionCacheService                  = mock[SessionCacheService]
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
-  val mockHeaderCarrier: HeaderCarrier = mock[HeaderCarrier]
-  val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
-  val mockAuditEvents: AuditEvents = mock[AuditEvents]
+  val mockHeaderCarrier: HeaderCarrier                         = mock[HeaderCarrier]
+  val mockAppConfig: ApplicationConfig                         = mock[ApplicationConfig]
+  val mockAuditEvents: AuditEvents                             = mock[AuditEvents]
 
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  implicit val request: Request[_] = mock[Request[_]]
-  implicit val hc: HeaderCarrier = mock[HeaderCarrier]
+  implicit val request: Request[_]          = mock[Request[_]]
+  implicit val hc: HeaderCarrier            = mock[HeaderCarrier]
 
   val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11999991234567",
@@ -62,8 +61,10 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
   def createListBuffer(listBuffer: ListBuffer[Seq[String]]): ListBuffer[ValidDataRow] =
     ListBuffer(ValidDataRow(data = listBuffer))
 
-  val callbackData: UpscanCallback = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)
-  val callbackDataCSV: UpscanCallback = UpscanCallback("EMI40_Adjustments_V4", "downloadUrl", Some(1024), Some("csv"), None, None)
+  val callbackData: UpscanCallback    = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)
+
+  val callbackDataCSV: UpscanCallback =
+    UpscanCallback("EMI40_Adjustments_V4", "downloadUrl", Some(1024), Some("csv"), None, None)
 
   before {
     reset(mockErsFileValidatorConnector)
@@ -71,85 +72,129 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
   }
 
   "The File Processing Service" must {
-    def processOdsService(): ProcessOdsService = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes = false
-      override val maxNumberOfRows = 1
+    def processOdsService(): ProcessOdsService =
+      new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+        override val splitSchemes    = false
+        override val maxNumberOfRows = 1
 
-      override def readFile(downloadUrl: String): InputStream =
-        XMLTestData.getEMIAdjustmentsTemplateSTAX
+        override def readFile(downloadUrl: String): InputStream =
+          XMLTestData.getEMIAdjustmentsTemplateSTAX
 
-    }
+      }
 
     when(hc.sessionId).thenReturn(Some(SessionId("sessionId")))
 
     "yield a list of scheme data from file data" in {
 
-      when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+      when(
+        mockErsFileValidatorConnector
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+      )
         .thenReturn(Future.successful(Right(HttpResponse(200, ""))))
       when(mockSessionService.storeCallbackData(any(), any())(any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
 
-      val result: Future[Either[ErsError, Int]] = processOdsService().processFile(callbackData, "")(hc, schemeInfo, request)
-      val either = Await.result(result, Duration(5, SECONDS))
+      val result: Future[Either[ErsError, Int]] =
+        processOdsService().processFile(callbackData, "")(hc, schemeInfo, request)
+      val either                                = Await.result(result, Duration(5, SECONDS))
       either mustBe Right(1)
-    }
-
-    "return user validation error when DataGenerator throws an exception" in {
-      val result: Future[Either[ErsError, Int]] = processOdsService().processFile(callbackData, "")(hc, schemeInfo, request)
-      val either: Either[ErsError, Int] = Await.result(result, Duration(5, SECONDS))
-      either.swap.map(_.message mustBe "[ProcessOdsService][processFile]: Error reading ODS file -> Validation failed!!!")
     }
 
     "yield a list of scheme data from file data with large file" in {
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
-      when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
-      when(mockSessionService.storeCallbackData(any[UpscanCallback], any[Int])(any())).thenReturn(Future.successful(Some(callbackData)))
+      when(
+        mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(
+          any[HeaderCarrier],
+          any[Request[_]]
+        )
+      ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+      when(mockSessionService.storeCallbackData(any[UpscanCallback], any[Int])(any()))
+        .thenReturn(Future.successful(Some(callbackData)))
       val result = processOdsService().processFile(callbackData, "")(hc, schemeInfo, request)
       Await.result(result, Duration(5, SECONDS))
-      verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier], any[Request[_]]) // TODO: THIS WAS SET TO CALL 3 TIMES, I THINK THIS SHOULD BE 1 BUT NEED TO DOUBLE CHECK
+      verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any(), any[String]())(
+        any[HeaderCarrier],
+        any[Request[_]]
+      ) // TODO: THIS WAS SET TO CALL 3 TIMES, I THINK THIS SHOULD BE 1 BUT NEED TO DOUBLE CHECK
     }
 
     "return system error when DataGenerator returns system error" in {
-      val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-        override val splitSchemes = false
-        override val maxNumberOfRows = 1
-        override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
-      }
+      val fileProcessingService: ProcessOdsService = spy(
+        new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+          override val splitSchemes                  = false
+          override val maxNumberOfRows               = 1
+          override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+        }
+      )
 
-      val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
+      doThrow(new RuntimeException("exception detail"))
+        .when(fileProcessingService)
+        .generateSchemeData(any())(any())
+
+
+      val result =
+        Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
 
       result.swap.map(
         _ mustBe RowValidationError(
-          message = "[ProcessOdsService][processFile]: Error reading ODS file -> System configuration error",
-          context = "System configuration error",
+          message = "[ProcessOdsService][processFile]: Error reading ODS file -> exception detail",
+          context = "exception detail",
           rowNumber = None
         )
       )
     }
 
     "return system error when the callback data isn't stored correctly" in {
-      val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-        override val splitSchemes = false
-        override val maxNumberOfRows = 1
-        override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
-      }
+      val fileProcessingService: ProcessOdsService =
+        new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+          override val splitSchemes                  = false
+          override val maxNumberOfRows               = 1
+          override def readFile(downloadUrl: String) = XMLTestData.getEMIAdjustmentsTemplateLarge
+        }
 
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
-      when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier],any[Request[_]])).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
-      when(mockSessionService.storeCallbackData(any[UpscanCallback],any[Int])(any())).thenReturn(Future.successful(None))
+      when(
+        mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(
+          any[HeaderCarrier],
+          any[Request[_]]
+        )
+      ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+      when(mockSessionService.storeCallbackData(any[UpscanCallback], any[Int])(any()))
+        .thenReturn(Future.successful(None))
 
-      val result = Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
+      val result =
+        Await.result(fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request), Duration(5, SECONDS))
 
-      result mustBe Left(ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data"))
+      result mustBe Left(
+        ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data")
+      )
     }
 
     "throw an exception when sending data to ers-submissions fails" in {
 
       val listBuffer = ListBuffer(
-        Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
+        Seq(
+          "yes",
+          "yes",
+          "yes",
+          "4",
+          "1989-10-20",
+          "Anthony",
+          "Joe",
+          "Jones",
+          "AA123456A",
+          "123/XZ55555555",
+          "10.1232",
+          "100.00",
+          "10.2585",
+          "10.2544"
+        )
       )
 
-      when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+      when(
+        mockErsFileValidatorConnector
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+      )
         .thenReturn(Future.successful(Left(ERSFileProcessingException("Runtime error", "oh no!"))))
 
       val processOdsService: ProcessOdsService =
@@ -157,17 +202,19 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
 
       val ex: ERSFileProcessingException = intercept[ERSFileProcessingException](
         Await.result(
-          processOdsService.sendSchemeData(SchemeData(schemeInfo, "", None, listBuffer), ""), Duration.Inf
+          processOdsService.sendSchemeData(SchemeData(schemeInfo, "", None, listBuffer), ""),
+          Duration.Inf
         )
       )
       ex.message mustBe "models.ERSFileProcessingException: Runtime error"
     }
 
     "return ERSFileProcessingException when reading the file fails" in {
-      val exceptionMessage = "Simulated file read failure"
-      val fileProcessingService: ProcessOdsService = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-        override def readFile(downloadUrl: String) = throw new RuntimeException(exceptionMessage)
-      }
+      val exceptionMessage                         = "Simulated file read failure"
+      val fileProcessingService: ProcessOdsService =
+        new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+          override def readFile(downloadUrl: String) = throw new RuntimeException(exceptionMessage)
+        }
 
       val result: Either[ErsError, Int] = Await.result(
         fileProcessingService.processFile(callbackData, "")(hc, schemeInfo, request),
@@ -186,64 +233,106 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
     "sendScheme method" must {
 
       val oneHundredRecords: ListBuffer[Seq[String]] = ListBuffer.fill(100)(
-        Seq("yes", "yes", "yes", "4", "1989-10-20", "Anthony", "Joe", "Jones", "AA123456A", "123/XZ55555555", "10.1232", "100.00", "10.2585", "10.2544")
+        Seq(
+          "yes",
+          "yes",
+          "yes",
+          "4",
+          "1989-10-20",
+          "Anthony",
+          "Joe",
+          "Jones",
+          "AA123456A",
+          "123/XZ55555555",
+          "10.1232",
+          "100.00",
+          "10.2585",
+          "10.2544"
+        )
       )
 
       "return 1 and call sendSchemeData once when splitSchemes is set to false in config even if number of records > mac number of rows/sub" in {
 
-        when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+        when(
+          mockErsFileValidatorConnector
+            .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        )
           .thenReturn(Future.successful(Right(HttpResponse(200, ""))))
         when(mockAppConfig.splitLargeSchemes).thenReturn(false)
         when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(50)
 
-        val output: Int = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
-          .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
+        val output: Int =
+          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+            .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
 
         output mustBe 1
-        verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        verify(mockErsFileValidatorConnector, times(1))
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
       }
 
       "return 1 and call sendSchemeData once when splitSchemes is set to true in config but the number of records > mac number of rows/sub" in {
 
-        when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+        when(
+          mockErsFileValidatorConnector
+            .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        )
           .thenReturn(Future.successful(Right(HttpResponse(200, ""))))
         when(mockAppConfig.splitLargeSchemes).thenReturn(true)
-        when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(200) // pass in 100 records and the number of records/sheet is 200
+        when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(
+          200
+        ) // pass in 100 records and the number of records/sheet is 200
 
-        val output: Int = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
-          .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
+        val output: Int =
+          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+            .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
 
         output mustBe 1
-        verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        verify(mockErsFileValidatorConnector, times(1))
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
       }
 
       "return 2 slices and call sendSchemeData twice" in {
 
-        when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+        when(
+          mockErsFileValidatorConnector
+            .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        )
           .thenReturn(Future.successful(Right(HttpResponse(200, ""))))
         when(mockAppConfig.splitLargeSchemes).thenReturn(true)
-        when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(50) // pass in 100 records, 100/50 = 2 -> call sendScheme twice
+        when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(
+          50
+        ) // pass in 100 records, 100/50 = 2 -> call sendScheme twice
 
-        val output: Int = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
-          .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
+        val output: Int =
+          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+            .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
 
         output mustBe 2
-        verify(mockErsFileValidatorConnector, times(2)).sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        verify(mockErsFileValidatorConnector, times(2))
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
       }
 
       "return 3 slices and call sendSchemeData 3 times" in {
 
-        when(mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]]))
+        when(
+          mockErsFileValidatorConnector
+            .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        )
           .thenReturn(Future.successful(Right(HttpResponse(200, ""))))
         when(mockAppConfig.splitLargeSchemes).thenReturn(true)
-        when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(40) // pass in 100 records, 100/40 results in 3 calls to sendScheme
+        when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(
+          40
+        ) // pass in 100 records, 100/40 results in 3 calls to sendScheme
 
-        val output: Int = new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
-          .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
+        val output: Int =
+          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+            .sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), "")
 
         output mustBe 3
-        verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        verify(mockErsFileValidatorConnector, times(3))
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
       }
     }
   }
+
 }

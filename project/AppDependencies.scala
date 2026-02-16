@@ -15,7 +15,7 @@ object AppDependencies {
     "commons-codec"           % "commons-codec"              % "1.19.0",
     "uk.gov.hmrc.mongo"      %% "hmrc-mongo-play-30"         % mongoVersion,
     "org.apache.pekko"       %% "pekko-connectors-csv"       % pekkoVersion,
-    "uk.gov.hmrc"            %% "ers-file-validator-config"  % "0.3.0"
+    "uk.gov.hmrc"            %% "ers-file-validator-config"  % "0.4.0"
   )
 
   val test: Seq[ModuleID] = Seq(
@@ -27,7 +27,7 @@ object AppDependencies {
     "org.jsoup"               %  "jsoup"                    % "1.21.1",
     "uk.gov.hmrc"             %% "bootstrap-test-play-30"   % bootstrapVersion,
     "org.scalatest"           %% "scalatest"                % "3.2.19",
-    "org.scalatestplus"       %% "mockito-4-11"             % "3.2.18.0",
+    "org.scalatestplus"       %% "mockito-5-12"             % "3.2.19.0",
   ).map(_ % Test)
 
   def apply(): Seq[ModuleID] = compile ++ test
