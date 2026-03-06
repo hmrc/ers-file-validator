@@ -18,6 +18,4 @@ package models
 
 import models.upscan.UpscanCallback
 
-case class CsvFileContents(sheetName: String, contents: Seq[Seq[String]])
-
 case class CsvFileSubmissions(sheetName: String, fileLength: Int, upscanCallback: UpscanCallback)

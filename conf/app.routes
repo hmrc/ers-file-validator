@@ -1,8 +1,8 @@
 # microservice specific routes
 
-POST        /:empRef/process-file               controllers.DataUploadController.processFileDataFromFrontend(empRef:String)
+POST        /:empRef/process-file               controllers.DataUploadController.processOdsFile(empRef:String)
 
-POST        /v2/:empRef/process-csv-file        controllers.DataUploadController.processCsvFileDataFromFrontendV2(empRef:String)
+POST        /v2/:empRef/process-csv-file        controllers.DataUploadController.processCsvFile(empRef:String)
 
 POST        /:sessionId/create-callback         controllers.FileValidatorController.createCallbackRecord(sessionId: String)
 GET         /:sessionId/get-callback            controllers.FileValidatorController.getCallbackRecord(sessionId: String)

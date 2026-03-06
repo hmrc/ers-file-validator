@@ -25,9 +25,15 @@ import models.upscan.UpscanCallback
 import play.api.Logging
 import play.api.mvc.Request
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
+import uk.gov.hmrc.validator.SchemeVersion
 import uk.gov.hmrc.validator.models.ods.ValidDataRow
 import uk.gov.hmrc.validator.ods.OdsValidator
-import utils.{ErrorResponseMessages, ValidationUtils}
+import uk.gov.hmrc.validator.{
+  DataContainsAmpersandException, FileDataContentsInvalidException, IncorrectHeaderException, IncorrectSchemeException,
+  IncorrectSheetNameException, NoDataException, ParserFailureException, SheetNameNotInSchemeVersion,
+  SystemErrorDuringValidationException, ValidatorException
+}
+import utils.{ErrorResponseMessages, SchemeResolver, ValidationUtils}
 
 import java.io.InputStream
 import java.util.UUID
@@ -50,13 +56,15 @@ class ProcessOdsService @Inject() (
   val splitSchemes: Boolean = appConfig.splitLargeSchemes
   val maxNumberOfRows: Int  = appConfig.maxNumberOfRowsPerSubmission
 
-  def generateSchemeData(callbackData: UpscanCallback)(implicit schemeInfo: SchemeInfo): ListBuffer[SchemeData] =
+  def generateSchemeData(callbackData: UpscanCallback, schemeVersion: SchemeVersion)(implicit
+    schemeInfo: SchemeInfo
+  ): ListBuffer[SchemeData] =
     OdsValidator
       .generateSchemeData(
-        appConfig.csopV5Enabled,
+        schemeVersion,
         readFile(callbackData.downloadUrl),
         schemeInfo.schemeType,
-        "" // TODO: Come back to filename arg
+        callbackData.name
       )
       .map((validDataRow: ValidDataRow) => SchemeData(schemeInfo, validDataRow.sheetName, None, validDataRow.data))
 
@@ -66,68 +74,78 @@ class ProcessOdsService @Inject() (
     request: Request[_]
   ): Future[Either[ErsError, Int]] = {
     val startTime = System.currentTimeMillis()
-    Try(generateSchemeData(callbackData)) match {
-      case Failure(exception: Throwable)               =>
-        logger.error(
-          s"[ProcessOdsService][processFile] Unexpected error reading file: ${exception.getMessage}",
-          exception
-        )
 
-        deliverBESMetrics(startTime)
+    val result = for {
+      schemeVersion <- SchemeResolver.getSchemeVersion(schemeInfo.taxYear, appConfig)
+      schemeData    <-
+        Try(generateSchemeData(callbackData, schemeVersion)).toEither.left
+          .map(error => mapValidatorException(error, startTime))
+    } yield schemeData
 
-        Future.successful(
-          Left(
-            RowValidationError(
-              message = s"[ProcessOdsService][processFile]: Error reading ODS file -> ${exception.getMessage}",
-              context = exception.getMessage,
-              rowNumber = None
-            )
-          )
-        )
-      case Success(schemeData: ListBuffer[SchemeData]) =>
-        processSchemeData(callbackData, schemeData, startTime, empRef)
+    result match {
+      case Left(error)       => Future.successful(Left(error))
+      case Right(schemeData) => processSchemeData(callbackData, schemeData, startTime, empRef)
     }
   }
 
-  private def processSchemeData(
-    callbackData: UpscanCallback,
-    result: ListBuffer[SchemeData],
-    startTime: Long,
-    empRef: String
-  )(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsError, Int]] = {
-    logger.debug("2.1 result contains: " + result)
+  private def isSystemError(e: ValidatorException): Boolean = e match {
+    case _: SystemErrorDuringValidationException | _: ParserFailureException =>
+      true // note removed SheetNameNotInSchemeVersion, check ATs
+    case _                                                                   => false
+  }
+
+  private def mapValidatorException(
+    e: Throwable,
+    startTime: Long
+  )(implicit schemeInfo: SchemeInfo): ErsError = {
     deliverBESMetrics(startTime)
 
-    val filesWithData  = result.filter(_.data.nonEmpty)
-    var totalRows      = 0
-    val res1: Try[Int] = Try(filesWithData.foldLeft(0) { (res, el) =>
-      totalRows += el.data.size
-      res + sendScheme(el, empRef)
-    })
+    val logStart = "[ProcessOdsService][processFile]"
 
-    res1 match {
-      case Failure(exception) =>
-        Future.successful(Left(ERSFileProcessingException(exception.getMessage, exception.getStackTrace.toString)))
-      case Success(res1)      =>
-        val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
-        sessionService.storeCallbackData(callbackData, totalRows)(RequestWithUpdatedSession(request, sessionId)).map {
-          case Some(_) =>
-            logger.info(
-              s"[ProcessOdsService][processFile]: Total number of rows for ods file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): $totalRows"
-            )
-
-            auditEvents.totalRows(totalRows, schemeInfo)
-
-            Right(res1)
-          case None    =>
-            logger.error(s"storeCallbackData failed with Exception , timestamp: ${System.currentTimeMillis()}.")
-            Left(
-              ERSFileProcessingException(
-                "callback data storage in sessioncache failed ",
-                "Exception storing callback data"
-              )
-            )
-        }
+    e match {
+      case e: IncorrectSchemeException               =>
+        logger.warn(
+          s"$logStart Scheme type mismatch: ${e.message}, schemeRef: ${schemeInfo.schemeRef}"
+        )
+        SchemeTypeMismatchError(
+          message = ErrorResponseMessages.dataParserIncorrectSheetName,
+          context = ErrorResponseMessages
+            .dataParserIncorrectSchemeType(Some(e.uploadedFileSchemeType), Some(e.selectedSchemeType)),
+          expectedSchemeType = e.uploadedFileSchemeType,
+          requestSchemeType = e.selectedSchemeType
+        )
+      case e: IncorrectSheetNameException            =>
+        logger.warn(
+          s"$logStart Unknown sheet name: ${e.sheetName}, schemeRef: ${schemeInfo.schemeRef}"
+        )
+        UnknownSheetError(
+          ErrorResponseMessages.dataParserIncorrectSheetName,
+          s"Couldn't find config for given SheetName: ${e.sheetName}"
+        )
+      case e: IncorrectHeaderException               =>
+        logger.warn(
+          s"$logStart Incorrect header: ${e.message}, schemeRef: ${schemeInfo.schemeRef}"
+        )
+        HeaderValidationError(ErrorResponseMessages.dataParserIncorrectHeader, e.message)
+      case _: NoDataException                        =>
+        logger.warn(s"$logStart No data in file, schemeRef: ${schemeInfo.schemeRef}")
+        NoDataError(ErrorResponseMessages.dataParserNoData, ErrorResponseMessages.dataParserNoData)
+      case e: ValidatorException if isSystemError(e) =>
+        logger.error(
+          s"$logStart System error during validation: ${e.message}, schemeRef: ${schemeInfo.schemeRef}"
+        )
+        ERSFileProcessingException(e.message, s"System error during ODS processing, schemeRef: ${schemeInfo.schemeRef}")
+      case e: ValidatorException                     =>
+        logger.warn(
+          s"$logStart File validation error: ${e.message}, schemeRef: ${schemeInfo.schemeRef}"
+        )
+        FileValidationError(e.message, e.message)
+      case e: Throwable                              =>
+        logger.error(s"$logStart Unexpected error reading file: ${e.getMessage}", e)
+        FileValidationError(
+          s"$logStart Error reading ODS file -> ${e.getMessage}",
+          e.getMessage
+        )
     }
   }
 
@@ -140,10 +158,8 @@ class ProcessOdsService @Inject() (
     @scala.annotation.tailrec
     def findFileInZip(stream: ZipInputStream): InputStream =
       Option(stream.getNextEntry) match {
-        case Some(entry) if entry.getName == targetFileName =>
-          stream
-        case Some(_)                                        =>
-          findFileInZip(stream)
+        case Some(entry) if entry.getName == targetFileName => stream
+        case Some(_)                                        => findFileInZip(stream)
         case None                                           =>
           throw ERSFileProcessingException(
             s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
@@ -158,37 +174,97 @@ class ProcessOdsService @Inject() (
   def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit
     hc: HeaderCarrier,
     request: Request[_]
-  ): Future[Boolean] = {
+  ): Future[Either[ErsError, Unit]] = {
     logger.debug("Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
-    for (result <- ersConnector.sendToSubmissions(ersSchemeData, empRef)) yield result match {
-      case Right(_)            =>
+    ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
+      case Right(_) => // todo, shouldn't we do something with the http response here?
         auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
-      case Left(ex: Throwable) =>
+        Right(())
+      case Left(ex) =>
         auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         logger.error(s"[ProcessOdsService][sendSchemeData] An exception occurred: ${ex.getMessage}", ex)
-        throw ERSFileProcessingException(ex.toString, ex.getStackTrace.toString)
+        Left(ERSFileProcessingException(ex.toString, ex.getMessage))
     }
   }
 
-  def sendScheme(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Int =
-    if (splitSchemes && (schemeData.data.size > maxNumberOfRows)) {
+  def sendScheme(schemeData: SchemeData, empRef: String)(implicit
+    hc: HeaderCarrier,
+    request: Request[_]
+  ): Future[Either[ErsError, Int]] =
 
-      val slices: Int = ValidationUtils.numberOfSlices(schemeData.data.size, maxNumberOfRows)
-      for (i <- 0 until slices * maxNumberOfRows by maxNumberOfRows) {
+    if (splitSchemes && schemeData.data.size > maxNumberOfRows) {
+
+      val slices = ValidationUtils.numberOfSlices(schemeData.data.size, maxNumberOfRows)
+
+      val sendSchemeResults = for (i <- 0 until slices * maxNumberOfRows by maxNumberOfRows) yield {
         val scheme = new SchemeData(
           schemeData.schemeInfo,
           schemeData.sheetName,
           Option(slices),
           schemeData.data.slice(i, i + maxNumberOfRows)
         )
+
         logger.debug("The size of the scheme data is " + scheme.data.size + " and i is " + i)
+
         sendSchemeData(scheme, empRef)
       }
-      slices
+
+      Future.sequence(sendSchemeResults).map { results =>
+        results.find(_.isLeft) match {
+          case Some(Left(err)) => Left(err)
+          case _               => Right(slices)
+        }
+      }
     } else {
-      sendSchemeData(schemeData, empRef)
-      1
+      sendSchemeData(schemeData, empRef).map((sendResult: Either[ErsError, Unit]) =>
+        sendResult.map(_ => 1)
+      ) // todo why is this 1?
     }
+
+  private def processSchemeData(
+    callbackData: UpscanCallback,
+    result: ListBuffer[SchemeData],
+    startTime: Long,
+    empRef: String
+  )(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsError, Int]] = {
+    logger.debug("2.1 result contains: " + result)
+    deliverBESMetrics(startTime)
+
+    val filesWithData = result.filter(_.data.nonEmpty)
+
+    val totalRows = filesWithData.map(_.data.size).sum
+
+    Future
+      .sequence(
+        filesWithData.map(schemeData => sendScheme(schemeData, empRef))
+      )
+      .flatMap { results: ListBuffer[Either[ErsError, Int]] =>
+        results.find(_.isLeft) match {
+          case Some(Left(err)) => Future.successful(Left(err))
+          case _               =>
+            val totalSlices = results.collect { case Right(n) => n }.sum
+            val sessionId   = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
+            sessionService
+              .storeCallbackData(callbackData, totalRows)(RequestWithUpdatedSession(request, sessionId))
+              .map {
+                case Some(_) =>
+                  logger.info(
+                    s"[ProcessOdsService][processFile]: Total number of rows for ods file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): $totalRows"
+                  )
+                  auditEvents.totalRows(totalRows, schemeInfo)
+                  Right(totalSlices)
+                case None    =>
+                  logger.error(s"storeCallbackData failed, timestamp: ${System.currentTimeMillis()}.")
+                  Left(
+                    ERSFileProcessingException(
+                      "callback data storage in sessioncache failed ",
+                      "Exception storing callback data"
+                    )
+                  )
+              }
+        }
+      }
+  }
 
   def deliverBESMetrics(startTime: Long): Unit =
     metrics.besTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)

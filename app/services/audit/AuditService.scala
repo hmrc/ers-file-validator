@@ -39,11 +39,11 @@ class AuditService @Inject()(auditConnector: DefaultAuditConnector,
     DataEvent(
       auditSource = auditSource,
       auditType = transactionName,
-      tags = generateTags(request.session, hc),
+      tags = generateTags(hc),
       detail = details
     )
 
-  private def generateTags(session: Session, hc: HeaderCarrier): Map[String, String] =
+  private def generateTags(hc: HeaderCarrier): Map[String, String] =
     hc.otherHeaders.toMap ++
       hc.otherHeaders.toMap ++
       Map(

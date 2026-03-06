@@ -50,64 +50,68 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
                                      )(implicit val ec: ExecutionContext, actorSystem: ActorSystem)
   extends BackendController(cc) with Metrics with Authorisation with Logging {
 
-  def processFileDataFromFrontend(empRef: String): Action[AnyContent] = authorisedAction(empRef) {
+  def processOdsFile(empRef: String): Action[AnyContent] = authorisedAction(empRef) {
     implicit request: Request[AnyContent] =>
       val startTime = System.currentTimeMillis()
       logger.debug("File Processing Request Received At: " + startTime)
+      val logStart = "[DataUploadController][processOdsFile]"
 
-      val json = request.body.asJson.get
+       request.body.asJson match {
+        case Some(json) =>
+          json.validate[UpscanFileData].fold(
+            valid = res => {
+              implicit val schemeInfo: SchemeInfo = res.schemeInfo
+              processOdsService.processFile(res.callbackData, empRef).map {
+                case Right(result) =>
+                  deliverFileProcessingMetrics(startTime)
+                  Ok(result.toString)
 
-      json.validate[UpscanFileData].fold(
-        valid = res => {
-          implicit val schemeInfo: SchemeInfo = res.schemeInfo
-          processOdsService.processFile(res.callbackData, empRef).map {
-            case Right(result) =>
-              deliverFileProcessingMetrics(startTime)
-              Ok(result.toString)
+                case Left(error: ErsError) =>
+                  deliverFileProcessingMetrics(startTime)
 
-            case Left(error: ErsError) =>
-              deliverFileProcessingMetrics(startTime)
+                  error match {
+                    case schemeError: SchemeTypeMismatchError =>
+                      logger.warn(s"$logStart Scheme type mismatch: " +
+                        s"${schemeError.message}, expected: ${schemeError.expectedSchemeType}, got: ${schemeError.requestSchemeType}, schemeRef: ${schemeInfo.schemeRef}")
 
-              error match {
-                case schemeError: SchemeTypeMismatchError =>
-                  logger.warn(s"[DataUploadController][processFileDataFromFrontend] Scheme type mismatch: " +
-                    s"${schemeError.message}, expected: ${schemeError.expectedSchemeType}, got: ${schemeError.requestSchemeType}, schemeRef: ${schemeInfo.schemeRef}")
-                  val schemeMismatch = SchemeMismatchError(schemeError.message, schemeError.expectedSchemeType, schemeError.requestSchemeType)
-                  BadRequest(Json.toJson(schemeMismatch))
+                      BadRequest(Json.toJson(SchemeMismatchError(schemeError.message, schemeError.expectedSchemeType, schemeError.requestSchemeType)))
 
-                case userError: UserValidationError =>
-                  logger.warn(s"[DataUploadController][processFileDataFromFrontend] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
-                  BadRequest(userError.message)
+                    case userError: UserValidationError =>
+                      logger.warn(s"$logStart User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}")
+                      BadRequest(userError.message)
 
-                case systemError: SystemError =>
-                  logger.error(s"[DataUploadController][processFileDataFromFrontend] Unexpected system error: ${systemError.message}")
-                  InternalServerError
+                    case systemError: SystemError =>
+                      logger.error(s"$logStart Unexpected system error: ${systemError.message}")
+                      InternalServerError
+                  }
               }
-          }
-        },
-        invalid = e => {
-          val errorMessage = e.mkString(", ")
-          logger.error(s"[DataUploadController][processFileDataFromFrontend] An exception occurred while validating file data :$errorMessage")
-          deliverFileProcessingMetrics(startTime)
-          Future.successful(BadRequest(e.toString))
-        }
-      )
+            },
+            invalid = e => {
+              val errorMessage = e.mkString(", ")
+              logger.error(s"$logStart An exception occurred while validating file data :$errorMessage")
+              deliverFileProcessingMetrics(startTime)
+              Future.successful(BadRequest(e.toString))
+            }
+          )
+        case None => Future.successful(BadRequest("No JSON body"))
+      }
   }
 
   def deliverFileProcessingMetrics(startTime: Long): Unit =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
 
-  def processCsvFileDataFromFrontendV2(empRef: String): Action[JsValue] = authorisedActionWithBody(empRef) {
+  def processCsvFile(empRef: String): Action[JsValue] = authorisedActionWithBody(empRef) {
     implicit request: Request[JsValue] =>
 
+      val logStart = "[DataUploadController][processCsvFile]"
       val startTime = System.currentTimeMillis()
       request.body.validate[UpscanCsvFileData].fold(
         valid = res => {
-          val schemeInfo: SchemeInfo = res.schemeInfo
+          implicit val schemeInfo: SchemeInfo = res.schemeInfo
           logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
           deliverFileProcessingMetrics(startTime)
 
-          val processedFiles: Seq[Future[Either[ErsError, CsvFileSubmissions]]] = processCsvService.processFiles(res, streamFile)
+          val processedFiles: Seq[Future[Either[ErsError, CsvFileSubmissions]]] = processCsvService.processFiles(res, schemeInfo, streamFile)
 
           val extractedSchemeData: Seq[Future[Either[ErsError, CsvFileLengthInfo]]] = processedFiles.map { submission =>
             submission.flatMap(processCsvService.extractSchemeData(res.schemeInfo, empRef, _))
@@ -118,11 +122,11 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
               case Left(error: ErsError) =>
                 error match {
                   case userError: UserValidationError =>
-                    logger.warn(s"[DataUploadController][processCsvFileDataFromFrontendV2] User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}")
+                    logger.warn(s"$logStart User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}")
                     deliverFileProcessingMetrics(startTime)
                     Future.successful(BadRequest(userError.message))
                   case systemError: SystemError =>
-                    logger.error(s"[DataUploadController][processCsvFileDataFromFrontendV2] System error: ${systemError.message}, schemeRef: ${schemeInfo.schemeRef}")
+                    logger.error(s"$logStart System error: ${systemError.message}, schemeRef: ${schemeInfo.schemeRef}")
                     deliverFileProcessingMetrics(startTime)
                     Future.successful(InternalServerError)
                 }
@@ -134,7 +138,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
                 }
                 val totalRowCount = result.foldLeft(0)((accum, inputTuple) => accum + inputTuple.fileLength)
                 result.foreach((csvFileLengthInfo: CsvFileLengthInfo) =>
-                  logger.info(s"[DataUploadController][processCsvFileDataFromFrontendV2]: Total number of rows for csv file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): ${csvFileLengthInfo.fileLength}")
+                  logger.info(s"$logStart: Total number of rows for csv file, schemeRef ${schemeInfo.schemeRef} (scheme type: ${schemeInfo.schemeType}): ${csvFileLengthInfo.fileLength}")
                 )
 
                 auditEvents.totalRows(totalRowCount, schemeInfo)
@@ -144,11 +148,11 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
                 sessionService.storeCallbackData(res.callbackData.head, totalRowCount)(RequestWithUpdatedSession(request, sessionId)).map {
                   case callback: Option[UpscanCallback] if callback.isDefined =>
                     val numberOfSlices = result.map(_.noOfSlices).sum
-                    logger.info(s"[DataUploadController][processCsvFileDataFromFrontendV2] File validated successfully, schemeRef: ${schemeInfo.schemeRef}")
+                    logger.info(s"$logStart File validated successfully, schemeRef: ${schemeInfo.schemeRef}")
                     Ok(numberOfSlices.toString)
                   case _ =>
                     logger.error(
-                      s"[DataUploadController][processCsvFileDataFromFrontendV2] csv storeCallbackData failed" +
+                      s"$logStart CSV storeCallbackData failed" +
                         s" while storing data, schemeRef: ${schemeInfo.schemeRef}, timestamp: ${java.time.LocalTime.now()}.")
                     deliverFileProcessingMetrics(startTime)
                     Accepted("csv callback data storage in sessioncache failed")
@@ -157,7 +161,7 @@ class DataUploadController @Inject()(auditEvents: AuditEvents,
           }
         },
         invalid = e => {
-          logger.warn("[DataUploadController][processCsvFileDataFromFrontendV2] Invalid request body")
+          logger.warn(s"$logStart Invalid request body")
           deliverFileProcessingMetrics(startTime)
           Future.successful(BadRequest(e.toString))
         }

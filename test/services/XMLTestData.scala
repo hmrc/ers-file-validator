@@ -22,9 +22,8 @@ import java.io.ByteArrayInputStream
 import scala.collection.mutable.ListBuffer
 import scala.xml.Elem
 
-/**
- * Created by raghu on 21/01/16.
- */
+
+// TODO do we need this class &  data?
 object XMLTestData extends EMIBESIntegrationTestData {
 
   val staxIntegrationTests : ListBuffer[(String,Elem,Elem)] = ListBuffer()
