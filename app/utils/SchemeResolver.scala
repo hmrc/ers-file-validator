@@ -27,7 +27,14 @@ object SchemeResolver {
   def getSchemeVersion(taxYear: String, appConfig: ApplicationConfig): Either[ErsError, SchemeVersion] =
     if (appConfig.csopV5Enabled) {
       Try(taxYear.split("/")(0).toInt >= 2023) match {
-        case Success(v5Required) => Right(SchemeVersion.V5IfEnabled(v5Required)) // todo: not sure the library should care about the V4/V5 switch (V5IfEnabled), ADT should probably be simpler
+        case Success(v5Required) =>
+          Right {
+            if (v5Required) {
+              SchemeVersion.V5
+            } else {
+              SchemeVersion.V4
+            }
+          }
         case Failure(_)          =>
           Left(
             InvalidTaxYearError(

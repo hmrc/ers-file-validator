@@ -25,15 +25,10 @@ import models.upscan.UpscanCallback
 import play.api.Logging
 import play.api.mvc.Request
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
-import uk.gov.hmrc.validator.SchemeVersion
 import uk.gov.hmrc.validator.models.ods.ValidDataRow
 import uk.gov.hmrc.validator.ods.OdsValidator
-import uk.gov.hmrc.validator.{
-  DataContainsAmpersandException, FileDataContentsInvalidException, IncorrectHeaderException, IncorrectSchemeException,
-  IncorrectSheetNameException, NoDataException, ParserFailureException, SheetNameNotInSchemeVersion,
-  SystemErrorDuringValidationException, ValidatorException
-}
-import utils.{ErrorResponseMessages, SchemeResolver, ValidationUtils}
+import uk.gov.hmrc.validator._
+import _root_.utils.{ErrorResponseMessages, SchemeResolver, ValidationUtils}
 
 import java.io.InputStream
 import java.util.UUID
@@ -42,7 +37,7 @@ import java.util.zip.ZipInputStream
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.Try
 
 @Singleton
 class ProcessOdsService @Inject() (
