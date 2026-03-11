@@ -201,6 +201,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
           "10.2544"
         )
       )
+
       when(
         mockErsFileValidatorConnector
           .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
@@ -217,7 +218,8 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
     }
 
     "return ERSFileProcessingException when reading the file fails" in {
-      val exceptionMessage                         = "Simulated file read failure"
+      val exceptionMessage = "Simulated file read failure"
+
       val fileProcessingService: ProcessOdsService =
         new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
           override def readFile(downloadUrl: String): InputStream = throw new RuntimeException(exceptionMessage)
@@ -266,8 +268,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
 
     "return NoDataError for NoDataException" in {
       val result = Await.result(
-        serviceWithException(new NoDataException())
-          .processFile(callbackData, "")(hc, schemeInfo, request),
+        serviceWithException(new NoDataException()).processFile(callbackData, "")(hc, schemeInfo, request),
         Duration(5, SECONDS)
       )
       result.left.value mustBe a[NoDataError]
@@ -284,8 +285,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
 
     "return ERSFileProcessingException for ParserFailureException" in {
       val result = Await.result(
-        serviceWithException(new ParserFailureException())
-          .processFile(callbackData, "")(hc, schemeInfo, request),
+        serviceWithException(new ParserFailureException()).processFile(callbackData, "")(hc, schemeInfo, request),
         Duration(5, SECONDS)
       )
       result.left.value mustBe a[ERSFileProcessingException]
@@ -358,7 +358,9 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
       when(mockAppConfig.splitLargeSchemes).thenReturn(true)
-      when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(50) // 100 / 50 = 2
+      when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(
+        50
+      ) // pass in 100 records, 100/50 = 2 -> call sendScheme twice
 
       val result = Await.result(
         new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
@@ -372,12 +374,16 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
 
     "return 3 slices and call sendSchemeData 3 times" in {
       when(
-        mockErsFileValidatorConnector
-          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(
+          any[HeaderCarrier],
+          any[Request[_]]
+        )
       ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
       when(mockAppConfig.splitLargeSchemes).thenReturn(true)
-      when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(40) // 100 / 40 = 3 slices
+      when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(
+        40
+      ) // pass in 100 records, 100/40 results in 3 calls to sendScheme
 
       val result = Await.result(
         new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
