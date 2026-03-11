@@ -88,8 +88,8 @@ class ProcessCsvService @Inject() (
                            )
         } yield extractBodyOfRequest(source(successUpload.downloadUrl))
           .via(
-            Flow.fromFunction((maybeRow: Either[Throwable, List[ByteString]]) =>
-              maybeRow.flatMap(row => CsvValidator.validateCsvRow(dataEngine, row))
+            Flow.fromFunction((rowBytes: Either[Throwable, List[ByteString]]) =>
+              rowBytes.flatMap(row => CsvValidator.validateCsvRow(dataEngine, row))
             )
           )
           .takeWhile(_.isRight, inclusive = true)

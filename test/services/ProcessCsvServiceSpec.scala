@@ -196,6 +196,75 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test"))
       error.context mustBe "Error processing CSV file: NOT A VALID SHEET"
       assert(boolList.forall(_.isLeft))
     }
+
+
+    "return the original UserValidationError when the stream produces a Left(UserValidationError)" in {
+      val userValidationError = FileValidationError("user error message", "user error context")
+      val callback = UpscanCsvFileData(
+        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))),
+        schemeInfo
+      )
+
+      val resultFuture = processCsvService(
+        extractBodyOfRequestOverride = Some(_ => Source.single(Left(userValidationError)))
+      ).processFiles(callback, schemeInfo, returnStubSource(_, ""))
+
+      val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
+
+      result.head.isLeft mustBe true
+      result.head.left.value mustBe userValidationError
+      result.head.left.value mustBe a[FileValidationError]
+    }
+
+    "return an ErsSystemError when the stream produces a Left(Throwable) that is not a UserValidationError" in {
+      val exception = new RuntimeException("unexpected processing error")
+      val callback  = UpscanCsvFileData(
+        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))),
+        schemeInfo
+      )
+
+      val resultFuture = processCsvService(
+        extractBodyOfRequestOverride = Some(_ => Source.single(Left(exception)))
+      ).processFiles(callback, schemeInfo, returnStubSource(_, ""))
+
+      val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
+
+      result.head.isLeft mustBe true
+      result.head.left.value mustBe a[ErsSystemError]
+      result.head.left.value.message mustBe "unexpected processing error"
+      result.head.left.value.context mustBe "Error processing CSV file: CSOP_OptionsGranted_V4.csv"
+    }
+
+    "return a FileValidationError when the last row is a Right with non-empty validationErrors" in {
+      val invalidRow: List[ByteString] = List(
+        ByteString("bad-date"),   // invalid date -> triggers validation error
+        ByteString("250"),
+        ByteString("123.12"),
+        ByteString("12.1234"),
+        ByteString("12.1234"),
+        ByteString("no"),
+        ByteString("yes"),
+        ByteString("AB12345678"),
+        ByteString("no")
+      )
+
+      val callback = UpscanCsvFileData(
+        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))),
+        schemeInfo
+      )
+
+      val resultFuture = processCsvService(
+        extractBodyOfRequestOverride = Some(_ => Source.single(Right(invalidRow)))
+      ).processFiles(callback, schemeInfo, returnStubSource(_, ""))
+
+      val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
+
+      result.head.isLeft mustBe true
+      result.head.left.value mustBe a[FileValidationError]
+      result.head.left.value.message mustBe "[ProcessCSVService][processFiles]: Found validation errors in CSV"
+      result.head.left.value.context must include("CSOP_OptionsGranted_V4.csv")
+    }
+
   }
 
   "extractEntityData" should {
@@ -263,6 +332,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test"))
         mockErsFileValidatorConnector
           .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier], any[Request[_]])
       ).thenReturn(Future.successful(Right(uk.gov.hmrc.http.HttpResponse(StatusCodes.OK.intValue, "aBody"))))
+
       when(mockAuditEvents.fileValidatorAudit(any[SchemeInfo], any[String])(any[HeaderCarrier], any[Request[_]]))
         .thenReturn(true)
 
@@ -276,6 +346,7 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test"))
         mockErsFileValidatorConnector
           .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier], any[Request[_]])
       ).thenReturn(Future.successful(Left(returnException)))
+
       doNothing()
         .when(mockAuditEvents)
         .auditRunTimeError(any[Throwable], any[String], any[SchemeInfo], any[String])(any[HeaderCarrier], any[Request[_]])

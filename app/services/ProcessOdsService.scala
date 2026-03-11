@@ -84,8 +84,7 @@ class ProcessOdsService @Inject() (
   }
 
   private def isSystemError(e: ValidatorException): Boolean = e match {
-    case _: SystemErrorDuringValidationException | _: ParserFailureException =>
-      true // note removed SheetNameNotInSchemeVersion, check ATs
+    case _: SystemErrorDuringValidationException | _: ParserFailureException => true
     case _                                                                   => false
   }
 
@@ -99,9 +98,8 @@ class ProcessOdsService @Inject() (
 
     e match {
       case e: IncorrectSchemeException               =>
-        logger.warn(
-          s"$logStart Scheme type mismatch: ${e.message}, schemeRef: ${schemeInfo.schemeRef}"
-        )
+        logger.warn(s"$logStart Scheme type mismatch: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
+
         SchemeTypeMismatchError(
           message = ErrorResponseMessages.dataParserIncorrectSheetName,
           context = ErrorResponseMessages
@@ -110,37 +108,27 @@ class ProcessOdsService @Inject() (
           requestSchemeType = e.selectedSchemeType
         )
       case e: IncorrectSheetNameException            =>
-        logger.warn(
-          s"$logStart Unknown sheet name: ${e.sheetName}, schemeRef: ${schemeInfo.schemeRef}"
-        )
+        logger.warn(s"$logStart Unknown sheet name: ${e.sheetName}, schemeRef: ${schemeInfo.schemeRef}")
+
         UnknownSheetError(
           ErrorResponseMessages.dataParserIncorrectSheetName,
           s"Couldn't find config for given SheetName: ${e.sheetName}"
         )
       case e: IncorrectHeaderException               =>
-        logger.warn(
-          s"$logStart Incorrect header: ${e.message}, schemeRef: ${schemeInfo.schemeRef}"
-        )
+        logger.warn(s"$logStart Incorrect header: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
         HeaderValidationError(ErrorResponseMessages.dataParserIncorrectHeader, e.message)
       case _: NoDataException                        =>
         logger.warn(s"$logStart No data in file, schemeRef: ${schemeInfo.schemeRef}")
         NoDataError(ErrorResponseMessages.dataParserNoData, ErrorResponseMessages.dataParserNoData)
       case e: ValidatorException if isSystemError(e) =>
-        logger.error(
-          s"$logStart System error during validation: ${e.message}, schemeRef: ${schemeInfo.schemeRef}"
-        )
+        logger.error(s"$logStart System error during validation: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
         ERSFileProcessingException(e.message, s"System error during ODS processing, schemeRef: ${schemeInfo.schemeRef}")
       case e: ValidatorException                     =>
-        logger.warn(
-          s"$logStart File validation error: ${e.message}, schemeRef: ${schemeInfo.schemeRef}"
-        )
+        logger.warn(s"$logStart File validation error: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
         FileValidationError(e.message, e.message)
       case e: Throwable                              =>
         logger.error(s"$logStart Unexpected error reading file: ${e.getMessage}", e)
-        FileValidationError(
-          s"$logStart Error reading ODS file -> ${e.getMessage}",
-          e.getMessage
-        )
+        FileValidationError(s"$logStart Error reading ODS file -> ${e.getMessage}", e.getMessage)
     }
   }
 

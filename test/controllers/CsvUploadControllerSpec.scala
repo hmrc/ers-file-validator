@@ -22,7 +22,7 @@ import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
+import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.testkit.TestKit
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
@@ -35,7 +35,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, JsValue, Json}
-import play.api.mvc.{Action, AnyContent, DefaultActionBuilder, Result}
+import play.api.mvc.{Action, DefaultActionBuilder, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
 import services.audit.AuditEvents
@@ -47,7 +47,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 
 class CsvUploadControllerSpec
-  extends TestKit(ActorSystem("CsvUploadControllerSpec"))
+    extends TestKit(ActorSystem("CsvUploadControllerSpec"))
     with AnyWordSpecLike
     with Matchers
     with OptionValues
@@ -56,15 +56,15 @@ class CsvUploadControllerSpec
     with WithMockedAuthActions
     with ScalaFutures {
 
-  val empRef: String                            = "1234/ABCD"
-  val mockSessionService: SessionCacheService   = mock[SessionCacheService]
-  val mockProcessCsvService: ProcessCsvService  = mock[ProcessCsvService]
-  val mockAuthConnector: DefaultAuthConnector   = mock[DefaultAuthConnector]
-  val mockAuditEvents: AuditEvents              = mock[AuditEvents]
-  val metrics: Metrics                          = mock[Metrics]
-  implicit val ec: ExecutionContextExecutor     = ExecutionContext.global
+  val empRef: String                           = "1234/ABCD"
+  val mockSessionService: SessionCacheService  = mock[SessionCacheService]
+  val mockProcessCsvService: ProcessCsvService = mock[ProcessCsvService]
+  val mockAuthConnector: DefaultAuthConnector  = mock[DefaultAuthConnector]
+  val mockAuditEvents: AuditEvents             = mock[AuditEvents]
+  val metrics: Metrics                         = mock[Metrics]
+  implicit val ec: ExecutionContextExecutor    = ExecutionContext.global
 
-  override implicit lazy val app: Application =
+  implicit override lazy val app: Application =
     GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
 
   val defaultActionBuilder: DefaultActionBuilder =
@@ -82,16 +82,18 @@ class CsvUploadControllerSpec
       mockAuthorisedActionWithBody(empRef)(body)
   }
 
-  val schemeInfo: SchemeInfo   = SchemeInfo(
-    schemeRef  = "XA11000001231275",
-    timestamp  = ZonedDateTime.now,
-    schemeId   = "123PA12345678",
-    taxYear    = "2014/F15",
+  val schemeInfo: SchemeInfo       = SchemeInfo(
+    schemeRef = "XA11000001231275",
+    timestamp = ZonedDateTime.now,
+    schemeId = "123PA12345678",
+    taxYear = "2014/F15",
     schemeName = "MyScheme",
     schemeType = "EMI"
   )
-  val request                  = FakeRequest()
-  val metaData: JsObject       = Json.obj(
+
+  val request                      = FakeRequest()
+
+  val metaData: JsObject           = Json.obj(
     "scon"                   -> "S1401234Z",
     "nino"                   -> "CB433298A",
     "surname"                -> "Smith",
@@ -101,7 +103,10 @@ class CsvUploadControllerSpec
     "contsEarningsRequest"   -> false,
     "inflationProofRequest"  -> false
   )
-  val callbackData: UpscanCallback = UpscanCallback("John", "downloadUrl", Some(1000L), Some("content-type"), Some(metaData), None)
+
+  val callbackData: UpscanCallback =
+    UpscanCallback("John", "downloadUrl", Some(1000L), Some("content-type"), Some(metaData), None)
+
   val csvData: UpscanCsvFileData   = UpscanCsvFileData(List(callbackData, callbackData), schemeInfo)
 
   "processCsvFile" must {
@@ -141,10 +146,9 @@ class CsvUploadControllerSpec
         .thenReturn(Future(Left(userError)))
 
       val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result) shouldBe BAD_REQUEST
+      status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "No data found"
     }
-
 
     "return INTERNAL_SERVER_ERROR when a SystemError occurs" in {
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
@@ -164,13 +168,15 @@ class CsvUploadControllerSpec
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
 
-      val result: Future[Result] = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result: Future[Result] =
+        csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
       status(result)          shouldBe ACCEPTED
       contentAsString(result) shouldBe "csv callback data storage in sessioncache failed"
     }
 
     "return BAD_REQUEST if the body cannot be parsed into an UpscanCsvFileData object" in {
-      val result: Future[Result] = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson("bad json")))
+      val result: Future[Result] =
+        csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson("bad json")))
       status(result) shouldBe BAD_REQUEST
     }
   }
@@ -199,4 +205,5 @@ class CsvUploadControllerSpec
       responses.head   shouldBe HttpResponse(StatusCodes.OK)
     }
   }
+
 }

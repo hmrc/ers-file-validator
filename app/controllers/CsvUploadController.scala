@@ -60,6 +60,7 @@ class CsvUploadController @Inject() (
           invalid = jsonValidationError => {
             logger.warn(s"[CsvUploadController][processCsvFile] Invalid request body")
             deliverFileProcessingMetrics(startTime)
+
             Future.successful(
               BadRequest(jsonValidationError.toString)
             ) // todo: do we want to give a bit more detail to the caller here?
@@ -105,11 +106,17 @@ class CsvUploadController @Inject() (
         val successResults: Seq[CsvFileLengthInfo] = allFilesResults.collect { case Right(info) => info }
         storeCsvCallbackDataAndRespond(res, successResults, startTime)
       case Some(userError: UserValidationError) =>
-        logger.warn(s"[CsvUploadController][handleCsvResults] User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}")
+        logger.warn(
+          s"[CsvUploadController][handleCsvResults] User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}"
+        )
+
         deliverFileProcessingMetrics(startTime)
         Future.successful(BadRequest(userError.message))
       case Some(systemError: SystemError)       =>
-        logger.error(s"[CsvUploadController][handleCsvResults] System error: ${systemError.message}, schemeRef: ${schemeInfo.schemeRef}")
+        logger.error(
+          s"[CsvUploadController][handleCsvResults] System error: ${systemError.message}, schemeRef: ${schemeInfo.schemeRef}"
+        )
+
         deliverFileProcessingMetrics(startTime)
         Future.successful(InternalServerError)
     }
@@ -138,11 +145,14 @@ class CsvUploadController @Inject() (
       .map {
         case callback if callback.isDefined =>
           val numberOfSlices = results.map(_.noOfSlices).sum
+
           logger.info(
             s"[CsvUploadController][storeCsvCallbackDataAndRespond] File validated successfully, schemeRef: ${schemeInfo.schemeRef}"
           )
+
           Ok(numberOfSlices.toString)
-        case _                              =>
+
+        case _ =>
           logger.error(
             s"[CsvUploadController][storeCsvCallbackDataAndRespond] CSV storeCallbackData failed, schemeRef: ${schemeInfo.schemeRef}, timestamp: ${java.time.LocalTime.now()}."
           )
