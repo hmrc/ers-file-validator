@@ -15,7 +15,7 @@ object AppDependencies {
     "commons-codec"           % "commons-codec"              % "1.19.0",
     "uk.gov.hmrc.mongo"      %% "hmrc-mongo-play-30"         % mongoVersion,
     "org.apache.pekko"       %% "pekko-connectors-csv"       % pekkoVersion,
-    "uk.gov.hmrc"            %% "ers-file-validator-config"  % "0.10.0",
+    "uk.gov.hmrc"            %% "ers-file-validator-config"  % "0.11.0",
   )
 
   val test: Seq[ModuleID] = Seq(
