@@ -97,8 +97,6 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
       ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage)
   }
 
-  // $COVERAGE-OFF$
   def deliverSendToSubmissionsMetrics(startTime: Long): Unit =
     metrics.sendToSubmissionsTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)
-  // $COVERAGE-ON$
 }
