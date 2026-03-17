@@ -100,13 +100,11 @@ class ProcessCsvService @Inject() (
           Future.successful(Left(error))
         case Right(futureListOfResults) =>
 
-          /*
-          Because of the .takeWhile function in extractBodyOfRequest method, if any row had an error in it, the 'creation' or futureListOfErrors will terminate.
-         Since .takeWhile is set to be inclusive, if any row had an error in it, it will be the last object in the list.
-         For example: if given an input of 3 rows, (valid, valid, valid), futureListOfErrors will be a List(Right, Right, Right).
-         If given an input of 3 rows, (valid, invalid, valid), futureListOfErrors will be a List(Right, Left).
+          /* Because of the .takeWhile function in extractBodyOfRequest method, if any row had an error in it, the 'creation' or futureListOfErrors will terminate.
+             Since .takeWhile is set to be inclusive, if any row had an error in it, it will be the last object in the list.
+             For example: if given an input of 3 rows, (valid, valid, valid), futureListOfErrors will be a List(Right, Right, Right).
+             If given an input of 3 rows, (valid, invalid, valid), futureListOfErrors will be a List(Right, Left).
            */
-
           futureListOfResults.map { sequenceOfEithers =>
             sequenceOfEithers.lastOption match {
               case None                    =>
@@ -124,6 +122,7 @@ class ProcessCsvService @Inject() (
                     val errorsToLog = results.validationErrors
                       .map(error => s"column - ${error.cell.column}, error - ${error.errorId} : ${error.errorMsg}")
                       .mkString("\n")
+
                     Left(
                       FileValidationError(
                         message = s"[ProcessCSVService][processFiles]: Found validation errors in CSV",
@@ -185,6 +184,7 @@ class ProcessCsvService @Inject() (
           s"[ProcessCsvService][sendSchemeDataCsv] Exception found when sending to submissions: ${ex.getMessage}",
           ex
         )
+
         Some(ERSFileProcessingException(ex.toString, ex.getMessage))
     }
   }

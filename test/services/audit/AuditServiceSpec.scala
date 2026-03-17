@@ -33,6 +33,7 @@ import uk.gov.hmrc.play.audit.DefaultAuditConnector
 import java.time.ZonedDateTime
 
 class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
+  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
   "auditService sendEvent should send the event" in {
 
@@ -40,12 +41,13 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
 
     implicit val hc: HeaderCarrier = new HeaderCarrier
 
-    implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-    val dateTime = ZonedDateTime.now()
+    val dateTime           = ZonedDateTime.now()
     val mockAuditConnector = mock[DefaultAuditConnector]
+
     val auditService = new AuditService(mockAuditConnector, ec) {
       override protected def getDateTime: ZonedDateTime = dateTime
     }
+
     val details: Map[String, String] = Map("details1" -> "randomDetail")
 
     val dataEvent = DataEvent(
@@ -55,7 +57,23 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
       detail = details
     )
 
-    when(mockAuditConnector.sendEvent(argEq(dataEvent))(any[HeaderCarrier](), any[ExecutionContext]())).thenReturn(Future.successful(Success))
+    when(mockAuditConnector.sendEvent(argEq(dataEvent))(any[HeaderCarrier](), any[ExecutionContext]()))
+      .thenReturn(Future.successful(Success))
     auditService.sendEvent("source", details)
   }
+
+  "getDateTime should return a ZonedDateTime representing the current time" in {
+    val mockAuditConnector = mock[DefaultAuditConnector]
+
+    val auditService = new AuditService(mockAuditConnector, ec) {
+      def exposedGetDateTime: ZonedDateTime = getDateTime
+    }
+
+    val tolerance               = 10L // milliseconds
+    val expected: ZonedDateTime = ZonedDateTime.now()
+    val result                  = auditService.exposedGetDateTime
+
+    assert(Math.abs(result.toInstant.toEpochMilli - expected.toInstant.toEpochMilli)  < tolerance)
+  }
+
 }
