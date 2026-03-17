@@ -78,7 +78,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
         override val splitSchemes                               = false
         override val maxNumberOfRows                            = 1
-        override def readFile(downloadUrl: String): InputStream = XMLTestData.getEMIAdjustmentsTemplateSTAX
+        override def readFile(downloadUrl: String): InputStream = XMLTestData.getEMIAdjustmentsTemplate
       }
 
     when(hc.sessionId).thenReturn(Some(SessionId("sessionId")))

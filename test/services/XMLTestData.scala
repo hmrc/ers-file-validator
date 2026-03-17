@@ -19,15 +19,13 @@ package services
 import services.besIntegrationTestData.EMIBESIntegrationTestData
 
 import java.io.ByteArrayInputStream
-import scala.collection.mutable.ListBuffer
-import scala.xml.Elem
 
 object XMLTestData extends EMIBESIntegrationTestData {
 
   def openTable(sheetName: String) = s"""<table:table table:name="${sheetName}" table:style-name="ta1">"""
   val closeTable = """</table:table>"""
 
-  def getEMIAdjustmentsTemplateSTAX: ByteArrayInputStream = {
+  def getEMIAdjustmentsTemplate: ByteArrayInputStream = {
     val sheetName = "EMI40_Adjustments_V4"
     val row1 = <table:table-row table:style-name="ro1"><table:table-cell office:value-type="string" table:number-columns-spanned="14" table:number-rows-spanned="1" table:style-name="ce26"><text:p>EMI template - Adjustment of options</text:p></table:table-cell><table:covered-table-cell table:number-columns-repeated="13"/><table:table-cell table:number-columns-repeated="16370" table:style-name="ce2"/></table:table-row>.toString
     val row2 = <table:table-row table:style-name="ro1"><table:table-cell office:value-type="string" table:number-columns-spanned="14" table:number-rows-spanned="1" table:style-name="ce27"><text:p>How to complete this schedule:</text:p></table:table-cell><table:covered-table-cell table:number-columns-repeated="13"/><table:table-cell table:number-columns-repeated="16370" table:style-name="ce2"/></table:table-row>.toString
@@ -43,7 +41,7 @@ object XMLTestData extends EMIBESIntegrationTestData {
     new ByteArrayInputStream(inputXml.getBytes("utf-8"))
   }
 
-  def getEMIAdjustmentsTemplateLarge = {
+  def getEMIAdjustmentsTemplateLarge: ByteArrayInputStream = {
     val sheetName = "EMI40_Adjustments_V4"
     val row1 = <table:table-row table:style-name="ro1"><table:table-cell office:value-type="string" table:number-columns-spanned="14" table:number-rows-spanned="1" table:style-name="ce26"><text:p>EMI template - Adjustment of options</text:p></table:table-cell><table:covered-table-cell table:number-columns-repeated="13"/><table:table-cell table:number-columns-repeated="16370" table:style-name="ce2"/></table:table-row>.toString
     val row2 = <table:table-row table:style-name="ro1"><table:table-cell office:value-type="string" table:number-columns-spanned="14" table:number-rows-spanned="1" table:style-name="ce27"><text:p>How to complete this schedule:</text:p></table:table-cell><table:covered-table-cell table:number-columns-repeated="13"/><table:table-cell table:number-columns-repeated="16370" table:style-name="ce2"/></table:table-row>.toString
