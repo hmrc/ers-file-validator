@@ -111,12 +111,12 @@ class CsvUploadControllerSpec
 
   "processCsvFile" must {
 
+    when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
+      .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
+
     "successfully receive data" in {
       when(mockSessionService.storeCallbackData(any(), any())(any()))
         .thenReturn(Future.successful(Some(callbackData)))
-
-      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
-        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
 
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
@@ -127,21 +127,7 @@ class CsvUploadControllerSpec
 
     "return BAD_REQUEST when a UserValidationError occurs in extractSchemeData" in {
       val userError = NoDataError("No data found", "File contains no data")
-      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
-        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
-        .thenReturn(Future(Left(userError)))
 
-      val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
-      status(result)          shouldBe BAD_REQUEST
-      contentAsString(result) shouldBe "No data found"
-    }
-
-    "return BAD_REQUEST when UserValidationError occurs in extractSchemeData" in {
-      val userError = NoDataError("No data found", "File contains no data")
-
-      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
-        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
         .thenReturn(Future(Left(userError)))
 
@@ -151,8 +137,6 @@ class CsvUploadControllerSpec
     }
 
     "return INTERNAL_SERVER_ERROR when a SystemError occurs" in {
-      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
-        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
         .thenReturn(Future.successful(Left(ErsSystemError("System configuration error", "Config failure"))))
 
@@ -163,8 +147,7 @@ class CsvUploadControllerSpec
     "return ACCEPTED when failing to store callback data" in {
       when(mockSessionService.storeCallbackData(any(), any())(any()))
         .thenReturn(Future.successful(None))
-      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
-        .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
+
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
 
@@ -177,6 +160,7 @@ class CsvUploadControllerSpec
     "return BAD_REQUEST if the body cannot be parsed into an UpscanCsvFileData object" in {
       val result: Future[Result] =
         csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson("bad json")))
+
       status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe
         "Invalid request body, parse errors: obj: error.expected.jsobject"
