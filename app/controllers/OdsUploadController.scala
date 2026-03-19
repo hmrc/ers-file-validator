@@ -60,7 +60,7 @@ class OdsUploadController @Inject() (
                   case Right(result)         =>
                     deliverFileProcessingMetrics(startTime)
                     Ok(result.toString)
-                  case Left(error: ErsError) =>
+                  case Left(error: ErsException) =>
                     deliverFileProcessingMetrics(startTime)
                     handleOdsError(error)
                 }
@@ -83,10 +83,10 @@ class OdsUploadController @Inject() (
       }
   }
 
-  private def handleOdsError(error: ErsError)(implicit schemeInfo: SchemeInfo): Result =
+  private def handleOdsError(error: ErsException)(implicit schemeInfo: SchemeInfo): Result =
 
     error match {
-      case schemeError: SchemeTypeMismatchError =>
+      case schemeError: SchemeTypeMismatchException =>
         logger.warn(
           s"[OdsUploadController][handleOdsError] Scheme type mismatch: " +
             s"${schemeError.message}, expected: ${schemeError.expectedSchemeType}, got: ${schemeError.requestSchemeType}, schemeRef: ${schemeInfo.schemeRef}"
@@ -97,7 +97,7 @@ class OdsUploadController @Inject() (
 
         BadRequest(Json.toJson(error))
 
-      case userError: UserValidationError =>
+      case userError: UserValidationException =>
         logger.warn(
           s"[OdsUploadController][handleOdsError] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}"
         )

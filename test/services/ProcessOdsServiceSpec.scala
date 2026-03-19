@@ -92,7 +92,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       when(mockSessionService.storeCallbackData(any(), any())(any())).thenReturn(Future.successful(Some(callbackData)))
       when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
 
-      val result: Future[Either[ErsError, Int]] =
+      val result: Future[Either[ErsException, Int]] =
         processOdsService().processFile(callbackData, "")(hc, schemeInfo, request)
       Await.result(result, Duration(5, SECONDS)) mustBe Right(1)
     }
@@ -134,9 +134,9 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       )
 
       result.swap.map(
-        _ mustBe FileValidationError(
-          message = "[ProcessOdsService][processFile] Error reading ODS file -> exception detail",
-          context = "exception detail"
+        _ mustBe ErsFileProcessingException(
+          message = "exception detail",
+          context = "Unexpected error processing file"
         )
       )
     }
@@ -165,11 +165,11 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
         Duration(5, SECONDS)
       )
       result mustBe Left(
-        ERSFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data")
+        ErsFileProcessingException("callback data storage in sessioncache failed ", "Exception storing callback data")
       )
     }
 
-    "return FileValidationError for a generic ValidatorException" in {
+    "return FileValidationException for a generic ValidatorException" in {
       val genericValidatorException = DataContainsAmpersandException()
 
       val result = Await.result(
@@ -177,7 +177,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
           .processFile(callbackData, "")(hc, schemeInfo, request),
         Duration(5, SECONDS)
       )
-      result.left.value mustBe FileValidationError("Must not contain ampersands.", "Must not contain ampersands.")
+      result.left.value mustBe FileValidationException("Must not contain ampersands.", "Must not contain ampersands.")
     }
 
     "throw an exception when sending data to ers-submissions fails" in {
@@ -212,10 +212,10 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
         processOdsService.sendSchemeData(SchemeData(schemeInfo, "", None, listBuffer), ""),
         Duration(5, SECONDS)
       )
-      result mustBe Left(ERSFileProcessingException("java.lang.RuntimeException: Runtime error", "Runtime error"))
+      result mustBe Left(ErsFileProcessingException("java.lang.RuntimeException: Runtime error", "Runtime error"))
     }
 
-    "return ERSFileProcessingException when reading the file fails" in {
+    "return ErsFileProcessingException when reading the file fails" in {
       val exceptionMessage = "Simulated file read failure"
 
       val fileProcessingService: ProcessOdsService =
@@ -228,65 +228,65 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
         Duration(5, SECONDS)
       )
       result mustBe Left(
-        FileValidationError(
-          message = "[ProcessOdsService][processFile] Error reading ODS file -> Simulated file read failure",
-          context = exceptionMessage
+        ErsFileProcessingException(
+          message = "Simulated file read failure",
+          context = "Unexpected error processing file"
         )
       )
     }
   }
 
   "mapValidatorException coverage" must {
-    "return HeaderValidationError for IncorrectHeaderException" in {
+    "return HeaderValidationException for IncorrectHeaderException" in {
       val result = Await.result(
         serviceWithException(new IncorrectHeaderException("sheetname", "filename"))
           .processFile(callbackData, "")(hc, schemeInfo, request),
         Duration(5, SECONDS)
       )
-      result.left.value mustBe a[HeaderValidationError]
+      result.left.value mustBe a[HeaderValidationException]
     }
 
-    "return SchemeTypeMismatchError for IncorrectSchemeException" in {
+    "return SchemeTypeMismatchException for IncorrectSchemeException" in {
       val result = Await.result(
         serviceWithException(new IncorrectSchemeException("EMI", "CSOP", "filename"))
           .processFile(callbackData, "")(hc, schemeInfo, request),
         Duration(5, SECONDS)
       )
-      result.left.value mustBe a[SchemeTypeMismatchError]
+      result.left.value mustBe a[SchemeTypeMismatchException]
     }
 
-    "return UnknownSheetError for IncorrectSheetNameException" in {
+    "return UnknownSheetException for IncorrectSheetNameException" in {
       val result = Await.result(
         serviceWithException(new IncorrectSheetNameException("sheetName", "schemeName"))
           .processFile(callbackData, "")(hc, schemeInfo, request),
         Duration(5, SECONDS)
       )
-      result.left.value mustBe a[UnknownSheetError]
+      result.left.value mustBe a[UnknownSheetException]
     }
 
-    "return NoDataError for NoDataException" in {
+    "return NoDataException for NoDataException" in {
       val result = Await.result(
         serviceWithException(new NoDataException()).processFile(callbackData, "")(hc, schemeInfo, request),
         Duration(5, SECONDS)
       )
-      result.left.value mustBe a[NoDataError]
+      result.left.value mustBe a[FileValidatorNoDataException]
     }
 
-    "return ERSFileProcessingException for SystemErrorDuringValidationException" in {
+    "return ErsFileProcessingException for SystemErrorDuringValidationException" in {
       val result = Await.result(
         serviceWithException(new SystemErrorDuringValidationException("sys error"))
           .processFile(callbackData, "")(hc, schemeInfo, request),
         Duration(5, SECONDS)
       )
-      result.left.value mustBe a[ERSFileProcessingException]
+      result.left.value mustBe a[ErsFileProcessingException]
     }
 
-    "return ERSFileProcessingException for ParserFailureException" in {
+    "return ErsFileProcessingException for ParserFailureException" in {
       val result = Await.result(
         serviceWithException(new ParserFailureException()).processFile(callbackData, "")(hc, schemeInfo, request),
         Duration(5, SECONDS)
       )
-      result.left.value mustBe a[ERSFileProcessingException]
+      result.left.value mustBe a[ErsFileProcessingException]
     }
   }
 

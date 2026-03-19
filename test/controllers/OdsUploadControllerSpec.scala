@@ -135,12 +135,12 @@ class OdsUploadControllerSpec
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
-    "return BAD_REQUEST when a SchemeTypeMismatchError occurs" in {
+    "return BAD_REQUEST when a SchemeTypeMismatchException occurs" in {
       val errorMessage       = ErrorResponseMessages.dataParserIncorrectSheetName
       val expectedSchemeType = "EMI"
       val requestSchemeType  = "CSOP"
 
-      val userError = SchemeTypeMismatchError(
+      val userError = SchemeTypeMismatchException(
         errorMessage,
         ErrorResponseMessages.dataParserIncorrectSchemeType(Some(expectedSchemeType), Some(requestSchemeType)),
         expectedSchemeType,
@@ -159,8 +159,8 @@ class OdsUploadControllerSpec
       mismatchError.requestSchemeType  shouldBe requestSchemeType
     }
 
-    "return BAD_REQUEST when a UserValidationError occurs" in {
-      val userError = HeaderValidationError("Header error", "Invalid header format")
+    "return BAD_REQUEST when a UserValidationException occurs" in {
+      val userError = HeaderValidationException("Header error", "Invalid header format")
 
       when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
         .thenReturn(Future.successful(Left(userError)))

@@ -56,7 +56,7 @@ class ProcessCsvService @Inject() (
             s"body: ${notOkResponse.entity.dataBytes}"
         )
         Source.failed(
-          ERSFileProcessingException(
+          ErsFileProcessingException(
             s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
             s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}"
           )
@@ -75,11 +75,11 @@ class ProcessCsvService @Inject() (
     callback: UpscanCsvFileData,
     schemeInfo: SchemeInfo,
     source: String => Source[HttpResponse, _]
-  ): Seq[Future[Either[ErsError, CsvFileSubmissions]]] =
+  ): Seq[Future[Either[ErsException, CsvFileSubmissions]]] =
     callback.callbackData.map { successUpload =>
       val sheetName = stripExtension(successUpload.name)
 
-      val pipeline: Either[ErsError, Future[Seq[Either[Throwable, RowValidationResults]]]] =
+      val pipeline: Either[ErsException, Future[Seq[Either[Throwable, RowValidationResults]]]] =
         for {
           schemeVersion <- SchemeResolver.getSchemeVersion(schemeInfo.taxYear, appConfig)
           dataEngine    <- DataEngine(sheetName, schemeVersion).left.map(e =>
@@ -108,7 +108,7 @@ class ProcessCsvService @Inject() (
             sequenceOfEithers.lastOption match {
               case None                    =>
                 Left(
-                  NoDataError(
+                  FileValidatorNoDataException(
                     s"${ErrorResponseMessages.ersCheckCsvFileNoData(sheetName + ".csv")}",
                     s"${ErrorResponseMessages.ersCheckCsvFileNoData()}"
                   )
@@ -118,29 +118,30 @@ class ProcessCsvService @Inject() (
                   case Right(results) if results.validationErrors.isEmpty                        =>
                     Right(CsvFileSubmissions(sheetName, sequenceOfEithers.length, successUpload))
                   case Right(results: RowValidationResults) =>
-                    val errorsToLog = results.validationErrors
+
+                    val errorDetail = results.validationErrors
                       .map(error => s"column - ${error.cell.column}, error - ${error.errorId} : ${error.errorMsg}")
                       .mkString("\n")
 
                     Left(
-                      FileValidationError(
-                        message = s"[ProcessCSVService][processFiles]: Found validation errors in CSV",
-                        context = s"Error processing CSV file: ${successUpload.name}, errors: $errorsToLog"
+                      FileValidationException(
+                        message = s"Found validation errors in CSV",
+                        context = s"Error processing CSV file: ${successUpload.name}, errors: $errorDetail"
                       )
                     )
-                  case Left(userError: UserValidationError)                                      =>
+                  case Left(userError: UserValidationException)                                      =>
                     Left(userError)
                   case Left(exception: Throwable)                                                =>
-                    Left(ErsSystemError(exception.getMessage, s"Error processing CSV file: ${successUpload.name}"))
+                    Left(ErsSystemError(exception.getMessage, s"Unexpected error processing CSV file: ${successUpload.name}"))
                 }
             }
           }
       }
     }
 
-  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[ErsError, CsvFileSubmissions])(implicit
-    hc: HeaderCarrier
-  ): Future[Either[ErsError, CsvFileLengthInfo]] =
+  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[ErsException, CsvFileSubmissions])(implicit
+                                                                                                                  hc: HeaderCarrier
+  ): Future[Either[ErsException, CsvFileLengthInfo]] =
     result.fold(
       error => Future.successful(Left(error)),
       (csvFileSubmissions: CsvFileSubmissions) => {
@@ -156,7 +157,7 @@ class ProcessCsvService @Inject() (
         )
           .map {
             case Some(throwable) =>
-              Left(ERSFileProcessingException(throwable.getMessage, "Error during CSV submission processing"))
+              Left(ErsFileProcessingException(throwable.getMessage, "Error during CSV submission processing"))
             case None            =>
               val noOfSlices: Int =
                 ValidationUtils.numberOfSlices(csvFileSubmissions.fileLength, appConfig.maxNumberOfRowsPerSubmission)
@@ -182,7 +183,7 @@ class ProcessCsvService @Inject() (
           ex
         )
 
-        Some(ERSFileProcessingException(ex.toString, ex.getMessage))
+        Some(ErsFileProcessingException(ex.toString, ex.getMessage))
     }
   }
 

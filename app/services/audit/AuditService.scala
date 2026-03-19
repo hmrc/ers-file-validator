@@ -41,7 +41,6 @@ class AuditService @Inject() (auditConnector: DefaultAuditConnector, implicit va
     )
 
   private def generateTags(hc: HeaderCarrier): Map[String, String] =
-    hc.otherHeaders.toMap ++
       hc.otherHeaders.toMap ++
       Map(
         "dateTime" -> getDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))

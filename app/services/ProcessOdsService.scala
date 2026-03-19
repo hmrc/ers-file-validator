@@ -67,7 +67,7 @@ class ProcessOdsService @Inject() (
     hc: HeaderCarrier,
     schemeInfo: SchemeInfo,
     request: Request[_]
-  ): Future[Either[ErsError, Int]] = {
+  ): Future[Either[ErsException, Int]] = {
     val startTime = System.currentTimeMillis()
 
     val result = for {
@@ -91,7 +91,7 @@ class ProcessOdsService @Inject() (
   private def mapValidatorException(
     e: Throwable,
     startTime: Long
-  )(implicit schemeInfo: SchemeInfo): ErsError = {
+  )(implicit schemeInfo: SchemeInfo): ErsException = {
     deliverBESMetrics(startTime)
 
     val logStart = "[ProcessOdsService][processFile]"
@@ -100,7 +100,7 @@ class ProcessOdsService @Inject() (
       case e: IncorrectSchemeException               =>
         logger.warn(s"$logStart Scheme type mismatch: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
 
-        SchemeTypeMismatchError(
+        SchemeTypeMismatchException(
           message = ErrorResponseMessages.dataParserIncorrectSheetName,
           context = ErrorResponseMessages
             .dataParserIncorrectSchemeType(Some(e.uploadedFileSchemeType), Some(e.selectedSchemeType)),
@@ -110,25 +110,25 @@ class ProcessOdsService @Inject() (
       case e: IncorrectSheetNameException            =>
         logger.warn(s"$logStart Unknown sheet name: ${e.sheetName}, schemeRef: ${schemeInfo.schemeRef}")
 
-        UnknownSheetError(
+        UnknownSheetException(
           ErrorResponseMessages.dataParserIncorrectSheetName,
           s"Couldn't find config for given SheetName: ${e.sheetName}"
         )
       case e: IncorrectHeaderException               =>
         logger.warn(s"$logStart Incorrect header: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
-        HeaderValidationError(ErrorResponseMessages.dataParserIncorrectHeader, e.message)
+        HeaderValidationException(ErrorResponseMessages.dataParserIncorrectHeader, e.message)
       case _: NoDataException                        =>
         logger.warn(s"$logStart No data in file, schemeRef: ${schemeInfo.schemeRef}")
-        NoDataError(ErrorResponseMessages.dataParserNoData, ErrorResponseMessages.dataParserNoData)
+        FileValidatorNoDataException(ErrorResponseMessages.dataParserNoData, ErrorResponseMessages.dataParserNoData)
       case e: ValidatorException if isSystemError(e) =>
         logger.error(s"$logStart System error during validation: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
-        ERSFileProcessingException(e.message, s"System error during ODS processing, schemeRef: ${schemeInfo.schemeRef}")
+        ErsFileProcessingException(e.message, s"System error during ODS processing, schemeRef: ${schemeInfo.schemeRef}")
       case e: ValidatorException                     =>
         logger.warn(s"$logStart File validation error: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
-        FileValidationError(e.message, e.message)
+        FileValidationException(e.message, e.message)
       case e: Throwable                              =>
-        logger.error(s"$logStart Unexpected error reading file: ${e.getMessage}", e)
-        FileValidationError(s"$logStart Error reading ODS file -> ${e.getMessage}", e.getMessage)
+        logger.error(s"$logStart Unexpected error processing file: ${e.getMessage}", e)
+        ErsFileProcessingException(e.getMessage, "Unexpected error processing file")
     }
   }
 
@@ -144,19 +144,26 @@ class ProcessOdsService @Inject() (
         case Some(entry) if entry.getName == targetFileName => stream
         case Some(_)                                        => findFileInZip(stream)
         case None                                           =>
-          throw ERSFileProcessingException(
+          throw ErsFileProcessingException(
             s"${ErrorResponseMessages.fileProcessingServiceFailedStream}",
             s"${ErrorResponseMessages.fileProcessingServiceBulkEntity}"
           )
       }
 
-    findFileInZip(zipInputStream)
+    try {
+      findFileInZip(zipInputStream)
+    } catch {
+      case e: Throwable =>
+        Try(zipInputStream.close())
+        Try(stream.close())
+        throw e
+    }
   }
   // $COVERAGE-ON$
 
   def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit
     hc: HeaderCarrier
-  ): Future[Either[ErsError, Unit]] = {
+  ): Future[Either[ErsException, Unit]] = {
     logger.debug("Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
     ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
       case Right(_) => // todo, shouldn't we do something with the http response here?
@@ -165,13 +172,13 @@ class ProcessOdsService @Inject() (
       case Left(ex) =>
         auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         logger.error(s"[ProcessOdsService][sendSchemeData] An exception occurred: ${ex.getMessage}", ex)
-        Left(ERSFileProcessingException(ex.toString, ex.getMessage))
+        Left(ErsFileProcessingException(ex.toString, ex.getMessage))
     }
   }
 
   def sendScheme(schemeData: SchemeData, empRef: String)(implicit
     hc: HeaderCarrier
-  ): Future[Either[ErsError, Int]] =
+  ): Future[Either[ErsException, Int]] =
 
     if (splitSchemes && schemeData.data.size > maxNumberOfRows) {
 
@@ -197,7 +204,7 @@ class ProcessOdsService @Inject() (
         }
       }
     } else { // data enough to send in single slice
-      sendSchemeData(schemeData, empRef).map((sendResult: Either[ErsError, Unit]) =>
+      sendSchemeData(schemeData, empRef).map((sendResult: Either[ErsException, Unit]) =>
         sendResult.map(_ => 1)
       )
     }
@@ -207,7 +214,7 @@ class ProcessOdsService @Inject() (
     result: ListBuffer[SchemeData],
     startTime: Long,
     empRef: String
-  )(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsError, Int]] = {
+  )(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsException, Int]] = {
     logger.debug("2.1 result contains: " + result)
     deliverBESMetrics(startTime)
 
@@ -219,7 +226,7 @@ class ProcessOdsService @Inject() (
       .sequence(
         filesWithData.map(schemeData => sendScheme(schemeData, empRef))
       )
-      .flatMap { results: ListBuffer[Either[ErsError, Int]] =>
+      .flatMap { results: ListBuffer[Either[ErsException, Int]] =>
         results.find(_.isLeft) match {
           case Some(Left(err)) => Future.successful(Left(err))
           case _               =>
@@ -237,7 +244,7 @@ class ProcessOdsService @Inject() (
                 case None    =>
                   logger.error(s"storeCallbackData failed, timestamp: ${System.currentTimeMillis()}.")
                   Left(
-                    ERSFileProcessingException(
+                    ErsFileProcessingException(
                       "callback data storage in sessioncache failed ",
                       "Exception storing callback data"
                     )

@@ -17,7 +17,7 @@
 package utils
 
 import config.ApplicationConfig
-import models.InvalidTaxYearError
+import models.InvalidTaxYearException
 import org.scalatest.EitherValues
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -78,28 +78,28 @@ class SchemeResolverSpec extends AnyWordSpecLike with Matchers with MockitoSugar
         result mustBe Right(SchemeVersion.V4)
       }
 
-      "return InvalidTaxYearError when tax year has no slash separator" in {
+      "return InvalidTaxYearException when tax year has no slash separator" in {
         when(mockAppConfig.csopV5Enabled).thenReturn(true)
         val result = SchemeResolver.getSchemeVersion("invalid", mockAppConfig)
         result.isLeft mustBe true
-        result.left.value mustBe a[InvalidTaxYearError]
+        result.left.value mustBe a[InvalidTaxYearException]
       }
 
-      "return InvalidTaxYearError when tax year start is not a number" in {
+      "return InvalidTaxYearException when tax year start is not a number" in {
         when(mockAppConfig.csopV5Enabled).thenReturn(true)
         val result = SchemeResolver.getSchemeVersion("ABCD/EF", mockAppConfig)
         result.isLeft mustBe true
-        val error = result.left.value.asInstanceOf[InvalidTaxYearError]
+        val error = result.left.value.asInstanceOf[InvalidTaxYearException]
         error.message mustBe "Invalid tax year format"
         error.context must include("ABCD/EF")
         error.context must include("expected format YYYY/YY")
       }
 
-      "return InvalidTaxYearError for an empty string" in {
+      "return InvalidTaxYearException for an empty string" in {
         when(mockAppConfig.csopV5Enabled).thenReturn(true)
         val result = SchemeResolver.getSchemeVersion("", mockAppConfig)
         result.isLeft mustBe true
-        result.left.value mustBe a[InvalidTaxYearError]
+        result.left.value mustBe a[InvalidTaxYearException]
       }
     }
   }

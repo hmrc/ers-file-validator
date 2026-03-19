@@ -82,10 +82,10 @@ class CsvUploadController @Inject() (
     logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
     deliverFileProcessingMetrics(startTime)
 
-    val processedFiles: Seq[Future[Either[ErsError, CsvFileSubmissions]]] =
+    val processedFiles: Seq[Future[Either[ErsException, CsvFileSubmissions]]] =
       processCsvService.processFiles(upscanCsvFileData, schemeInfo, streamFile)
 
-    val extractedSchemeData: Seq[Future[Either[ErsError, CsvFileLengthInfo]]] =
+    val extractedSchemeData: Seq[Future[Either[ErsException, CsvFileLengthInfo]]] =
       processedFiles.map(submissions =>
         submissions.flatMap(submissions => processCsvService.extractSchemeData(schemeInfo, empRef, submissions))
       )
@@ -98,17 +98,17 @@ class CsvUploadController @Inject() (
   private def handleCsvResults(
     res: UpscanCsvFileData,
     startTime: Long,
-    allFilesResults: Seq[Either[ErsError, CsvFileLengthInfo]]
+    allFilesResults: Seq[Either[ErsException, CsvFileLengthInfo]]
   )(implicit request: Request[JsValue]): Future[Result] = {
     implicit val schemeInfo: SchemeInfo = res.schemeInfo
 
-    val maybeErrors: Option[ErsError] = allFilesResults.collectFirst { case Left(error) => error }
+    val maybeErrors: Option[ErsException] = allFilesResults.collectFirst { case Left(error) => error }
 
     maybeErrors match {
       case None                                 =>
         val successResults: Seq[CsvFileLengthInfo] = allFilesResults.collect { case Right(info) => info }
         storeCsvCallbackDataAndRespond(res, successResults, startTime)
-      case Some(userError: UserValidationError) =>
+      case Some(userError: UserValidationException) =>
         logger.warn(
           s"[CsvUploadController][handleCsvResults] User validation error: ${userError.message}, schemeRef: ${schemeInfo.schemeRef}"
         )

@@ -18,7 +18,7 @@ package connectors
 
 import config.ApplicationConfig
 import metrics.Metrics
-import models.{ERSFileProcessingException, SchemeData, SchemeInfo, SubmissionsSchemeData}
+import models.{ErsFileProcessingException, SchemeData, SchemeInfo, SubmissionsSchemeData}
 import play.api.Logging
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HttpReads.Implicits._
@@ -77,27 +77,27 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
   }
 
   def handleException(exception: Throwable, startTime: Long, schemeInfo: SchemeInfo, sheetName: String)
-                     (implicit hc: HeaderCarrier): ERSFileProcessingException = exception match {
+                     (implicit hc: HeaderCarrier): ErsFileProcessingException = exception match {
     case nf: BadRequestException =>
       deliverSendToSubmissionsMetrics(startTime)
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf)
       auditEvents.auditRunTimeError(nf, nf.toString, schemeInfo, sheetName)
-      ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf.getMessage)
+      ErsFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf.getMessage)
     case nf: NotFoundException =>
       deliverSendToSubmissionsMetrics(startTime)
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf)
       auditEvents.auditRunTimeError(nf, nf.toString, schemeInfo, sheetName)
-      ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf.getMessage)
+      ErsFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorNotFound}", nf.getMessage)
     case nf: ServiceUnavailableException =>
       deliverSendToSubmissionsMetrics(startTime)
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf)
       auditEvents.auditRunTimeError(nf, nf.toString, schemeInfo, sheetName)
-      ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf.getMessage)
+      ErsFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorServiceUnavailable}", nf.getMessage)
     case e =>
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e)
       deliverSendToSubmissionsMetrics(startTime)
       auditEvents.auditRunTimeError(e, e.toString, schemeInfo, sheetName)
-      ERSFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage)
+      ErsFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage)
   }
 
   def deliverSendToSubmissionsMetrics(startTime: Long): Unit =

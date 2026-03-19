@@ -48,7 +48,7 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
     val dataEvent = DataEvent(
       auditSource = "ers-file-validator",
       auditType = "source",
-      tags = hc.otherHeaders.toMap ++ hc.otherHeaders.toMap ++ Map("dateTime" -> dateTime.toString),
+      tags = hc.otherHeaders.toMap ++ Map("dateTime" -> dateTime.toString),
       detail = details
     )
 

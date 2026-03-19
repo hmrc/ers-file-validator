@@ -125,8 +125,8 @@ class CsvUploadControllerSpec
       status(result) shouldBe OK
     }
 
-    "return BAD_REQUEST when a UserValidationError occurs in extractSchemeData" in {
-      val userError = NoDataError("No data found", "File contains no data")
+    "return BAD_REQUEST when a UserValidationException occurs in extractSchemeData" in {
+      val userError = FileValidatorNoDataException("No data found", "File contains no data")
 
       when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
         .thenReturn(Future(Left(userError)))

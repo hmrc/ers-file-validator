@@ -121,7 +121,7 @@ class ERSFileValidatorConnectorSpec
       verify(ersFileValidatorConnector, times(1)).deliverSendToSubmissionsMetrics(any())
     }
 
-    "return a ERSFileProcessingException when receiving a BadRequestException" in {
+    "return a ErsFileProcessingException when receiving a BadRequestException" in {
       val badRequestException = new BadRequestException("This is a BadRequestException")
 
       configureMockHttpFailureResponse[SchemeData](
@@ -132,22 +132,22 @@ class ERSFileValidatorConnectorSpec
       )
 
       val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
-      result mustBe Left(ERSFileProcessingException("Submissions Service Bad Request", badRequestException.getMessage))
+      result mustBe Left(ErsFileProcessingException("Submissions Service Bad Request", badRequestException.getMessage))
 
       verify(ersFileValidatorConnector, times(1)).deliverSendToSubmissionsMetrics(any())
     }
 
-    "return a ERSFileProcessingException when receiving a NotFoundException" in {
+    "return a ErsFileProcessingException when receiving a NotFoundException" in {
       val notFoundException = new NotFoundException("This is a NotFoundException")
       configureMockHttpFailureResponse(mockHttpClient, mockEncodedSubmissionsUrl, submissionData, notFoundException)
 
       val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
-      result mustBe Left(ERSFileProcessingException("Submissions Service Not Found", notFoundException.getMessage))
+      result mustBe Left(ErsFileProcessingException("Submissions Service Not Found", notFoundException.getMessage))
       verify(ersFileValidatorConnector, times(1)).deliverSendToSubmissionsMetrics(any())
 
     }
 
-    "return a ERSFileProcessingException when receiving a ServiceUnavailableException" in {
+    "return a ErsFileProcessingException when receiving a ServiceUnavailableException" in {
       val serviceUnavailableException = new ServiceUnavailableException("This is a ServiceUnavailableException")
       configureMockHttpFailureResponse(
         mockHttpClient,
@@ -159,16 +159,16 @@ class ERSFileValidatorConnectorSpec
       val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
 
       result mustBe Left(
-        ERSFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage)
+        ErsFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage)
       )
     }
 
-    "return a ERSFileProcessingException when receiving an Exception" in {
+    "return a ErsFileProcessingException when receiving an Exception" in {
       val genericException = new MethodNotAllowedException("This is a MethodNotAllowedException")
       configureMockHttpFailureResponse(mockHttpClient, mockEncodedSubmissionsUrl, submissionData, genericException)
 
       val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
-      result mustBe Left(ERSFileProcessingException("Failed sending data", genericException.getMessage))
+      result mustBe Left(ErsFileProcessingException("Failed sending data", genericException.getMessage))
     }
   }
 
@@ -189,7 +189,7 @@ class ERSFileValidatorConnectorSpec
       response.value.body   must equal("Please check for me!")
     }
 
-    "return a ERSFileProcessingException when receiving a BadRequestException" in {
+    "return a ErsFileProcessingException when receiving a BadRequestException" in {
       val badRequestException = new BadRequestException("This is a BadRequestException")
 
       configureMockHttpFailureResponse(
@@ -200,10 +200,10 @@ class ERSFileValidatorConnectorSpec
       )
 
       val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
-      result mustBe Left(ERSFileProcessingException("Submissions Service Bad Request", badRequestException.getMessage))
+      result mustBe Left(ErsFileProcessingException("Submissions Service Bad Request", badRequestException.getMessage))
     }
 
-    "return a ERSFileProcessingException when receiving a NotFoundException" in {
+    "return a ErsFileProcessingException when receiving a NotFoundException" in {
       val notFoundException = new NotFoundException("This is a NotFoundException")
 
       configureMockHttpFailureResponse(
@@ -214,10 +214,10 @@ class ERSFileValidatorConnectorSpec
       )
 
       val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
-      result mustBe Left(ERSFileProcessingException("Submissions Service Not Found", notFoundException.getMessage))
+      result mustBe Left(ErsFileProcessingException("Submissions Service Not Found", notFoundException.getMessage))
     }
 
-    "return a ERSFileProcessingException when receiving a ServiceUnavailableException" in {
+    "return a ErsFileProcessingException when receiving a ServiceUnavailableException" in {
       val serviceUnavailableException = new ServiceUnavailableException("This is a ServiceUnavailableException")
 
       configureMockHttpFailureResponse(
@@ -230,13 +230,13 @@ class ERSFileValidatorConnectorSpec
       val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
 
       result mustBe Left(
-        ERSFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage)
+        ErsFileProcessingException("Submissions Service Service Unavailable", serviceUnavailableException.getMessage)
       )
 
       verify(ersFileValidatorConnector, times(1)).deliverSendToSubmissionsMetrics(any())
     }
 
-    "return a ERSFileProcessingException when receiving an Exception" in {
+    "return a ErsFileProcessingException when receiving an Exception" in {
       val genericException = new MethodNotAllowedException("This is a MethodNotAllowedException")
 
       configureMockHttpFailureResponse(
@@ -248,7 +248,7 @@ class ERSFileValidatorConnectorSpec
 
       val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
 
-      result mustBe Left(ERSFileProcessingException("Failed sending data", genericException.getMessage))
+      result mustBe Left(ErsFileProcessingException("Failed sending data", genericException.getMessage))
       verify(ersFileValidatorConnector, times(1)).deliverSendToSubmissionsMetrics(any())
     }
   }

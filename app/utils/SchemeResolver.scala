@@ -17,14 +17,14 @@
 package utils
 
 import config.ApplicationConfig
-import models.{ErsError, InvalidTaxYearError}
+import models.{ErsException, InvalidTaxYearException}
 import uk.gov.hmrc.validator.SchemeVersion
 
 import scala.util.{Failure, Success, Try}
 
 object SchemeResolver {
 
-  def getSchemeVersion(taxYear: String, appConfig: ApplicationConfig): Either[ErsError, SchemeVersion] =
+  def getSchemeVersion(taxYear: String, appConfig: ApplicationConfig): Either[ErsException, SchemeVersion] =
     if (appConfig.csopV5Enabled) {
       Try(taxYear.split("/")(0).toInt >= 2023) match {
         case Success(v5Required) =>
@@ -37,7 +37,7 @@ object SchemeResolver {
           }
         case Failure(_)          =>
           Left(
-            InvalidTaxYearError(
+            InvalidTaxYearException(
               "Invalid tax year format",
               s"Invalid tax year format or conversion error: $taxYear, expected format YYYY/YY"
             )
