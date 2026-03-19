@@ -66,7 +66,7 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
 
     val startTime = System.currentTimeMillis()
 
-    // todo: DDCE-5795 actually upgrade to http v2 client (DDCE-5795)
+    // todo: actually upgrade to http v2 client (DDCE-5795)
     http.POST[SubmissionsSchemeData, HttpResponse](s"${appConfig.submissionsUrl}/ers/v2/$encodedEmpRef/submit-presubmission", submissionsSchemeData).map { response =>
       deliverSendToSubmissionsMetrics(startTime)
       Right(response)
