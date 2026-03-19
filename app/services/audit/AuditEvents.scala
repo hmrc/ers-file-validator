@@ -18,7 +18,6 @@ package services.audit
 
 import models.SchemeInfo
 import org.apache.commons.lang3.exception.ExceptionUtils
-import play.api.mvc.Request
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.validator.models.ValidationError
 
@@ -39,7 +38,7 @@ class AuditEvents @Inject()(auditService: AuditService) {
   }
 
   def auditRunTimeError(exception: Throwable, contextInfo: String, schemeInfo: SchemeInfo, sheetName: String)
-                       (implicit hc: HeaderCarrier,request: Request[_]) : Unit = {
+                       (implicit hc: HeaderCarrier) : Unit = {
     auditService.sendEvent("ERSRunTimeError",Map(
       "ErrorMessage" -> exception.getMessage,
       "Context" -> contextInfo,
@@ -48,18 +47,18 @@ class AuditEvents @Inject()(auditService: AuditService) {
     ))
   }
 
-  def fileValidatorAudit(schemeInfo: SchemeInfo, sheetName: String)(implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
+  def fileValidatorAudit(schemeInfo: SchemeInfo, sheetName: String)(implicit hc: HeaderCarrier): Boolean = {
     auditService.sendEvent("ERSFileValidatorAudit", eventMap(schemeInfo, sheetName))
     true
   }
 
-  def fileProcessingErrorAudit(schemeInfo: SchemeInfo, sheetName: String, errorMsg: String)(implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
+  def fileProcessingErrorAudit(schemeInfo: SchemeInfo, sheetName: String, errorMsg: String)(implicit hc: HeaderCarrier): Boolean = {
     auditService.sendEvent("ERSFileProcessingError", eventMap(schemeInfo, sheetName) ++ Map("ErrorMessage" -> errorMsg))
     true
   }
 
   def validationErrorAudit(validationErrors:List[ValidationError], schemeInfo: SchemeInfo, sheetName: String)
-                          (implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
+                          (implicit hc: HeaderCarrier): Boolean = {
     auditService.sendEvent("ERSValidationError",Map(
         "Column" -> validationErrors.head.cell.column,
         "Row" -> validationErrors.head.cell.row.toString,
@@ -69,7 +68,7 @@ class AuditEvents @Inject()(auditService: AuditService) {
     true
   }
 
-  def totalRows(totalRows: Int, schemeInfo: SchemeInfo)(implicit hc: HeaderCarrier, request: Request[_]): Boolean = {
+  def totalRows(totalRows: Int, schemeInfo: SchemeInfo)(implicit hc: HeaderCarrier): Boolean = {
 
     auditService.sendEvent("ERStotalRowCount", Map(
       "rows" -> totalRows.toString,

@@ -20,12 +20,12 @@ import config.ApplicationConfig
 import metrics.Metrics
 import models.{ERSFileProcessingException, SchemeData, SchemeInfo, SubmissionsSchemeData}
 import play.api.Logging
-import play.api.mvc.Request
 import services.audit.AuditEvents
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 import utils.ErrorResponseMessages
-import uk.gov.hmrc.http.HttpReads.Implicits._
+
 import java.io.InputStream
 import java.net.URL
 import java.util.concurrent.TimeUnit
@@ -44,7 +44,7 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
     new URL(downloadUrl).openStream()
   // $COVERAGE-ON$
 
-  def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, HttpResponse]] = {
+  def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit hc: HeaderCarrier): Future[Either[Throwable, HttpResponse]] = {
     import java.net.URLEncoder
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
@@ -58,7 +58,7 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
   }
 
   def sendToSubmissionsNew(submissionsSchemeData: SubmissionsSchemeData, empRef: String)(
-    implicit hc: HeaderCarrier, request: Request[_]): Future[Either[Throwable, HttpResponse]] = {
+    implicit hc: HeaderCarrier): Future[Either[Throwable, HttpResponse]] = {
 
     import java.net.URLEncoder
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
@@ -74,7 +74,7 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
   }
 
   def handleException(exception: Throwable, startTime: Long, schemeInfo: SchemeInfo, sheetName: String)
-                     (implicit hc: HeaderCarrier, request: Request[_]): ERSFileProcessingException = exception match {
+                     (implicit hc: HeaderCarrier): ERSFileProcessingException = exception match {
     case nf: BadRequestException =>
       deliverSendToSubmissionsMetrics(startTime)
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorBadRequest}", nf)

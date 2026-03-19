@@ -118,7 +118,7 @@ class CsvUploadControllerSpec
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
 
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
 
       val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
@@ -129,7 +129,7 @@ class CsvUploadControllerSpec
       val userError = NoDataError("No data found", "File contains no data")
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
         .thenReturn(Future(Left(userError)))
 
       val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
@@ -142,7 +142,7 @@ class CsvUploadControllerSpec
 
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
         .thenReturn(Future(Left(userError)))
 
       val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
@@ -153,7 +153,7 @@ class CsvUploadControllerSpec
     "return INTERNAL_SERVER_ERROR when a SystemError occurs" in {
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
         .thenReturn(Future.successful(Left(ErsSystemError("System configuration error", "Config failure"))))
 
       val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
@@ -165,7 +165,7 @@ class CsvUploadControllerSpec
         .thenReturn(Future.successful(None))
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
         .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any(), any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
 
       val result: Future[Result] =

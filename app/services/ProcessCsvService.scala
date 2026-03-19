@@ -26,7 +26,6 @@ import org.apache.pekko.stream.connectors.csv.scaladsl.CsvParsing
 import org.apache.pekko.stream.scaladsl.{Flow, Sink, Source}
 import org.apache.pekko.util.ByteString
 import play.api.Logging
-import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.validator.DataEngine
@@ -118,7 +117,7 @@ class ProcessCsvService @Inject() (
                 lastRowValidation match {
                   case Right(results) if results.validationErrors.isEmpty                        =>
                     Right(CsvFileSubmissions(sheetName, sequenceOfEithers.length, successUpload))
-                  case Right(results: RowValidationResults) if results.validationErrors.nonEmpty =>
+                  case Right(results: RowValidationResults) =>
                     val errorsToLog = results.validationErrors
                       .map(error => s"column - ${error.cell.column}, error - ${error.errorId} : ${error.errorMsg}")
                       .mkString("\n")
@@ -140,7 +139,6 @@ class ProcessCsvService @Inject() (
     }
 
   def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[ErsError, CsvFileSubmissions])(implicit
-    request: Request[_],
     hc: HeaderCarrier
   ): Future[Either[ErsError, CsvFileLengthInfo]] =
     result.fold(
@@ -168,8 +166,7 @@ class ProcessCsvService @Inject() (
     )
 
   def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(implicit
-    hc: HeaderCarrier,
-    request: Request[_]
+    hc: HeaderCarrier
   ): Future[Option[Throwable]] = {
     logger.debug(
       "[ProcessCsvService][sendSchemeDataCsv] Sheetdata sending to ers-submission " + ersSchemeData.sheetName

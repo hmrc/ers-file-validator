@@ -155,8 +155,7 @@ class ProcessOdsService @Inject() (
   // $COVERAGE-ON$
 
   def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit
-    hc: HeaderCarrier,
-    request: Request[_]
+    hc: HeaderCarrier
   ): Future[Either[ErsError, Unit]] = {
     logger.debug("Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
     ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
@@ -171,8 +170,7 @@ class ProcessOdsService @Inject() (
   }
 
   def sendScheme(schemeData: SchemeData, empRef: String)(implicit
-    hc: HeaderCarrier,
-    request: Request[_]
+    hc: HeaderCarrier
   ): Future[Either[ErsError, Int]] =
 
     if (splitSchemes && schemeData.data.size > maxNumberOfRows) {

@@ -19,25 +19,20 @@ package services.audit
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.mvc.AnyContentAsEmpty
-import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.DefaultAuditConnector
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 import uk.gov.hmrc.play.audit.model.DataEvent
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import org.scalatest.wordspec.AnyWordSpecLike
-import uk.gov.hmrc.play.audit.DefaultAuditConnector
-
 import java.time.ZonedDateTime
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
   "auditService sendEvent should send the event" in {
-
-    implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
     implicit val hc: HeaderCarrier = new HeaderCarrier
 

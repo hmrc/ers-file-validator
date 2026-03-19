@@ -22,16 +22,16 @@ import models._
 import models.upscan.UpscanCallback
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
-import org.scalatest.BeforeAndAfter
+import org.scalatest.{BeforeAndAfter, EitherValues}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.EitherValues
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import play.api.mvc.Request
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
-import uk.gov.hmrc.validator.models.ods.ValidDataRow
 import uk.gov.hmrc.validator._
+import uk.gov.hmrc.validator.models.ods.ValidDataRow
+
 import java.io.InputStream
 import java.time.ZonedDateTime
 import scala.collection.mutable.ListBuffer
@@ -86,11 +86,11 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
     "yield a list of scheme data from file data" in {
       when(
         mockErsFileValidatorConnector
-          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
       ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
       when(mockSessionService.storeCallbackData(any(), any())(any())).thenReturn(Future.successful(Some(callbackData)))
-      when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
+      when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
 
       val result: Future[Either[ErsError, Int]] =
         processOdsService().processFile(callbackData, "")(hc, schemeInfo, request)
@@ -98,12 +98,11 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
     }
 
     "yield a list of scheme data from file data with large file" in {
-      when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
+      when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
 
       when(
         mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(
-          any[HeaderCarrier],
-          any[Request[_]]
+          any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
@@ -113,7 +112,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       val result = processOdsService().processFile(callbackData, "")(hc, schemeInfo, request)
       Await.result(result, Duration(5, SECONDS))
       verify(mockErsFileValidatorConnector, times(1))
-        .sendToSubmissions(any(), any[String]())(any[HeaderCarrier], any[Request[_]])
+        .sendToSubmissions(any(), any[String]())(any[HeaderCarrier])
     }
 
     "return system error when generateSchemeData throws a RuntimeException" in {
@@ -150,12 +149,11 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
           override def readFile(downloadUrl: String): InputStream = XMLTestData.getEMIAdjustmentsTemplateLarge
         }
 
-      when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any(), any())).thenReturn(true)
+      when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
 
       when(
         mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(
-          any[HeaderCarrier],
-          any[Request[_]]
+          any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
@@ -204,7 +202,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
 
       when(
         mockErsFileValidatorConnector
-          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
       ).thenReturn(Future.successful(Left(new RuntimeException("Runtime error"))))
 
       val processOdsService: ProcessOdsService =
@@ -315,7 +313,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
     "return 1 and call sendSchemeData once when splitSchemes is set to false in config even if number of records > max number of rows/sub" in {
       when(
         mockErsFileValidatorConnector
-          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
       ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
       when(mockAppConfig.splitLargeSchemes).thenReturn(false)
       when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(50)
@@ -327,13 +325,13 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       )
       result mustBe Right(1)
       verify(mockErsFileValidatorConnector, times(1))
-        .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
     }
 
     "return 1 and call sendSchemeData once when splitSchemes is set to true but the number of records does not exceed max" in {
       when(
         mockErsFileValidatorConnector
-          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
       ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
       when(mockAppConfig.splitLargeSchemes).thenReturn(true)
@@ -348,13 +346,13 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       )
       result mustBe Right(1)
       verify(mockErsFileValidatorConnector, times(1))
-        .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
     }
 
     "return 2 slices and call sendSchemeData twice" in {
       when(
         mockErsFileValidatorConnector
-          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
       ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
       when(mockAppConfig.splitLargeSchemes).thenReturn(true)
@@ -369,14 +367,13 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       )
       result mustBe Right(2)
       verify(mockErsFileValidatorConnector, times(2))
-        .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
     }
 
     "return 3 slices and call sendSchemeData 3 times" in {
       when(
         mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(
-          any[HeaderCarrier],
-          any[Request[_]]
+          any[HeaderCarrier]
         )
       ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
@@ -392,7 +389,7 @@ class ProcessOdsServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar
       )
       result mustBe Right(3)
       verify(mockErsFileValidatorConnector, times(3))
-        .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier], any[Request[_]])
+        .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
     }
   }
 

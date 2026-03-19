@@ -92,7 +92,6 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test"))
 
     override def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(implicit
                                                                                      hc: HeaderCarrier,
-                                                                                     request: Request[_]
     ): Future[Option[Throwable]] =
       sendSchemeCsvNewOverride.getOrElse(super.sendSchemeCsv(ersSchemeData, empRef))
   }
@@ -330,10 +329,10 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test"))
     "return a None if the submission was sent successfully" in {
       when(
         mockErsFileValidatorConnector
-          .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier], any[Request[_]])
+          .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier])
       ).thenReturn(Future.successful(Right(uk.gov.hmrc.http.HttpResponse(StatusCodes.OK.intValue, "aBody"))))
 
-      when(mockAuditEvents.fileValidatorAudit(any[SchemeInfo], any[String])(any[HeaderCarrier], any[Request[_]]))
+      when(mockAuditEvents.fileValidatorAudit(any[SchemeInfo], any[String])(any[HeaderCarrier]))
         .thenReturn(true)
 
       val result = Await.result(processCsvService().sendSchemeCsv(submissionsSchemeData, "empRef"), Duration.Inf)
@@ -344,12 +343,12 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test"))
       val returnException = new Exception("this failed")
       when(
         mockErsFileValidatorConnector
-          .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier], any[Request[_]])
+          .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier])
       ).thenReturn(Future.successful(Left(returnException)))
 
       doNothing()
         .when(mockAuditEvents)
-        .auditRunTimeError(any[Throwable], any[String], any[SchemeInfo], any[String])(any[HeaderCarrier], any[Request[_]])
+        .auditRunTimeError(any[Throwable], any[String], any[SchemeInfo], any[String])(any[HeaderCarrier])
 
       val result = Await.result(processCsvService().sendSchemeCsv(submissionsSchemeData, "empRef"), Duration.Inf)
       assert(result.isDefined)
