@@ -138,7 +138,7 @@ class CsvUploadController @Inject() (
       )
     )
 
-    val totalRowCount = results.foldLeft(0)(_ + _.fileLength)
+    val totalRowCount: Int = results.map(_.fileLength).sum
     auditEvents.totalRows(totalRowCount, schemeInfo)
 
     val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
