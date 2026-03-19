@@ -196,10 +196,10 @@ class ProcessOdsService @Inject() (
           case _               => Right(slices)
         }
       }
-    } else {
+    } else { // data enough to send in single slice
       sendSchemeData(schemeData, empRef).map((sendResult: Either[ErsError, Unit]) =>
         sendResult.map(_ => 1)
-      ) // todo why is this 1?
+      )
     }
 
   private def processSchemeData(
