@@ -81,10 +81,10 @@ class OdsUploadControllerSpec
     schemeType = "EMI"
   )
 
-  val request                      = FakeRequest()
-  val l: ListBuffer[SchemeData]    = new ListBuffer()
+  val request                   = FakeRequest()
+  val l: ListBuffer[SchemeData] = new ListBuffer()
 
-  val metaData: JsObject           = Json.obj(
+  val metaData: JsObject = Json.obj(
     "scon"                   -> "S1401234Z",
     "nino"                   -> "CB433298A",
     "surname"                -> "Smith",
@@ -98,7 +98,7 @@ class OdsUploadControllerSpec
   val callbackData: UpscanCallback =
     UpscanCallback("John", "downloadUrl", Some(1000L), Some("content-type"), Some(metaData), None)
 
-  val d: UpscanFileData            = UpscanFileData(callbackData, schemeInfo)
+  val d: UpscanFileData = UpscanFileData(callbackData, schemeInfo)
 
   "processOdsFile" must {
 
@@ -115,12 +115,15 @@ class OdsUploadControllerSpec
         .thenReturn(Future.successful(Right(l.size)))
 
       val result = odsUploadController.processOdsFile(empRef).apply(request.withJsonBody(Json.toJson(metaData)))
-      status(result) shouldBe BAD_REQUEST
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe
+        "Invalid request body, parse errors: obj.schemeInfo: error.path.missing, obj.callbackData: error.path.missing"
     }
 
     "return BAD_REQUEST with no JSON body" in {
       val result = odsUploadController.processOdsFile(empRef).apply(request)
-      status(result) shouldBe BAD_REQUEST
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe "No JSON body in request"
     }
 
     "return INTERNAL_SERVER_ERROR when a SystemError occurs" in {

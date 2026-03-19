@@ -82,7 +82,7 @@ class CsvUploadControllerSpec
       mockAuthorisedActionWithBody(empRef)(body)
   }
 
-  val schemeInfo: SchemeInfo       = SchemeInfo(
+  val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11000001231275",
     timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
@@ -91,9 +91,9 @@ class CsvUploadControllerSpec
     schemeType = "EMI"
   )
 
-  val request                      = FakeRequest()
+  val request = FakeRequest()
 
-  val metaData: JsObject           = Json.obj(
+  val metaData: JsObject = Json.obj(
     "scon"                   -> "S1401234Z",
     "nino"                   -> "CB433298A",
     "surname"                -> "Smith",
@@ -107,7 +107,7 @@ class CsvUploadControllerSpec
   val callbackData: UpscanCallback =
     UpscanCallback("John", "downloadUrl", Some(1000L), Some("content-type"), Some(metaData), None)
 
-  val csvData: UpscanCsvFileData   = UpscanCsvFileData(List(callbackData, callbackData), schemeInfo)
+  val csvData: UpscanCsvFileData = UpscanCsvFileData(List(callbackData, callbackData), schemeInfo)
 
   "processCsvFile" must {
 
@@ -177,7 +177,9 @@ class CsvUploadControllerSpec
     "return BAD_REQUEST if the body cannot be parsed into an UpscanCsvFileData object" in {
       val result: Future[Result] =
         csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson("bad json")))
-      status(result) shouldBe BAD_REQUEST
+      status(result)          shouldBe BAD_REQUEST
+      contentAsString(result) shouldBe
+        "Invalid request body, parse errors: obj: error.expected.jsobject"
     }
   }
 

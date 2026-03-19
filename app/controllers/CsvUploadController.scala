@@ -32,6 +32,7 @@ import services.{ProcessCsvService, SessionCacheService}
 import uk.gov.hmrc.http.SessionId
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import utils.LogUtils
 
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -57,13 +58,15 @@ class CsvUploadController @Inject() (
         .validate[UpscanCsvFileData]
         .fold(
           valid = upscanCsvFileData => processValidCsvRequest(empRef, upscanCsvFileData, startTime),
-          invalid = jsonValidationError => {
-            logger.warn(s"[CsvUploadController][processCsvFile] Invalid request body")
+          invalid = jsonValidationErrors => {
+            val parseErrors = LogUtils.formatErrorMessageFromJsonParseFailure(jsonValidationErrors)
+
+            logger.warn(s"[CsvUploadController][processCsvFile] Invalid request body: $parseErrors")
             deliverFileProcessingMetrics(startTime)
 
             Future.successful(
-              BadRequest(jsonValidationError.toString)
-            ) // todo: do we want to give a bit more detail to the caller here?
+              BadRequest(s"Invalid request body, parse errors: $parseErrors")
+            )
           }
         )
   }

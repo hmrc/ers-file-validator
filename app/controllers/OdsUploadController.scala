@@ -27,6 +27,7 @@ import play.api.mvc._
 import services.ProcessOdsService
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import utils.LogUtils
 
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
@@ -65,12 +66,15 @@ class OdsUploadController @Inject() (
                 }
               },
               invalid = jsonValidationErrors => {
-                val errorMessage = jsonValidationErrors.mkString(", ")
+
+                val parseErrors = LogUtils.formatErrorMessageFromJsonParseFailure(jsonValidationErrors)
+
                 logger.error(
-                  s"[OdsUploadController][processOdsFile] An exception occurred while validating file data :$errorMessage"
+                  s"[OdsUploadController][processOdsFile] An exception occurred while validating file data :$parseErrors"
                 )
+
                 deliverFileProcessingMetrics(startTime)
-                Future.successful(BadRequest(jsonValidationErrors.toString)) // todo: do we want to give a bit more detail to the caller here?
+                Future.successful(BadRequest(s"Invalid request body, parse errors: $parseErrors"))
               }
             )
         case None       =>
@@ -93,14 +97,14 @@ class OdsUploadController @Inject() (
 
         BadRequest(Json.toJson(error))
 
-      case userError: UserValidationError       =>
+      case userError: UserValidationError =>
         logger.warn(
           s"[OdsUploadController][handleOdsError] User validation error: ${userError.message}, context: ${userError.context}, schemeRef: ${schemeInfo.schemeRef}"
         )
 
         BadRequest(userError.message)
 
-      case systemError: SystemError             =>
+      case systemError: SystemError =>
         logger.error(s"[OdsUploadController][handleOdsError] Unexpected system error: ${systemError.message}")
         InternalServerError
     }
