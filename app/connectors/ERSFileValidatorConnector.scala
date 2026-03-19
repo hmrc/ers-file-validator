@@ -49,6 +49,7 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
     val startTime = System.currentTimeMillis()
+    // todo: actually upgrade to http V2 client (DDCE-5795)
     http.POST[SchemeData, HttpResponse](s"${appConfig.submissionsUrl}/ers/$encodedEmpRef/submit-presubmission", schemeData).map { response =>
       deliverSendToSubmissionsMetrics(startTime)
       Right(response)
@@ -64,6 +65,8 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
     val startTime = System.currentTimeMillis()
+
+    // todo: DDCE-5795actually upgrade to http v2 client (DDCE-5795)
     http.POST[SubmissionsSchemeData, HttpResponse](s"${appConfig.submissionsUrl}/ers/v2/$encodedEmpRef/submit-presubmission", submissionsSchemeData).map { response =>
       deliverSendToSubmissionsMetrics(startTime)
       Right(response)
