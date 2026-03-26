@@ -169,10 +169,8 @@ class CsvUploadController @Inject() (
       .single(HttpRequest(uri = downloadUrl))
       .mapAsync(parallelism = 1)(makeRequest)
 
-  // $COVERAGE-OFF$
   private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] =
     Http()(actorSystem).singleRequest(request)
-  // $COVERAGE-ON$
 
   private def deliverFileProcessingMetrics(startTime: Long): Unit =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)

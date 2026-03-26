@@ -21,7 +21,8 @@ import metrics.Metrics
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.testkit.TestKit
 import org.mockito.ArgumentMatchers.any
@@ -169,26 +170,35 @@ class CsvUploadControllerSpec
 
   "streamFile" should {
 
-    val streamController: CsvUploadController = new CsvUploadController(
-      mockAuditEvents,
-      mockSessionService,
-      mockProcessCsvService,
-      mockAuthConnector,
-      stubControllerComponents(),
-      defaultActionBuilder
-    ) {
-      override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
-        mockAuthorisedActionWithBody(empRef)(body)
+    val binding = Await.result(
+      Http().newServerAt("localhost", 0).bindSync(_ => HttpResponse(StatusCodes.OK)),
+      Duration.Inf
+    )
+    val port    = binding.localAddress.getPort
 
-      override private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] =
-        Future.successful(HttpResponse(StatusCodes.OK))
-    }
+    val streamController = spy(
+      new CsvUploadController(
+        mockAuditEvents,
+        mockSessionService,
+        mockProcessCsvService,
+        mockAuthConnector,
+        stubControllerComponents(),
+        defaultActionBuilder
+      ) {
+        override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
+          mockAuthorisedActionWithBody(empRef)(body)
+      }
+    )
 
     "process the response" in {
-      val result    = streamController.streamFile("http://www.test.com").runWith(Sink.seq)
+      val result    = streamController.streamFile(s"http://localhost:$port").runWith(Sink.seq)
       val responses = Await.result(result, Duration.Inf)
-      responses.length shouldBe 1
-      responses.head   shouldBe HttpResponse(StatusCodes.OK)
+
+      verify(streamController, times(1)).makeRequest(any())
+      responses.length      shouldBe 1
+      responses.head.status shouldBe StatusCodes.OK
+
+      Await.result(binding.unbind(), Duration.Inf)
     }
   }
 

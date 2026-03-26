@@ -49,7 +49,6 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
 
     val startTime = System.currentTimeMillis()
-    // todo: actually upgrade to http V2 client (DDCE-5795)
     http.POST[SchemeData, HttpResponse](s"${appConfig.submissionsUrl}/ers/$encodedEmpRef/submit-presubmission", schemeData).map { response =>
       deliverSendToSubmissionsMetrics(startTime)
       Right(response)
@@ -66,7 +65,6 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
 
     val startTime = System.currentTimeMillis()
 
-    // todo: actually upgrade to http v2 client (DDCE-5795)
     http.POST[SubmissionsSchemeData, HttpResponse](s"${appConfig.submissionsUrl}/ers/v2/$encodedEmpRef/submit-presubmission", submissionsSchemeData).map { response =>
       deliverSendToSubmissionsMetrics(startTime)
       Right(response)
@@ -97,7 +95,8 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e)
       deliverSendToSubmissionsMetrics(startTime)
       auditEvents.auditRunTimeError(e, e.toString, schemeInfo, sheetName)
-      ErsFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage)
+      ErsFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage) // maps to 'There are errors in your file' on frontend seems wrong?!
+
   }
 
   def deliverSendToSubmissionsMetrics(startTime: Long): Unit =

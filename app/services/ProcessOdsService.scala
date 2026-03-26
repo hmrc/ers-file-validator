@@ -166,7 +166,7 @@ class ProcessOdsService @Inject() (
   ): Future[Either[ErsException, Unit]] = {
     logger.debug("Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
     ersConnector.sendToSubmissions(ersSchemeData, empRef).map {
-      case Right(_) => // todo, shouldn't we do something with the http response here?
+      case Right(_) =>
         auditEvents.fileValidatorAudit(ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         Right(())
       case Left(ex) =>
