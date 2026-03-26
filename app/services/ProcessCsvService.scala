@@ -170,7 +170,7 @@ class ProcessCsvService @Inject() (
     hc: HeaderCarrier
   ): Future[Option[Throwable]] = {
     logger.debug(
-      "[ProcessCsvService][sendSchemeDataCsv] Sheetdata sending to ers-submission " + ersSchemeData.sheetName
+      "[ProcessCsvService][sendSchemeCsv] Sheetdata sending to ers-submission " + ersSchemeData.sheetName
     )
     ersConnector.sendToSubmissionsNew(ersSchemeData, empRef).map {
       case Right(_)            =>
@@ -179,7 +179,7 @@ class ProcessCsvService @Inject() (
       case Left(ex: Throwable) =>
         auditEvents.auditRunTimeError(ex, ex.getMessage, ersSchemeData.schemeInfo, ersSchemeData.sheetName)
         logger.error(
-          s"[ProcessCsvService][sendSchemeDataCsv] Exception found when sending to submissions: ${ex.getMessage}",
+          s"[ProcessCsvService][sendSchemeCsv] Exception found when sending to submissions: ${ex.getMessage}",
           ex
         )
 

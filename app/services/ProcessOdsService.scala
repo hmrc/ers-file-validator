@@ -132,7 +132,6 @@ class ProcessOdsService @Inject() (
     }
   }
 
-  // $COVERAGE-OFF$
   private[services] def readFile(downloadUrl: String): InputStream = {
     val stream         = ersConnector.upscanFileStream(downloadUrl)
     val targetFileName = "content.xml"
@@ -159,7 +158,6 @@ class ProcessOdsService @Inject() (
         throw e
     }
   }
-  // $COVERAGE-ON$
 
   def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit
     hc: HeaderCarrier

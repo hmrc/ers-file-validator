@@ -33,7 +33,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.language.postfixOps
 
-class SessionServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
+class SessionCacheServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
   val sessionPair: (String, String) = SessionKeys.sessionId -> UUID.randomUUID.toString
   val mockSessionCache: ERSFileValidatorSessionRepository = mock[ERSFileValidatorSessionRepository]

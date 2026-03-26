@@ -16,7 +16,8 @@
 
 package controllers
 
-import fixtures.WithMockedAuthActions
+import ch.qos.logback.classic.Level
+import fixtures.{LogCapturePerTest, TestFixtures, WithMockedAuthActions}
 import metrics.Metrics
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
@@ -39,13 +40,11 @@ import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Action, DefaultActionBuilder, Result}
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import services.audit.AuditEvents
-import services.{ProcessCsvService, SessionCacheService}
+import services.ProcessCsvService
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 
-import java.time.ZonedDateTime
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{Await, Future}
 
 class CsvUploadControllerSpec
     extends TestKit(ActorSystem("CsvUploadControllerSpec"))
@@ -55,15 +54,13 @@ class CsvUploadControllerSpec
     with MockitoSugar
     with GuiceOneAppPerSuite
     with WithMockedAuthActions
-    with ScalaFutures {
+    with ScalaFutures
+    with LogCapturePerTest
+    with TestFixtures {
 
-  val empRef: String                           = "1234/ABCD"
-  val mockSessionService: SessionCacheService  = mock[SessionCacheService]
   val mockProcessCsvService: ProcessCsvService = mock[ProcessCsvService]
   val mockAuthConnector: DefaultAuthConnector  = mock[DefaultAuthConnector]
-  val mockAuditEvents: AuditEvents             = mock[AuditEvents]
   val metrics: Metrics                         = mock[Metrics]
-  implicit val ec: ExecutionContextExecutor    = ExecutionContext.global
 
   implicit override lazy val app: Application =
     GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
@@ -83,16 +80,9 @@ class CsvUploadControllerSpec
       mockAuthorisedActionWithBody(empRef)(body)
   }
 
-  val schemeInfo: SchemeInfo = SchemeInfo(
-    schemeRef = "XA11000001231275",
-    timestamp = ZonedDateTime.now,
-    schemeId = "123PA12345678",
-    taxYear = "2014/F15",
-    schemeName = "MyScheme",
-    schemeType = "EMI"
-  )
+  override def logCaptureTargets: Seq[CsvUploadController] = Seq(csvUploadController)
 
-  val request = FakeRequest()
+  override val request = FakeRequest()
 
   val metaData: JsObject = Json.obj(
     "scon"                   -> "S1401234Z",
@@ -135,6 +125,9 @@ class CsvUploadControllerSpec
       val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
       status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "No data found"
+
+      logExistsContaining(Level.WARN, "[CsvUploadController][handleCsvResults] User validation error:") shouldBe true
+
     }
 
     "return INTERNAL_SERVER_ERROR when a SystemError occurs" in {
@@ -143,6 +136,8 @@ class CsvUploadControllerSpec
 
       val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
       status(result) shouldBe INTERNAL_SERVER_ERROR
+
+      logExistsContaining(Level.ERROR, "[CsvUploadController][handleCsvResults] System error:") shouldBe true
     }
 
     "return ACCEPTED when failing to store callback data" in {
@@ -156,6 +151,12 @@ class CsvUploadControllerSpec
         csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
       status(result)          shouldBe ACCEPTED
       contentAsString(result) shouldBe "csv callback data storage in sessioncache failed"
+
+      logExistsContaining(
+        Level.ERROR,
+        "[CsvUploadController][storeCsvCallbackDataAndRespond] CSV storeCallbackData failed"
+      ) shouldBe true
+
     }
 
     "return BAD_REQUEST if the body cannot be parsed into an UpscanCsvFileData object" in {
@@ -165,6 +166,8 @@ class CsvUploadControllerSpec
       status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe
         "Invalid request body, parse errors: obj: error.expected.jsobject"
+
+      logExistsContaining(Level.WARN, "[CsvUploadController][processCsvFile] Invalid request body") shouldBe true
     }
   }
 
