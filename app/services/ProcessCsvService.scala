@@ -91,7 +91,10 @@ class ProcessCsvService @Inject() (
               rowBytes.flatMap(row => CsvValidator.validateCsvRow(dataEngine, row))
             )
           )
-          .takeWhile(_.isRight, inclusive = true)
+          .takeWhile(
+            throwableOrResults => throwableOrResults.exists(_.validationErrors.isEmpty),
+            inclusive = true
+          )
           .runWith(Sink.seq[Either[Throwable, RowValidationResults]])
 
       pipeline match {
@@ -115,9 +118,9 @@ class ProcessCsvService @Inject() (
                 )
               case Some(lastRowValidation) =>
                 lastRowValidation match {
-                  case Right(results) if results.validationErrors.isEmpty                        =>
+                  case Right(results) if results.validationErrors.isEmpty =>
                     Right(CsvFileSubmissions(sheetName, sequenceOfEithers.length, successUpload))
-                  case Right(results: RowValidationResults) =>
+                  case Right(results: RowValidationResults)               =>
 
                     val errorDetail = results.validationErrors
                       .map(error => s"column - ${error.cell.column}, error - ${error.errorId} : ${error.errorMsg}")
@@ -129,18 +132,23 @@ class ProcessCsvService @Inject() (
                         context = s"Error processing CSV file: ${successUpload.name}, errors: $errorDetail"
                       )
                     )
-                  case Left(userError: UserValidationException)                                      =>
+                  case Left(userError: UserValidationException) =>
                     Left(userError)
-                  case Left(exception: Throwable)                                                =>
-                    Left(ErsSystemError(exception.getMessage, s"Unexpected error processing CSV file: ${successUpload.name}"))
+                  case Left(exception: Throwable)               =>
+                    Left(
+                      ErsSystemError(
+                        exception.getMessage,
+                        s"Unexpected error processing CSV file: ${successUpload.name}"
+                      )
+                    )
                 }
             }
           }
       }
     }
 
-  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[ErsException, CsvFileSubmissions])(implicit
-                                                                                                                  hc: HeaderCarrier
+  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[ErsException, CsvFileSubmissions])(
+    implicit hc: HeaderCarrier
   ): Future[Either[ErsException, CsvFileLengthInfo]] =
     result.fold(
       error => Future.successful(Left(error)),

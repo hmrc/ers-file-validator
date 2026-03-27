@@ -141,34 +141,34 @@ class ProcessCsvServiceSpec
       assert(boolList.forall(_.isLeft))
     }
 
+    "return a user validation error when an error occurs during the file validation" in {
+      val callback      = UpscanCsvFileData(
+        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(3))),
+        schemeInfo
+      )
+      val dataWithError =
+        "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
+          "2015-09- 23,test,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
+          "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
-    // todo fix test
-//    "return a user validation error when an error occurs during the file validation" in {
-//      val callback = UpscanCsvFileData(
-//        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(3))),
-//        schemeInfo
-//      )
-//      val data     =
-//        "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
-//          "2015-09- 23,test,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
-//          "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
-//
-//      val resultFuture = newProcessCsvService().processFiles(callback, schemeInfo, returnStubSource(_, data))
-//
-//      val errorMessage = "[ProcessCsvService][processFiles]: Found validation errors in CSV"
-//      val context      =
-//        "Error processing CSV file: CSOP_OptionsGranted_V4.csv, errors: column - A, error - 001 : Enter a date that matches the yyyy-mm-dd pattern." +
-//          "\ncolumn - B, error - 002 : Must be a whole number and be less than 1,000,000."
-//
-//      val result = await(Future.sequence(resultFuture))
-//      result.size mustBe 1
-//      result.head.isLeft mustBe true
-//
-//      val error = result.head.left.value
-//      error         mustBe a[FileValidationException]
-//      error.message mustBe errorMessage
-//      error.context mustBe context
-//    }
+      val resultFuture = newProcessCsvService().processFiles(callback, schemeInfo, returnStubSource(_, dataWithError))
+
+      val errorMessage = "Found validation errors in CSV"
+      val context      =
+        "Error processing CSV file: CSOP_OptionsGranted_V4.csv, errors: column - A, error - 001 : Enter a date that matches the yyyy-mm-dd pattern" +
+          "\ncolumn - B, error - 002 : Must be a whole number and be less than 1,000,000"
+
+      val result = await(Future.sequence(resultFuture))
+
+      result.size        mustBe 1
+      result.head.isLeft mustBe true
+
+      val error = result.head.left.value
+
+      error         mustBe a[FileValidationException]
+      error.message mustBe errorMessage
+      error.context mustBe context
+    }
 
     "return a user validation error when an error occurs during the file processing" in {
       val callback = UpscanCsvFileData(
