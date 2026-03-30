@@ -149,7 +149,7 @@ class AuthorisationSpec
 
       val result =
         authorisationTestController.testAuthorisedActionWithBody("123/2343234")(FakeRequest().withBody(testBody))
-        
+
       status(result) shouldBe Status.UNAUTHORIZED
     }
 

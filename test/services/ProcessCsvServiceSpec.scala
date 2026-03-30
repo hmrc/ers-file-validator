@@ -99,8 +99,8 @@ class ProcessCsvServiceSpec
       "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
       "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
-  def returnStubSource(x: String, data: String): Source[HttpResponse, NotUsed] =
-    Source.single(HttpResponse(entity = data))
+  private def stubSource(data: String): String => Source[HttpResponse, NotUsed] =
+    _ => Source.single(HttpResponse(entity = data))
 
   "processFiles" should {
 
@@ -109,7 +109,7 @@ class ProcessCsvServiceSpec
       val callback       = UpscanCsvFileData(List(upscanCallback), schemeInfo)
 
       val results = awaitSequence(
-        processCsvService().processFiles(callback, schemeInfo, returnStubSource(_, validData))
+        processCsvService().processFiles(callback, schemeInfo, stubSource(validData))
       )
 
       results mustBe Seq(Right(CsvFileSubmissions("CSOP_OptionsGranted_V4", 3, upscanCallback)))
@@ -121,7 +121,7 @@ class ProcessCsvServiceSpec
       val data           = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
       val results = awaitSequence(
-        processCsvService().processFiles(callback, schemeInfo, returnStubSource(_, data))
+        processCsvService().processFiles(callback, schemeInfo, stubSource(data))
       )
 
       results mustBe Seq(Right(CsvFileSubmissions("CSOP_OptionsGranted_V4", 1, upscanCallback)))
@@ -136,7 +136,7 @@ class ProcessCsvServiceSpec
       val results = awaitSequence(
         processCsvService(
           extractBodyOverride = Some(_ => Source.empty)
-        ).processFiles(callback, schemeInfo, returnStubSource(_, validData))
+        ).processFiles(callback, schemeInfo, stubSource(validData))
       )
 
       results mustBe Seq(
@@ -150,17 +150,18 @@ class ProcessCsvServiceSpec
     }
 
     "return a user validation error when an error occurs during the file validation" in {
-      val callback      = UpscanCsvFileData(
+      val callback = UpscanCsvFileData(
         List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(3))),
         schemeInfo
       )
+
       val dataWithError =
         "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
           "2015-09- 23,test,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
           "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
       val results = awaitSequence(
-        processCsvService().processFiles(callback, schemeInfo, returnStubSource(_, dataWithError))
+        processCsvService().processFiles(callback, schemeInfo, stubSource(dataWithError))
       )
 
       results mustBe Seq(
@@ -181,7 +182,7 @@ class ProcessCsvServiceSpec
       )
 
       val results = awaitSequence(
-        processCsvService().processFiles(callback, schemeInfo, returnStubSource(_, validData))
+        processCsvService().processFiles(callback, schemeInfo, stubSource(validData))
       )
 
       results mustBe Seq(
@@ -204,7 +205,7 @@ class ProcessCsvServiceSpec
       val results = awaitSequence(
         processCsvService(
           extractBodyOverride = Some(_ => Source.single(Left(userValidationError)))
-        ).processFiles(callback, schemeInfo, returnStubSource(_, ""))
+        ).processFiles(callback, schemeInfo, stubSource(""))
       )
 
       results mustBe Seq(Left(userValidationError))
@@ -220,7 +221,7 @@ class ProcessCsvServiceSpec
       val results = awaitSequence(
         processCsvService(
           extractBodyOverride = Some(_ => Source.single(Left(exception)))
-        ).processFiles(callback, schemeInfo, returnStubSource(_, ""))
+        ).processFiles(callback, schemeInfo, stubSource(""))
       )
 
       results mustBe Seq(
@@ -253,7 +254,7 @@ class ProcessCsvServiceSpec
 
       val futureResults = processCsvService(
         extractBodyOverride = Some(_ => Source.single(Right(invalidRow)))
-      ).processFiles(callback, schemeInfo, returnStubSource(_, ""))
+      ).processFiles(callback, schemeInfo, stubSource(""))
 
       val results = awaitSequence(futureResults)
 
@@ -280,7 +281,7 @@ class ProcessCsvServiceSpec
       val results = awaitSequence(
         processCsvService(
           extractEntityOverride = Some(_ => Source.failed(exception))
-        ).processFiles(callback, schemeInfo, returnStubSource(_, ""))
+        ).processFiles(callback, schemeInfo, stubSource(""))
       )
 
       results mustBe Seq(Left(exception))
