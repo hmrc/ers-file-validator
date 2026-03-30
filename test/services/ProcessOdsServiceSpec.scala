@@ -43,8 +43,6 @@ class ProcessOdsServiceSpec
 
   implicit val timeout: Timeout = 5.seconds
 
-  val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
-
   when(headerCarrier.sessionId).thenReturn(Some(SessionId("sessionId")))
 
   val callbackData: UpscanCallback = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)

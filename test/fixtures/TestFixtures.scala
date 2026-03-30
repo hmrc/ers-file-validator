@@ -17,6 +17,7 @@
 package fixtures
 
 import config.ApplicationConfig
+import connectors.ERSFileValidatorConnector
 import models.SchemeInfo
 import org.scalatestplus.mockito.MockitoSugar.mock
 import play.api.mvc.Request
@@ -49,5 +50,8 @@ trait TestFixtures {
   val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
 
   val mockSessionService: SessionCacheService = mock[SessionCacheService]
+
+  val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
+
 
 }

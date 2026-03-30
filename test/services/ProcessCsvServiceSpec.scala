@@ -17,8 +17,6 @@
 package services
 
 import ch.qos.logback.classic.Level
-import config.ApplicationConfig
-import connectors.ERSFileValidatorConnector
 import fixtures.{LogCapturePerTest, TestFixtures}
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
@@ -51,23 +49,14 @@ class ProcessCsvServiceSpec
     with LogCapturePerTest
     with TestFixtures {
 
-  implicit val defaultTimeout: Timeout = 5.seconds
+  implicit val defaultTimeout: Timeout                      = 5.seconds
+  private def awaitSequence[T](seq: Seq[Future[T]]): Seq[T] = await(Future.sequence(seq))
 
-  private def awaitSequence[T](x: Seq[Future[T]]): Seq[T] =
-    await(Future.sequence(x))
-
-  val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
-
-  override val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
   when(mockAppConfig.uploadFileSizeLimit).thenReturn(10000)
   when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(10000)
 
-  val submissionsSchemeData: SubmissionsSchemeData = SubmissionsSchemeData(
-    schemeInfo,
-    "sheetName",
-    UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(11)),
-    numberOfRows = 11
-  )
+  private def stubSource(data: String): String => Source[HttpResponse, NotUsed] =
+    _ => Source.single(HttpResponse(entity = data))
 
   type BodyExtractor   = Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _]
   type EntityExtractor = HttpResponse => Source[ByteString, _]
@@ -94,13 +83,17 @@ class ProcessCsvServiceSpec
         sendSchemeOverride.getOrElse(super.sendSchemeCsv(ersSchemeData, empRef)(hc))
     }
 
+  val submissionsSchemeData: SubmissionsSchemeData = SubmissionsSchemeData(
+    schemeInfo,
+    "sheetName",
+    UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(11)),
+    numberOfRows = 11
+  )
+
   val validData: String =
     "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
       "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
       "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
-
-  private def stubSource(data: String): String => Source[HttpResponse, NotUsed] =
-    _ => Source.single(HttpResponse(entity = data))
 
   "processFiles" should {
 
