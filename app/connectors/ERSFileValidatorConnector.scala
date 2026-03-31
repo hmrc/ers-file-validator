@@ -95,7 +95,7 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
       logger.error(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e)
       deliverSendToSubmissionsMetrics(startTime)
       auditEvents.auditRunTimeError(e, e.toString, schemeInfo, sheetName)
-      ErsFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage) // maps to 'There are errors in your file' on frontend seems wrong?!
+      ErsFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage)
 
   }
 
