@@ -16,43 +16,30 @@
 
 package models
 
-
-
-sealed abstract class ErsError(message: String) extends Exception(message) {
+sealed abstract class ErsException(message: String) extends Exception(message) {
   def message: String
   def context: String
 }
 
-sealed abstract class UserValidationError(message: String) extends ErsError(message)
+sealed abstract class UserValidationException(message: String) extends ErsException(message)
+case class HeaderValidationException(message: String, context: String) extends UserValidationException(message)
 
-case class HeaderValidationError(message: String, context: String) extends UserValidationError(message)
+case class FileValidationException(message: String, context: String)
+    extends UserValidationException(message)
 
-case class RowValidationError(
-                               message: String,
-                              context: String,
-                              rowNumber: Option[Int]
-                             ) extends UserValidationError(message)
+case class SchemeTypeMismatchException(
+  message: String,
+  context: String,
+  expectedSchemeType: String,
+  requestSchemeType: String
+) extends UserValidationException(message)
 
-case class SchemeTypeMismatchError(
-                                    message: String,
-                                    context: String,
-                                    expectedSchemeType: String,
-                                    requestSchemeType: String
-                                  ) extends UserValidationError(message)
+// to differentiate from lib exception
+case class FileValidatorNoDataException(message: String, context: String) extends UserValidationException(message)
 
-case class NoDataError(message: String, context: String) extends UserValidationError(message)
+case class UnknownSheetException(message: String, context: String) extends UserValidationException(message)
+case class InvalidTaxYearException(message: String, context: String) extends UserValidationException(message)
 
-case class UnknownSheetError(message: String, context: String) extends UserValidationError(message)
-
-case class InvalidTaxYearError(message: String, context: String) extends UserValidationError(message)
-
-
-sealed abstract class SystemError(message: String) extends ErsError(message)
-
+sealed abstract class SystemError(message: String) extends ErsException(message)
 case class ErsSystemError(message: String, context: String) extends SystemError(message)
-
-case class ERSFileProcessingException(
-                                       message: String,
-                                       context: String,
-                                       jsonSize: Option[Int] = None
-                                     ) extends SystemError(message)
+case class ErsFileProcessingException(message: String, context: String) extends SystemError(message)

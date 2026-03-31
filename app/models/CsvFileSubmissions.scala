@@ -16,4 +16,6 @@
 
 package models
 
-case class ValidationErrorData(id:String, errorId:String, errorMsg:String)
+import models.upscan.UpscanCallback
+
+case class CsvFileSubmissions(sheetName: String, fileLength: Int, upscanCallback: UpscanCallback)

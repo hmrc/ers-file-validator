@@ -16,10 +16,8 @@
 
 package services
 
-import com.typesafe.config.{Config, ConfigFactory}
-import config.ApplicationConfig
-import connectors.ERSFileValidatorConnector
-import helpers.MockProcessCsvService
+import ch.qos.logback.classic.Level
+import fixtures.{LogCapturePerTest, TestFixtures}
 import models._
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.apache.pekko.NotUsed
@@ -27,261 +25,259 @@ import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.testkit.TestKit
-import org.apache.pekko.util.ByteString
+import org.apache.pekko.util.{ByteString, Timeout}
 import org.mockito.ArgumentMatchers._
 import org.mockito.Mockito._
-import org.scalatest.{EitherValues, OptionValues}
-import org.scalatest.concurrent.{ScalaFutures, TimeLimits}
+import org.scalatest.EitherValues
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.mvc.Request
-import services.audit.AuditEvents
+import play.api.test.Helpers.await
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.services.validation.DataValidator
-import uk.gov.hmrc.services.validation.models.{Cell, Row, ValidationError}
-import utils.ErrorResponseMessages
 
-import java.time.ZonedDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
-class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpecLike with Matchers with OptionValues with MockitoSugar with TimeLimits with ScalaFutures with EitherValues {
+class ProcessCsvServiceSpec
+    extends TestKit(ActorSystem("Test"))
+    with AnyWordSpecLike
+    with Matchers
+    with MockitoSugar
+    with ScalaFutures
+    with EitherValues
+    with LogCapturePerTest
+    with TestFixtures {
 
-  val mockDataGenerator: DataGenerator = mock[DataGenerator]
-  val mockAuditEvents: AuditEvents = mock[AuditEvents]
-  val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
-  val mockAppConfig: ApplicationConfig = mock[ApplicationConfig]
+  implicit val defaultTimeout: Timeout                      = 5.seconds
+  private def awaitSequence[T](seq: Seq[Future[T]]): Seq[T] = await(Future.sequence(seq))
+
   when(mockAppConfig.uploadFileSizeLimit).thenReturn(10000)
   when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(10000)
 
-  val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "CSOP_OptionsGranted_V4", "sheetTitle", "configFileName", List("aHeader"))
+  private def stubSource(data: String): String => Source[HttpResponse, NotUsed] =
+    _ => Source.single(HttpResponse(entity = data))
 
-  implicit val request: Request[_] = mock[Request[_]]
-  implicit val hc: HeaderCarrier = mock[HeaderCarrier]
+  type BodyExtractor   = Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _]
+  type EntityExtractor = HttpResponse => Source[ByteString, _]
 
-  val schemeInfo: SchemeInfo = SchemeInfo(
-    schemeRef = "XA11999991234567",
-    timestamp = ZonedDateTime.now,
-    schemeId = "123PA12345678",
-    taxYear = "2014/F15",
-    schemeName = "MyScheme",
-    schemeType = "EMI"
+  private def processCsvService(
+    extractBodyOverride: Option[BodyExtractor] = None,
+    extractEntityOverride: Option[EntityExtractor] = None,
+    sendSchemeOverride: Option[Future[Option[Throwable]]] = None
+  ): ProcessCsvService =
+    new ProcessCsvService(mockAuditEvents, mockAppConfig, mockErsFileValidatorConnector) {
+
+      override def extractRequestBody: BodyExtractor =
+        extractBodyOverride.getOrElse(super.extractRequestBody)
+
+      override def extractEntityData(response: HttpResponse): Source[ByteString, _] =
+        extractEntityOverride match {
+          case Some(httpResponseToSource) => httpResponseToSource(response)
+          case None                       => super.extractEntityData(response)
+        }
+
+      override def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(implicit
+        hc: HeaderCarrier
+      ): Future[Option[Throwable]] =
+        sendSchemeOverride.getOrElse(super.sendSchemeCsv(ersSchemeData, empRef)(hc))
+    }
+
+  val submissionsSchemeData: SubmissionsSchemeData = SubmissionsSchemeData(
+    schemeInfo,
+    "sheetName",
+    UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(11)),
+    numberOfRows = 11
   )
 
-  val submissionsSchemeData: SubmissionsSchemeData = SubmissionsSchemeData(schemeInfo, "sheetName",
-    UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(11)), numberOfRows = 11)
-
-  def testProcessCsvService: ProcessCsvService = new ProcessCsvService(mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)
-
-  class MockDataValidator(config: Config, returner: Option[List[ValidationError]]) extends DataValidator(config) {
-    override def validateRow(row: Row): Option[List[ValidationError]] = returner
-  }
-
-  "processRow" should {
-    "process a row and return the user validation error it contains" in {
-      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName",
-        (1 to 5).map(_.toString).toList)
-
-      val testService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
-        formatDataToValidate = Some(Seq("INVALIDROW", "With", "ManyValues"))
-      )
-      val dataValidator = new MockDataValidator(mock[Config], Some(List(ValidationError(Cell("A", 1, "value"), "ruleId", "errorId", "errorMessage"))))
-      val result = testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
-        "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
-
-      result.isLeft mustBe true
-      result.left.value mustBe a[RowValidationError]
-      val error = result.left.value.asInstanceOf[RowValidationError]
-      error.message mustBe s"${ErrorResponseMessages.dataParserFileInvalid}"
-      error.context mustBe s"${ErrorResponseMessages.dataParserValidationFailure}"
-    }
-
-    "process a row and return the data if there are no errors" in {
-      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName",
-        (1 to 5).map(_.toString).toList)
-
-      val testService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
-        formatDataToValidate = Some(Seq("thisIsARow", "With", "ManyValues"))
-      )
-      val dataValidator = new MockDataValidator(mock[Config], None)
-      val result = testService.processRow(List(ByteString("thisIsARow,With,ManyValues")),
-        "CSOP_OptionsGranted_V4.csv", schemeInfo, dataValidator, sheetTest)
-
-      assert(result.isRight)
-      result.value mustBe List("thisIsARow", "With", "ManyValues")
-    }
-
-    "return Left when validateRow throws an exception" in {
-      val testService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
-        formatDataToValidate = Some(Seq("thisIsARow", "With", "ManyValues"))
-      )
-      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName",
-        (1 to 5).map(_.toString).toList)
-
-      val dataValidator = mock[DataValidator]
-      when(dataValidator.validateRow(any())).thenThrow(new RuntimeException("this validation failed"))
-
-      val result = testService.processRow(List(ByteString("INVALIDROW,With,ManyValues")),
-        "Other_Grants_V4.csv", schemeInfo, dataValidator, sheetTest)
-
-      result.isLeft mustBe true
-      val error = result.left.value
-      error mustBe a[RowValidationError]
-      error.message mustBe "Invalid file format"
-      error.context mustBe "Could not validate row due to unexpected structure. Error: this validation failed"
-    }
-  }
+  val validData: String =
+    "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
+      "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
+      "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
   "processFiles" should {
-    when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
-      .thenReturn(Right((new DataValidator(ConfigFactory.load.getConfig("ers-csop-granted-validation-config")), sheetTest)))
-
-    def returnStubSource(x: String, data: String): Source[HttpResponse, NotUsed] = {
-      Source.single(HttpResponse(entity = data))
-    }
 
     "return Right if all rows are valid" in {
-      val upscanCallback = UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))
+      val upscanCallback = UpscanCallback("CSOP_OptionsGranted_V4", "no", noOfRows = Some(1))
+      val callback       = UpscanCsvFileData(List(upscanCallback), schemeInfo)
 
-      val callback = UpscanCsvFileData(List(upscanCallback), schemeInfo)
-      val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
-
-      val testService: ProcessCsvService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector
-      )(
-        mockExtractBodyOfRequest = Some(_ => Source.single(Right(List(ByteString(data))))),
-        processRow = Some(Right(Seq(data)))
+      val results = awaitSequence(
+        processCsvService().processFiles(callback, schemeInfo, stubSource(validData))
       )
 
-      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
-        .thenReturn(Right((mock[DataValidator], sheetTest)))
-
-      val resultFuture = testService.processFiles(callback, returnStubSource(_, data))
-
-      val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
-
-      boolList mustBe List(Right(CsvFileSubmissions("CSOP_OptionsGranted_V4", 1, upscanCallback)))
-      assert(boolList.forall(_.isRight))
+      results mustBe Seq(Right(CsvFileSubmissions("CSOP_OptionsGranted_V4", 3, upscanCallback)))
     }
 
     "treat file extension as case-insensitive when processing a valid file" in {
       val upscanCallback = UpscanCallback("CSOP_OptionsGranted_V4.CSV", "no", noOfRows = Some(1))
+      val callback       = UpscanCsvFileData(List(upscanCallback), schemeInfo)
+      val data           = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
-      val callback = UpscanCsvFileData(List(upscanCallback), schemeInfo)
-      val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
-
-      val testService: ProcessCsvService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector
-      )(
-        mockExtractBodyOfRequest = Some(_ => Source.single(Right(List(ByteString(data))))),
-        processRow = Some(Right(Seq(data)))
+      val results = awaitSequence(
+        processCsvService().processFiles(callback, schemeInfo, stubSource(data))
       )
 
-      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
-        .thenReturn(Right((mock[DataValidator], sheetTest)))
-
-      val resultFuture = testService.processFiles(callback, returnStubSource(_, data))
-
-      val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
-
-      boolList mustBe List(Right(CsvFileSubmissions("CSOP_OptionsGranted_V4", 1, upscanCallback)))
-      assert(boolList.forall(_.isRight))
+      results mustBe Seq(Right(CsvFileSubmissions("CSOP_OptionsGranted_V4", 1, upscanCallback)))
     }
 
     "return a user validation error when file is empty" in {
-      val testService: ProcessCsvService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector
-      )(
-        mockExtractBodyOfRequest = Some(_ => Source.empty),
-        processRow = Some(Right(Seq.empty))
+      val callback = UpscanCsvFileData(
+        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))),
+        schemeInfo
       )
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
-      val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
-      val resultFuture = testService.processFiles(callback, returnStubSource(_, data))
+      val results = awaitSequence(
+        processCsvService(
+          extractBodyOverride = Some(_ => Source.empty)
+        ).processFiles(callback, schemeInfo, stubSource(validData))
+      )
 
-      val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
-
-      assert(boolList.head.isLeft)
-      boolList.head.left.value mustBe a[NoDataError]
-      val error = boolList.head.left.value.asInstanceOf[NoDataError]
-      error.message mustBe "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return."
-      assert(boolList.forall(_.isLeft))
+      results mustBe Seq(
+        Left(
+          FileValidatorNoDataException(
+            "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload CSOP_OptionsGranted_V4.csv as part of your annual return.",
+            "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload  as part of your annual return."
+          )
+        )
+      )
     }
 
     "return a user validation error when an error occurs during the file validation" in {
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
-      val data = "2015-09-23,test,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
-
-      val userError = RowValidationError("thisIsBad", "qualityContent", Some(1))
-      val testService: ProcessCsvService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector
-      )(
-        mockExtractBodyOfRequest = Some(_ => Source.single(Right(List(ByteString(data))))),
-        processRow = Some(Left(userError))
+      val callback = UpscanCsvFileData(
+        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(3))),
+        schemeInfo
       )
-      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
-        .thenReturn(Right((mock[DataValidator], sheetTest)))
 
-      val resultFuture = testService.processFiles(callback, returnStubSource(_, data))
+      val dataWithError =
+        "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
+          "2015-09- 23,test,123.12,12.1234,12.1234,no,yes,AB12345678,no\n" +
+          "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
 
-      val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
-      result mustBe List(Left(userError))
+      val results = awaitSequence(
+        processCsvService().processFiles(callback, schemeInfo, stubSource(dataWithError))
+      )
+
+      results mustBe Seq(
+        Left(
+          FileValidationException(
+            "Found validation errors in CSV",
+            "Error processing CSV file: CSOP_OptionsGranted_V4.csv, errors: column - A, error - 001 : Enter a date that matches the yyyy-mm-dd pattern" +
+              "\ncolumn - B, error - 002 : Must be a whole number and be less than 1,000,000"
+          )
+        )
+      )
     }
 
     "return a user validation error when an error occurs during the file processing" in {
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
-      val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no\n2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
-      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any())).thenReturn(Left(ERSFileProcessingException(
-        "ers.exceptions.dataParser.configFailure",
-        "ers.exceptions.dataParser.validatorError"
-      )))
+      val callback = UpscanCsvFileData(
+        List(UpscanCallback("NOT A VALID SHEET", "no", noOfRows = Some(1))),
+        schemeInfo
+      )
 
-      val resultFuture = testProcessCsvService.processFiles(callback, returnStubSource(_, data))
+      val results = awaitSequence(
+        processCsvService().processFiles(callback, schemeInfo, stubSource(validData))
+      )
 
-      val boolList = Await.result(Future.sequence(resultFuture), Duration.Inf)
-      val error = boolList.head.left.value
-
-      error mustBe a[ERSFileProcessingException]
-      error.message mustBe "ers.exceptions.dataParser.configFailure"
-      error.context mustBe "ers.exceptions.dataParser.validatorError"
-      assert(boolList.forall(_.isLeft))
+      results mustBe Seq(
+        Left(
+          ErsSystemError(
+            "Sheet name: NOT A VALID SHEET not found for selected scheme version: V4",
+            "Error processing CSV file: NOT A VALID SHEET"
+          )
+        )
+      )
     }
 
-    "return UnknownSheetError when getValidatorAndSheetInfo returns ERSFileProcessingException" in {
-      val callback = UpscanCsvFileData(List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))), schemeInfo)
-      val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
+    "return the original UserValidationException when the stream produces a Left(UserValidationException)" in {
+      val userValidationError = FileValidationException("user error message", "user error context")
+      val callback            = UpscanCsvFileData(
+        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))),
+        schemeInfo
+      )
 
-      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
-        .thenReturn(Left(ERSFileProcessingException("Config error", "Missing config")))
+      val results = awaitSequence(
+        processCsvService(
+          extractBodyOverride = Some(_ => Source.single(Left(userValidationError)))
+        ).processFiles(callback, schemeInfo, stubSource(""))
+      )
 
-      val resultFuture = testProcessCsvService.processFiles(callback, returnStubSource(_, data))
-      val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
-
-      result.head.isLeft mustBe true
-      result.head.left.value mustBe a[ERSFileProcessingException]
-      val error = result.head.left.value.asInstanceOf[ERSFileProcessingException]
-      error.message mustBe "Config error"
-      error.context mustBe "Missing config"
+      results mustBe Seq(Left(userValidationError))
     }
 
-    "return UnknownSheetError when getValidatorAndSheetInfo returns UnknownSheetError" in {
-      val callback = UpscanCsvFileData(List(UpscanCallback("Invalid_Sheet.csv", "no", noOfRows = Some(1))), schemeInfo)
-      val data = "2015-09-23,250,123.12,12.1234,12.1234,no,yes,AB12345678,no"
+    "return an ErsSystemError when the stream produces a Left(Throwable) that is not a UserValidationException" in {
+      val exception = new RuntimeException("unexpected processing error")
+      val callback  = UpscanCsvFileData(
+        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))),
+        schemeInfo
+      )
 
-      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any[SchemeInfo])(any(), any()))
-        .thenReturn(Left(UnknownSheetError("Invalid sheet name", "Sheet not found in configuration")))
+      val results = awaitSequence(
+        processCsvService(
+          extractBodyOverride = Some(_ => Source.single(Left(exception)))
+        ).processFiles(callback, schemeInfo, stubSource(""))
+      )
 
-      val resultFuture = testProcessCsvService.processFiles(callback, returnStubSource(_, data))
-      val result = Await.result(Future.sequence(resultFuture), Duration.Inf)
+      results mustBe Seq(
+        Left(
+          ErsSystemError(
+            "unexpected processing error",
+            "Unexpected error processing CSV file: CSOP_OptionsGranted_V4.csv"
+          )
+        )
+      )
+    }
 
-      result.head.isLeft mustBe true
-      result.head.left.value mustBe a[UnknownSheetError]
+    "return a FileValidationException when the last row is a Right with non-empty validationErrors" in {
+      val invalidRow: List[ByteString] = List(
+        ByteString("bad-date"),
+        ByteString("250"),
+        ByteString("123.12"),
+        ByteString("12.1234"),
+        ByteString("12.1234"),
+        ByteString("no"),
+        ByteString("yes"),
+        ByteString("AB12345678"),
+        ByteString("no")
+      )
+
+      val callback = UpscanCsvFileData(
+        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))),
+        schemeInfo
+      )
+
+      val futureResults = processCsvService(
+        extractBodyOverride = Some(_ => Source.single(Right(invalidRow)))
+      ).processFiles(callback, schemeInfo, stubSource(""))
+
+      val results = awaitSequence(futureResults)
+
+      results mustBe Seq(
+        Left(
+          FileValidationException(
+            message = "Found validation errors in CSV",
+            context = "Error processing CSV file: CSOP_OptionsGranted_V4.csv, errors: column - A, " +
+              "error - 001 : Enter a date that matches the yyyy-mm-dd pattern"
+          )
+        )
+      )
+    }
+
+    "return a Left containing the throwable when extractEntityData fails" in {
+      val exception =
+        ErsSystemError("stream failed", "Unexpected error processing CSV file: CSOP_OptionsGranted_V4.csv")
+
+      val callback = UpscanCsvFileData(
+        List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))),
+        schemeInfo
+      )
+
+      val results = awaitSequence(
+        processCsvService(
+          extractEntityOverride = Some(_ => Source.failed(exception))
+        ).processFiles(callback, schemeInfo, stubSource(""))
+      )
+
+      results mustBe Seq(Left(exception))
     }
   }
 
@@ -289,163 +285,124 @@ class ProcessCsvServiceSpec extends TestKit(ActorSystem("Test")) with AnyWordSpe
 
     "extract the data from an HttpResponse" in {
       val response = HttpResponse(entity = "Test response body")
-      val resultFuture = testProcessCsvService.extractEntityData(response).runWith(Sink.head)
+      val result   = await(processCsvService().extractEntityData(response).runWith(Sink.head))
 
-      val result = Await.result(resultFuture, Duration.Inf)
       result.utf8String mustBe "Test response body"
     }
 
-    "return a failed source with an ERSFileProcessingException if response status is not Ok (200)" in {
+    "return a failed source with an ErsFileProcessingException if response status is not Ok (200)" in {
       val response = HttpResponse(status = StatusCodes.InternalServerError)
-      val resultFuture = testProcessCsvService.extractEntityData(response).runWith(Sink.head)
+      val result   = processCsvService().extractEntityData(response).runWith(Sink.head)
 
-      assert(resultFuture.failed.futureValue.getMessage.contains("Failed to stream the data from file"))
-      assert(resultFuture.failed.futureValue.isInstanceOf[ERSFileProcessingException])
-    }
-  }
-
-  "extractBodyOfRequest" should {
-
-    "extract the body from an Http response stream and read as csv" in {
-      val source = Source
-        .single(HttpResponse(entity = "0,1,2,3\n4,5"))
-
-      val testService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
-        extractEntityData = Some(Source.single(ByteString("0,1,2,3\n4,5")))
+      result.failed.futureValue mustBe ErsFileProcessingException(
+        "Failed to stream the data from file",
+        "Exception bulk entity streaming"
       )
-
-      val resultFuture = testService.extractBodyOfRequest(source).runWith(Sink.seq)
-      val result = Await.result(resultFuture, Duration.Inf)
-
-      assert(result.head.isRight)
-      result.head.value mustBe List(ByteString("0"), ByteString("1"), ByteString("2"), ByteString("3"))
-
-      assert(result(1).isRight)
-      result(1).value mustBe List(ByteString("4"), ByteString("5"))
-
-      result.length mustBe 2
-    }
-
-    "return a left containing a throwable when an error occurs" in {
-      val source = Source
-        .single(HttpResponse(status = StatusCodes.InternalServerError))
-
-      val testService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
-        extractEntityData = Some(Source.failed(ERSFileProcessingException("a message!", "with contents!")))
-      )
-
-      val resultFuture = testService.extractBodyOfRequest(source).runWith(Sink.seq)
-      val result = Await.result(resultFuture, Duration.Inf)
-      result.head.isLeft mustBe true
-      result.head.left.map { x =>
-        assert(x.isInstanceOf[ERSFileProcessingException])
-        assert(x.asInstanceOf[ERSFileProcessingException].getMessage.contains("a message!"))
-      }
     }
   }
 
   "extractSchemeData" should {
-    "pass on a Left if given a Left" in {
-      val userError = RowValidationError("hello there", "context", Some(1))
-      val result: Future[Either[ErsError, CsvFileLengthInfo]] = testProcessCsvService
-        .extractSchemeData(schemeInfo, "anEmpRef", Left(userError))
 
-      assert(result.futureValue.isLeft)
-      result.futureValue.left.value mustBe userError
+    "pass on a Left if given a Left" in {
+      val userError = ErsSystemError("hello there", "context")
+      val result    = processCsvService().extractSchemeData(schemeInfo, empRef, Left(userError)).futureValue
+
+      result.left.value mustBe ErsSystemError("hello there", "context")
     }
 
     "return system error if sendSchemeCsv finds errors" in {
-      val testService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
-        sendSchemeCsvNew = Some(Future.successful(Some(new Exception("this was bad")))))
+      val result = await(
+        processCsvService(
+          sendSchemeOverride = Some(Future.successful(Some(new Exception("this was bad"))))
+        ).extractSchemeData(
+          schemeInfo,
+          empRef,
+          Right(
+            CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1)))
+          )
+        )
+      )
 
-      val futureResult = testService
-        .extractSchemeData(schemeInfo, "anEmpRef", Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1)))))
-
-      val result = Await.result(futureResult, Duration.Inf)
-
-      result.isLeft mustBe true
-      result.left.value mustBe a[ERSFileProcessingException]
-      val error = result.left.value.asInstanceOf[ERSFileProcessingException]
-      error.message mustBe "this was bad"
-      error.context mustBe "Error during CSV submission processing"
+      result mustBe Left(ErsFileProcessingException("this was bad", "Error during CSV submission processing"))
     }
 
     "return a Right if sendSchemeCsv is happy" in {
-      val testService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
-        sendSchemeCsvNew = Some(Future.successful(None)))
-
-      val result = Await.result(testService
-        .extractSchemeData(schemeInfo, "anEmpRef",
-          Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no")))),
-        Duration.Inf
+      val testService = processCsvService(
+        sendSchemeOverride = Some(Future.successful(None))
       )
 
-      assert(result.isRight)
+      attachLogger(testService)
+
+      val result = await(
+        testService.extractSchemeData(
+          schemeInfo,
+          empRef,
+          Right(CsvFileSubmissions("sheetName", 1, UpscanCallback("CSOP_OptionsGranted_V4.csv", "no")))
+        )
+      )
+
       result.value mustBe CsvFileLengthInfo(1, 1)
 
+      logExistsContaining(Level.INFO, "[ProcessCsvService][extractSchemeData]: File length") mustBe true
     }
   }
 
+  "sendSchemeCsv" should {
 
-  "formatDataToValidate" should {
-
-    "process the rowData" in {
-      val sheetTest: SheetInfo = SheetInfo("schemeType", 1, "sheetName", "sheetTitle", "configFileName",
-        (1 to 5).map(_.toString).toList)
-
-      val testService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)()
-
-      when(mockDataGenerator.getValidatorAndSheetInfo(any(), any())(any(), any())).thenReturn(Right(mock[DataValidator], sheetTest))
-      val result = testService.formatDataToValidate((11 to 20).map(_.toString), sheetTest)
-
-      result mustBe (11 to 15).map(_.toString)
-    }
-  }
-
-
-  "sendSchemeCsv New" should {
     "return a None if the submission was sent successfully" in {
-      val testService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
-      )
-      when(mockErsFileValidatorConnector.sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier], any[Request[_]]))
-        .thenReturn(Future.successful(Right(uk.gov.hmrc.http.HttpResponse(StatusCodes.OK.intValue, "aBody"))))
-      when(mockAuditEvents.fileValidatorAudit(any[SchemeInfo], any[String])(any[HeaderCarrier], any[Request[_]]))
+      when(
+        mockErsFileValidatorConnector
+          .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(Right(uk.gov.hmrc.http.HttpResponse(StatusCodes.OK.intValue, "aBody"))))
+
+      when(mockAuditEvents.fileValidatorAudit(any[SchemeInfo], any[String])(any[HeaderCarrier]))
         .thenReturn(true)
 
-      val result: Option[Throwable] = Await.result(
-        testService.sendSchemeCsv(submissionsSchemeData, "empRef"),
-        Duration.Inf
-      )
+      val service = processCsvService()
+      attachLogger(service)
 
-      assert(result.isEmpty)
+      val result = await(service.sendSchemeCsv(submissionsSchemeData, empRef))
+
+      result mustBe None
+
+      logExistsContaining(
+        Level.DEBUG,
+        "[ProcessCsvService][sendSchemeCsv] Sheetdata sending to ers-submission"
+      ) mustBe true
     }
 
     "return a throwable if the submission was not sent successfully" in {
-      val testService = new MockProcessCsvService(
-        mockAuditEvents, mockDataGenerator, mockAppConfig, mockErsFileValidatorConnector)(
-      )
-      val returnException = new Exception("this failed")
-      when(mockErsFileValidatorConnector.sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier], any[Request[_]]))
-        .thenReturn(Future.successful(Left(returnException)))
-      doNothing().when(mockAuditEvents).auditRunTimeError(any[Throwable], any[String], any[SchemeInfo], any[String])(
-        any[HeaderCarrier], any[Request[_]])
 
-      val result: Option[Throwable] = Await.result(
-        testService.sendSchemeCsv(submissionsSchemeData, "empRef"),
-        Duration.Inf
-      )
+      when(
+        mockErsFileValidatorConnector
+          .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier])
+      ).thenReturn(Future.successful(Left(new Exception("this failed"))))
 
-      assert(result.isDefined)
-      assert(result.get.isInstanceOf[ERSFileProcessingException])
-      result.get.getMessage mustBe returnException.toString
+      doNothing()
+        .when(mockAuditEvents)
+        .auditRunTimeError(any[Throwable], any[String], any[SchemeInfo], any[String])(any[HeaderCarrier])
+
+      val result = await(processCsvService().sendSchemeCsv(submissionsSchemeData, empRef))
+
+      result mustBe Some(ErsFileProcessingException(message = "java.lang.Exception: this failed", "this failed"))
     }
   }
 
+  "stripExtension" should {
+
+    val service = processCsvService()
+
+    "Remove the extension" in {
+      service.stripExtension("test.csv") mustBe "test"
+    }
+
+    "Remove the last extension if the file name contains multiple ." in {
+      service.stripExtension("test.somethingelse.csv") mustBe "test.somethingelse"
+    }
+
+    "Return the original string if there is no extension" in {
+      service.stripExtension("test") mustBe "test"
+    }
+  }
 
 }

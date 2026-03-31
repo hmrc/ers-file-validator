@@ -26,8 +26,6 @@ trait ERSMetrics {
   def besTimer(diff: Long, unit: TimeUnit): Unit
 
   def sendToSubmissionsTimer(diff: Long, unit: TimeUnit): Unit
-
-  def dataIteratorTimer(diff: Long, unit: TimeUnit): Unit
 }
 
 object ERSMetrics extends ERSMetrics {
@@ -38,8 +36,6 @@ object ERSMetrics extends ERSMetrics {
   override def besTimer(diff: Long, unit: TimeUnit): Unit = registry.timer("bes-processing-time").update(diff, unit)
 
   override def sendToSubmissionsTimer(diff: Long, unit: TimeUnit): Unit = registry.timer("send-to-submissions-time").update(diff, unit)
-
-  override def dataIteratorTimer(diff: Long, unit: TimeUnit): Unit = registry.timer("data-iterator-time").update(diff, unit)
 }
 
 trait Metrics {

@@ -23,6 +23,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import services.SessionCacheService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import utils.LogUtils
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -69,8 +70,10 @@ class FileValidatorController @Inject()(sessionService: SessionCacheService,
                 InternalServerError("An error occurred while updating the callback record.")
             }
         },
-        invalid = errors => {
-          Future.successful(BadRequest(s"Request contains errors: $errors"))
+        invalid = jsonValidationErrors => {
+          val parseErrors = LogUtils.formatErrorMessageFromJsonParseFailure(jsonValidationErrors)
+          logger.error(s"[FileValidatorController][updateCallbackRecord] invalid request body, parse errors: $parseErrors")
+          Future.successful(BadRequest(s"Invalid request body, parse errors: $parseErrors"))
         }
       )
   }

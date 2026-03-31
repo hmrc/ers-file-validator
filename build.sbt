@@ -41,7 +41,6 @@ lazy val microservice = Project(appName, file("."))
     routesGenerator := InjectedRoutesGenerator
   )
   .settings(PlayKeys.playDefaultPort := 9226)
-
     scalacOptions ++= Seq(
       "-Wconf:cat=unused-imports&src=routes/.*:s"
 )

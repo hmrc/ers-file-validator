@@ -19,43 +19,56 @@ package services.audit
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
-import play.api.mvc.AnyContentAsEmpty
-import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.audit.DefaultAuditConnector
 import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 import uk.gov.hmrc.play.audit.model.DataEvent
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import org.scalatest.wordspec.AnyWordSpecLike
-import uk.gov.hmrc.play.audit.DefaultAuditConnector
-
 import java.time.ZonedDateTime
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
+  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
   "auditService sendEvent should send the event" in {
 
-    implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-
     implicit val hc: HeaderCarrier = new HeaderCarrier
 
-    implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-    val dateTime = ZonedDateTime.now()
+    val dateTime           = ZonedDateTime.now()
     val mockAuditConnector = mock[DefaultAuditConnector]
+
     val auditService = new AuditService(mockAuditConnector, ec) {
       override protected def getDateTime: ZonedDateTime = dateTime
     }
+
     val details: Map[String, String] = Map("details1" -> "randomDetail")
 
     val dataEvent = DataEvent(
       auditSource = "ers-file-validator",
       auditType = "source",
-      tags = hc.otherHeaders.toMap ++ hc.otherHeaders.toMap ++ Map("dateTime" -> dateTime.toString),
+      tags = hc.otherHeaders.toMap ++ Map("dateTime" -> dateTime.toString),
       detail = details
     )
 
-    when(mockAuditConnector.sendEvent(argEq(dataEvent))(any[HeaderCarrier](), any[ExecutionContext]())).thenReturn(Future.successful(Success))
+    when(mockAuditConnector.sendEvent(argEq(dataEvent))(any[HeaderCarrier](), any[ExecutionContext]()))
+      .thenReturn(Future.successful(Success))
     auditService.sendEvent("source", details)
   }
+
+  "getDateTime should return a ZonedDateTime representing the current time" in {
+    val mockAuditConnector = mock[DefaultAuditConnector]
+
+    val auditService = new AuditService(mockAuditConnector, ec) {
+      def exposedGetDateTime: ZonedDateTime = getDateTime
+    }
+
+    val tolerance               = 10L // milliseconds
+    val expected: ZonedDateTime = ZonedDateTime.now()
+    val result                  = auditService.exposedGetDateTime
+
+    assert(Math.abs(result.toInstant.toEpochMilli - expected.toInstant.toEpochMilli)  < tolerance)
+  }
+
 }

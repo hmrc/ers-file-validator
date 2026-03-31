@@ -20,7 +20,7 @@ import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class ValidationUtilsSpec extends AnyWordSpecLike with Matchers with OptionValues{
+class ValidationUtilsSpec extends AnyWordSpecLike with Matchers with OptionValues {
 
   "numberOfSlices" should {
     "return the number of slices required to fit all rows based on the size of the buffer" in {

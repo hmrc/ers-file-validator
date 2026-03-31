@@ -16,38 +16,34 @@
 
 package services.audit
 
-import play.api.mvc.{Request, Session}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.model.DataEvent
-
-import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.play.audit.DefaultAuditConnector
+import uk.gov.hmrc.play.audit.model.DataEvent
 
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class AuditService @Inject()(auditConnector: DefaultAuditConnector,
-                             implicit val ec: ExecutionContext) {
+class AuditService @Inject() (auditConnector: DefaultAuditConnector, implicit val ec: ExecutionContext) {
   val auditSource = "ers-file-validator"
 
-  def sendEvent(transactionName : String, details: Map[String, String])(implicit request: Request[_], hc: HeaderCarrier): Unit =
+  def sendEvent(transactionName: String, details: Map[String, String])(implicit hc: HeaderCarrier): Unit =
     auditConnector.sendEvent(buildEvent(transactionName, details))
 
-  private def buildEvent( transactionName: String,  details: Map[String, String])(implicit request: Request[_], hc: HeaderCarrier) =
+  private def buildEvent(transactionName: String, details: Map[String, String])(implicit hc: HeaderCarrier) =
     DataEvent(
       auditSource = auditSource,
       auditType = transactionName,
-      tags = generateTags(request.session, hc),
+      tags = generateTags(hc),
       detail = details
     )
 
-  private def generateTags(session: Session, hc: HeaderCarrier): Map[String, String] =
-    hc.otherHeaders.toMap ++
+  private def generateTags(hc: HeaderCarrier): Map[String, String] =
       hc.otherHeaders.toMap ++
       Map(
-        "dateTime" ->  getDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
+        "dateTime" -> getDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
       )
 
   protected def getDateTime: ZonedDateTime = ZonedDateTime.now()
