@@ -68,8 +68,8 @@ class ProcessCsvServiceSpec
   ): ProcessCsvService =
     new ProcessCsvService(mockAuditEvents, mockAppConfig, mockErsFileValidatorConnector) {
 
-      override def extractBodyOfRequest: BodyExtractor =
-        extractBodyOverride.getOrElse(super.extractBodyOfRequest)
+      override def extractRequestBody: BodyExtractor =
+        extractBodyOverride.getOrElse(super.extractRequestBody)
 
       override def extractEntityData(response: HttpResponse): Source[ByteString, _] =
         extractEntityOverride match {

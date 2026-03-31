@@ -63,13 +63,29 @@ class ProcessCsvService @Inject() (
         )
     }
 
-  def extractBodyOfRequest: Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _] =
+  def extractRequestBody: Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _] =
     _.flatMapConcat(extractEntityData)
       .via(CsvParsing.lineScanner())
       .via(Flow.fromFunction(Right(_)))
       .recover { case e =>
         Left(e)
       }
+
+  private def processSource(
+    source: Source[HttpResponse, _],
+    dataEngine: DataEngine
+  ): Future[Seq[Either[Throwable, RowValidationResults]]] =
+    extractRequestBody(source)
+      .via(
+        Flow.fromFunction((rowBytes: Either[Throwable, List[ByteString]]) =>
+          rowBytes.flatMap(row => CsvValidator.validateCsvRow(dataEngine, row))
+        )
+      )
+      .takeWhile(
+        throwableOrResults => throwableOrResults.exists(_.validationErrors.isEmpty),
+        inclusive = true
+      )
+      .runWith(Sink.seq[Either[Throwable, RowValidationResults]])
 
   def processFiles(
     callback: UpscanCsvFileData,
@@ -85,17 +101,10 @@ class ProcessCsvService @Inject() (
           dataEngine    <- DataEngine(sheetName, schemeVersion).left.map(e =>
                              ErsSystemError(e.getMessage, s"Error processing CSV file: ${successUpload.name}")
                            )
-        } yield extractBodyOfRequest(source(successUpload.downloadUrl))
-          .via(
-            Flow.fromFunction((rowBytes: Either[Throwable, List[ByteString]]) =>
-              rowBytes.flatMap(row => CsvValidator.validateCsvRow(dataEngine, row))
-            )
-          )
-          .takeWhile(
-            throwableOrResults => throwableOrResults.exists(_.validationErrors.isEmpty),
-            inclusive = true
-          )
-          .runWith(Sink.seq[Either[Throwable, RowValidationResults]])
+        } yield processSource(
+          source(successUpload.downloadUrl),
+          dataEngine = dataEngine
+        )
 
       pipeline match {
         case Left(error)                =>

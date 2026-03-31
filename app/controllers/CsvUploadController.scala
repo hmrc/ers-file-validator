@@ -105,7 +105,7 @@ class CsvUploadController @Inject() (
     val maybeErrors: Option[ErsException] = allFilesResults.collectFirst { case Left(error) => error }
 
     maybeErrors match {
-      case None                                 =>
+      case None                                     =>
         val successResults: Seq[CsvFileLengthInfo] = allFilesResults.collect { case Right(info) => info }
         storeCsvCallbackDataAndRespond(res, successResults, startTime)
       case Some(userError: UserValidationException) =>
@@ -115,7 +115,7 @@ class CsvUploadController @Inject() (
 
         deliverFileProcessingMetrics(startTime)
         Future.successful(BadRequest(userError.message))
-      case Some(systemError: SystemError)       =>
+      case Some(systemError: SystemError)           =>
         logger.error(
           s"[CsvUploadController][handleCsvResults] System error: ${systemError.message}, schemeRef: ${schemeInfo.schemeRef}"
         )

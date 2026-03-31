@@ -96,7 +96,6 @@ class ERSFileValidatorConnector @Inject()(appConfig: ApplicationConfig,
       deliverSendToSubmissionsMetrics(startTime)
       auditEvents.auditRunTimeError(e, e.toString, schemeInfo, sheetName)
       ErsFileProcessingException(s"${ErrorResponseMessages.fileValidatorConnectorFailedSendingData}", e.getMessage)
-
   }
 
   def deliverSendToSubmissionsMetrics(startTime: Long): Unit =
