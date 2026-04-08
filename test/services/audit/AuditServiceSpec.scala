@@ -68,7 +68,7 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
     val expected: ZonedDateTime = ZonedDateTime.now()
     val result                  = auditService.exposedGetDateTime
 
-    assert(Math.abs(result.toInstant.toEpochMilli - expected.toInstant.toEpochMilli)  < tolerance)
+    assert(Math.abs(result.toInstant.toEpochMilli - expected.toInstant.toEpochMilli) < tolerance)
   }
 
 }

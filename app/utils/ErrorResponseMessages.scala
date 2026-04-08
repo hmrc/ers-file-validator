@@ -18,25 +18,31 @@ package utils
 
 object ErrorResponseMessages {
 
-  val fileProcessingServiceFailedStream = "Failed to stream the data from file"
-  val fileProcessingServiceBulkEntity = "Exception bulk entity streaming"
-  val fileValidatorConnectorFailedSendingData = "Failed sending data"
-  val fileValidatorConnectorNotFound = "Submissions Service Not Found"
-  val fileValidatorConnectorBadRequest = "Submissions Service Bad Request"
-  val fileValidatorConnectorServiceUnavailable = "Submissions Service Service Unavailable"
-  val dataParserIncorrectSheetName = "Incorrect ERS Template - Sheet Name isn't as expected"
-  val dataParserIncorrectHeader = "Incorrect ERS Template - Header doesn't match"
-  val dataParserNoData = """The file that you chose doesn’t have any data after row 9. The reportable events data must start in cell A10.<br/><a href="https://www.gov.uk/government/collections/employment-related-securities">Use the ERS guidance documents</a> to help you create error-free files."""
+  val fileProcessingServiceFailedStream                     = "Failed to stream the data from file"
+  val fileProcessingServiceBulkEntity                       = "Exception bulk entity streaming"
+  val fileValidatorConnectorFailedSendingData               = "Failed sending data"
+  val fileValidatorConnectorNotFound                        = "Submissions Service Not Found"
+  val fileValidatorConnectorBadRequest                      = "Submissions Service Bad Request"
+  val fileValidatorConnectorServiceUnavailable              = "Submissions Service Service Unavailable"
+  val dataParserIncorrectSheetName                          = "Incorrect ERS Template - Sheet Name isn't as expected"
+  val dataParserIncorrectHeader                             = "Incorrect ERS Template - Header doesn't match"
 
-  def dataParserIncorrectSchemeType(expectedSheetName: Option[String] = None, parsedSheetName: Option[String] = None): String = {
+  val dataParserNoData                                      =
+    """The file that you chose doesn’t have any data after row 9. The reportable events data must start in cell A10.<br/><a href="https://www.gov.uk/government/collections/employment-related-securities">Use the ERS guidance documents</a> to help you create error-free files."""
+
+  def dataParserIncorrectSchemeType(
+    expectedSheetName: Option[String] = None,
+    parsedSheetName: Option[String] = None
+  ): String =
     (expectedSheetName, parsedSheetName) match {
       case (Some(expectedSheet), Some(parsedSheet)) =>
         s"Incorrect ERS Template - Scheme Type isn't as expected, expected: $expectedSheet parsed: $parsedSheet"
-      case (_, _) =>
+      case (_, _)                                   =>
         "Incorrect ERS Template - Scheme Type isn't as expected"
     }
-  }
-  def ersCheckCsvFileNoData(sheetName: String = ""): String = "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload " +
-    s"$sheetName as part of your annual return."
+
+  def ersCheckCsvFileNoData(sheetName: String = ""): String =
+    "The file that you chose doesn’t contain any data.<br/>You won’t be able to upload " +
+      s"$sheetName as part of your annual return."
 
 }

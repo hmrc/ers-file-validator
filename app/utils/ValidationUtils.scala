@@ -18,12 +18,11 @@ package utils
 
 object ValidationUtils {
 
-  def numberOfSlices(sizeOfBuffer: Int, maxNumberOfRows: Int): Int = {
-    if(sizeOfBuffer % maxNumberOfRows > 0) {
+  def numberOfSlices(sizeOfBuffer: Int, maxNumberOfRows: Int): Int =
+    if (sizeOfBuffer % maxNumberOfRows > 0) {
       sizeOfBuffer / maxNumberOfRows + 1
     } else {
       sizeOfBuffer / maxNumberOfRows
     }
-  }
 
 }

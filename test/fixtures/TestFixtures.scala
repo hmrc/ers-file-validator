@@ -39,9 +39,9 @@ trait TestFixtures {
     schemeType = "EMI"
   )
 
-  implicit val request: Request[_]           = mock[Request[_]]
+  implicit val request: Request[_]          = mock[Request[_]]
   implicit val headerCarrier: HeaderCarrier = mock[HeaderCarrier]
-  val mockAuditEvents: AuditEvents           = mock[AuditEvents]
+  val mockAuditEvents: AuditEvents          = mock[AuditEvents]
 
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
@@ -52,6 +52,5 @@ trait TestFixtures {
   val mockSessionService: SessionCacheService = mock[SessionCacheService]
 
   val mockErsFileValidatorConnector: ERSFileValidatorConnector = mock[ERSFileValidatorConnector]
-
 
 }

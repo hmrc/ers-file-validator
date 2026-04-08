@@ -149,9 +149,9 @@ class ProcessOdsService @Inject() (
           )
       }
 
-    try {
+    try
       findFileInZip(zipInputStream)
-    } catch {
+    catch {
       case e: Throwable =>
         Try(zipInputStream.close())
         Try(stream.close())
@@ -202,9 +202,7 @@ class ProcessOdsService @Inject() (
         }
       }
     } else { // data enough to send in single slice
-      sendSchemeData(schemeData, empRef).map((sendResult: Either[ErsException, Unit]) =>
-        sendResult.map(_ => 1)
-      )
+      sendSchemeData(schemeData, empRef).map((sendResult: Either[ErsException, Unit]) => sendResult.map(_ => 1))
     }
 
   private def processSchemeData(

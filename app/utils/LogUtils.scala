@@ -22,11 +22,13 @@ object LogUtils {
 
   def formatErrorMessageFromJsonParseFailure(
     jsonValidationErrors: scala.collection.Seq[(JsPath, scala.collection.Seq[JsonValidationError])]
-  ): String = {
-    jsonValidationErrors.flatMap { case (path, validationErrors) =>
-      validationErrors.map { err =>
-        s"${path.toJsonString}: ${err.messages.mkString(", ")}"
+  ): String =
+    jsonValidationErrors
+      .flatMap { case (path, validationErrors) =>
+        validationErrors.map { err =>
+          s"${path.toJsonString}: ${err.messages.mkString(", ")}"
+        }
       }
-    }.mkString(", ")
-  }
+      .mkString(", ")
+
 }

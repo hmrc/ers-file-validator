@@ -32,27 +32,29 @@ import uk.gov.hmrc.mongo.{MongoComponent, TimestampSupport}
 
 import scala.concurrent.ExecutionContext
 
-  class ERSFileValidatorSessionRepositorySpec extends PlaySpec with ScalaFutures with MockitoSugar with GuiceOneServerPerSuite {
+class ERSFileValidatorSessionRepositorySpec
+    extends PlaySpec with ScalaFutures with MockitoSugar with GuiceOneServerPerSuite {
 
-    private val sessionId = "sessionId"
-    private implicit val ec: ExecutionContext = scala.concurrent.ExecutionContext.global
-    private implicit val request: Request[AnyRef] = FakeRequest().withSession("sessionId" -> sessionId)
+  private val sessionId                         = "sessionId"
+  implicit private val ec: ExecutionContext     = scala.concurrent.ExecutionContext.global
+  implicit private val request: Request[AnyRef] = FakeRequest().withSession("sessionId" -> sessionId)
 
-    private val fakeAppConfig = app.injector.instanceOf[ApplicationConfig]
-    private val mongoComponent = app.injector.instanceOf[MongoComponent]
-    private val timestamp = app.injector.instanceOf[TimestampSupport]
-    private val sessionRepository = new ERSFileValidatorSessionRepository(mongoComponent, fakeAppConfig, timestamp)
+  private val fakeAppConfig     = app.injector.instanceOf[ApplicationConfig]
+  private val mongoComponent    = app.injector.instanceOf[MongoComponent]
+  private val timestamp         = app.injector.instanceOf[TimestampSupport]
+  private val sessionRepository = new ERSFileValidatorSessionRepository(mongoComponent, fakeAppConfig, timestamp)
 
-    "ERSFileValidatorSessionRepository" must {
-      "store data" in {
-        val dataKey = DataKey[UpscanCallback]("callback_data_key")
-        val upscanCallback = UpscanCallback("someName", "someUrl")
-        val expectedResult = Json.parse(
-        """{"name":"someName","downloadUrl":"someUrl","_type":"UploadedSuccessfully"}""").as[UpscanCallback]
-        await(sessionRepository.putSession(dataKey, upscanCallback))
+  "ERSFileValidatorSessionRepository" must {
+    "store data" in {
+      val dataKey        = DataKey[UpscanCallback]("callback_data_key")
+      val upscanCallback = UpscanCallback("someName", "someUrl")
+      val expectedResult =
+        Json.parse("""{"name":"someName","downloadUrl":"someUrl","_type":"UploadedSuccessfully"}""").as[UpscanCallback]
+      await(sessionRepository.putSession(dataKey, upscanCallback))
 
-        val result = await(sessionRepository.getFromSession(dataKey))
-        result.value mustBe expectedResult
-      }
+      val result = await(sessionRepository.getFromSession(dataKey))
+      result.value mustBe expectedResult
     }
   }
+
+}

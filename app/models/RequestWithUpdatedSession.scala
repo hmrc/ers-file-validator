@@ -21,12 +21,12 @@ import play.api.mvc.request.{RemoteConnection, RequestTarget}
 import play.api.mvc.{Headers, Request, Session}
 
 case class RequestWithUpdatedSession[A](originalRequest: Request[A], sessionId: String) extends Request[A] {
-  override def body: A = originalRequest.body
+  override def body: A                      = originalRequest.body
   override def connection: RemoteConnection = originalRequest.connection
-  override def method: String = originalRequest.method
-  override def target: RequestTarget = originalRequest.target
-  override def version: String = originalRequest.version
-  override def headers: Headers = originalRequest.headers
-  override def attrs: TypedMap = originalRequest.attrs
-  override def session: Session = originalRequest.session + ("sessionId" -> sessionId)
+  override def method: String               = originalRequest.method
+  override def target: RequestTarget        = originalRequest.target
+  override def version: String              = originalRequest.version
+  override def headers: Headers             = originalRequest.headers
+  override def attrs: TypedMap              = originalRequest.attrs
+  override def session: Session             = originalRequest.session + ("sessionId" -> sessionId)
 }

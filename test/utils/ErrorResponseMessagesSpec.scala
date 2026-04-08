@@ -41,4 +41,3 @@ class ErrorResponseMessagesSpec extends AnyWordSpecLike with Matchers {
   }
 
 }
-

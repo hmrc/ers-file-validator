@@ -17,23 +17,25 @@
 package fixtures
 
 import play.api.libs.json.JsValue
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Result, Request}
+import play.api.mvc.{Action, AnyContent, ControllerComponents, Request, Result}
 import play.api.test.Helpers.stubControllerComponents
 import scala.concurrent.Future
 import play.api.mvc.ActionBuilder
 
 trait WithMockedAuthActions {
 
-  type AsyncRequest = Request[AnyContent] => Future[Result]
+  type AsyncRequest     = Request[AnyContent] => Future[Result]
   type AsyncRequestJson = Request[JsValue] => Future[Result]
-  val cc: ControllerComponents = stubControllerComponents()
-  val action: ActionBuilder[Request,AnyContent] = cc.actionBuilder
+  val cc: ControllerComponents                   = stubControllerComponents()
+  val action: ActionBuilder[Request, AnyContent] = cc.actionBuilder
 
   def mockAuthorisedAction(empRef: String)(body: AsyncRequest): Action[AnyContent] = action.async { implicit request =>
     body(request)
   }
 
-  def mockAuthorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] = action.async(cc.parsers.json) { implicit request =>
-    body(request)
-  }
+  def mockAuthorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
+    action.async(cc.parsers.json) { implicit request =>
+      body(request)
+    }
+
 }
