@@ -24,20 +24,21 @@ class ValidationUtilsSpec extends AnyWordSpecLike with Matchers with OptionValue
 
   "numberOfSlices" should {
     "return the number of slices required to fit all rows based on the size of the buffer" in {
-      ValidationUtils.numberOfSlices(2, 2) shouldBe 1
-      ValidationUtils.numberOfSlices(1, 2) shouldBe 1
-      ValidationUtils.numberOfSlices(1, 4) shouldBe 1
-      ValidationUtils.numberOfSlices(4, 2) shouldBe 2
+      ValidationUtils.numberOfSlices(2, 2)  shouldBe 1
+      ValidationUtils.numberOfSlices(1, 2)  shouldBe 1
+      ValidationUtils.numberOfSlices(1, 4)  shouldBe 1
+      ValidationUtils.numberOfSlices(4, 2)  shouldBe 2
       ValidationUtils.numberOfSlices(10, 2) shouldBe 5
       ValidationUtils.numberOfSlices(10, 5) shouldBe 2
 
-      ValidationUtils.numberOfSlices(3, 2) shouldBe 2
-      ValidationUtils.numberOfSlices(5, 2) shouldBe 3
-      ValidationUtils.numberOfSlices(5, 3) shouldBe 2
-      ValidationUtils.numberOfSlices(7, 3) shouldBe 3
+      ValidationUtils.numberOfSlices(3, 2)  shouldBe 2
+      ValidationUtils.numberOfSlices(5, 2)  shouldBe 3
+      ValidationUtils.numberOfSlices(5, 3)  shouldBe 2
+      ValidationUtils.numberOfSlices(7, 3)  shouldBe 3
       ValidationUtils.numberOfSlices(16, 5) shouldBe 4
       ValidationUtils.numberOfSlices(19, 5) shouldBe 4
 
     }
   }
+
 }

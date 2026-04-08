@@ -22,23 +22,28 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
 @Singleton
-class ApplicationConfig @Inject()(config: ServicesConfig) {
+class ApplicationConfig @Inject() (config: ServicesConfig) {
 
   private def loadConfig(key: String) = config.getString(key)
 
   lazy val appName: String = config.getString("appName")
 
-  lazy val assetsPrefix: String = loadConfig("assets.url") + loadConfig("assets.version")
-  lazy val analyticsHost: String = config.getString("google-analytics.host")
-  lazy val analyticsToken: String = config.getString("govuk-tax.google-analytics.token")
-  lazy val ersTimeOut: FiniteDuration = config.getInt("ers-file-validator-timeout-seconds").seconds
+  lazy val assetsPrefix: String              = loadConfig("assets.url") + loadConfig("assets.version")
+  lazy val analyticsHost: String             = config.getString("google-analytics.host")
+  lazy val analyticsToken: String            = config.getString("govuk-tax.google-analytics.token")
+  lazy val ersTimeOut: FiniteDuration        = config.getInt("ers-file-validator-timeout-seconds").seconds
   lazy val maxNumberOfRowsPerSubmission: Int = config.getInt("largefiles.maxrowspersheet")
-  lazy val sessionCacheBaseUri: String = config.baseUrl("cachable.session-cache")
-  lazy val sessionCacheDomain: String = config.getConfString("cachable.session-cache.domain", throw new Exception("Could not find config ''cachable.session-cache.domain''"))
-  lazy val splitLargeSchemes: Boolean = config.getBoolean("largefiles.enabled")
-  lazy val submissionsUrl: String = config.baseUrl("ers-submissions")
-  lazy val validationChunkSize: Int = config.getInt("validationChunkSize")
-  lazy val uploadFileSizeLimit: Int = config.getInt("file-size.uploadSizeLimit")
-  lazy val mongoTTLInSeconds: Int = config.getInt("mongodb.timeToLiveInSeconds")
-  lazy val csopV5Enabled: Boolean = config.getConfBool("features.csop-v5.enabled", defBool = false)
+  lazy val sessionCacheBaseUri: String       = config.baseUrl("cachable.session-cache")
+
+  lazy val sessionCacheDomain: String        = config.getConfString(
+    "cachable.session-cache.domain",
+    throw new Exception("Could not find config ''cachable.session-cache.domain''")
+  )
+
+  lazy val splitLargeSchemes: Boolean        = config.getBoolean("largefiles.enabled")
+  lazy val submissionsUrl: String            = config.baseUrl("ers-submissions")
+  lazy val validationChunkSize: Int          = config.getInt("validationChunkSize")
+  lazy val uploadFileSizeLimit: Int          = config.getInt("file-size.uploadSizeLimit")
+  lazy val mongoTTLInSeconds: Int            = config.getInt("mongodb.timeToLiveInSeconds")
+  lazy val csopV5Enabled: Boolean            = config.getConfBool("features.csop-v5.enabled", defBool = false)
 }

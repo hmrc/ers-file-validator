@@ -32,50 +32,64 @@ trait Authorisation extends AuthorisedFunctions with Logging {
   implicit val ec: ExecutionContext
   val cc: ControllerComponents
   val defaultActionBuilder: DefaultActionBuilder
-  private type AsyncRequest = Request[AnyContent] => Future[Result]
+  private type AsyncRequest     = Request[AnyContent] => Future[Result]
   private type AsyncJsonRequest = Request[JsValue] => Future[Result]
 
-  def authorisedAction(slashSeparatedEmpRef: String)(body: AsyncRequest): Action[AnyContent] = defaultActionBuilder.async { implicit request =>
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-    Try(EmpRef.fromIdentifiers(slashSeparatedEmpRef)).toOption.map(empRef =>
-      authorised(
-        ConfidenceLevel.L50 and Enrolment("IR-PAYE")
-          .withIdentifier("TaxOfficeNumber", empRef.taxOfficeNumber)
-          .withIdentifier("TaxOfficeReference", empRef.taxOfficeReference)
-          .withDelegatedAuthRule("ers-auth")
-      ) {
-        body(request)
-      } recover {
-        case exception: AuthorisationException =>
-          logger.warn(s"[Authorisation][authorisedAction] user is unauthorised for ${request.uri} with " +
-            s"exception ${exception.getMessage}", exception)
-          Unauthorized
-      }
-    ).getOrElse {
-      logger.warn(s"[Authorisation][authorisedAction] an invalid empRef was supplied when trying to hit ${request.uri}")
-      Future.successful(Unauthorized)
-    }
-  }
-
-  def authorisedActionWithBody(slashSeparatedEmpRef: String)(body: AsyncJsonRequest): Action[JsValue] = defaultActionBuilder.async(cc.parsers.json) {
-    implicit request: Request[JsValue] =>
+  def authorisedAction(slashSeparatedEmpRef: String)(body: AsyncRequest): Action[AnyContent] =
+    defaultActionBuilder.async { implicit request =>
       implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-      Try(EmpRef.fromIdentifiers(slashSeparatedEmpRef)).toOption.map(empRef =>
-        authorised(
-          ConfidenceLevel.L50 and Enrolment("IR-PAYE")
-            .withIdentifier("TaxOfficeNumber", empRef.taxOfficeNumber)
-            .withIdentifier("TaxOfficeReference", empRef.taxOfficeReference)
-            .withDelegatedAuthRule("ers-auth")
-        ) {
-          body(request)
-        } recover {
-          case exception: AuthorisationException =>
-            logger.warn(s"[Authorisation][authorisedAction] user is unauthorised for ${request.uri} with exception  ${exception.getMessage}", exception)
+      Try(EmpRef.fromIdentifiers(slashSeparatedEmpRef)).toOption
+        .map(empRef =>
+          authorised(
+            ConfidenceLevel.L50 and Enrolment("IR-PAYE")
+              .withIdentifier("TaxOfficeNumber", empRef.taxOfficeNumber)
+              .withIdentifier("TaxOfficeReference", empRef.taxOfficeReference)
+              .withDelegatedAuthRule("ers-auth")
+          ) {
+            body(request)
+          } recover { case exception: AuthorisationException =>
+            logger.warn(
+              s"[Authorisation][authorisedAction] user is unauthorised for ${request.uri} with " +
+                s"exception ${exception.getMessage}",
+              exception
+            )
             Unauthorized
+          }
+        )
+        .getOrElse {
+          logger.warn(
+            s"[Authorisation][authorisedAction] an invalid empRef was supplied when trying to hit ${request.uri}"
+          )
+          Future.successful(Unauthorized)
         }
-      ).getOrElse {
-        logger.warn(s"[Authorisation][authorisedAction] an invalid empRef was supplied when trying to hit ${request.uri}")
-        Future.successful(Unauthorized)
-      }
-  }
+    }
+
+  def authorisedActionWithBody(slashSeparatedEmpRef: String)(body: AsyncJsonRequest): Action[JsValue] =
+    defaultActionBuilder.async(cc.parsers.json) { implicit request: Request[JsValue] =>
+      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+      Try(EmpRef.fromIdentifiers(slashSeparatedEmpRef)).toOption
+        .map(empRef =>
+          authorised(
+            ConfidenceLevel.L50 and Enrolment("IR-PAYE")
+              .withIdentifier("TaxOfficeNumber", empRef.taxOfficeNumber)
+              .withIdentifier("TaxOfficeReference", empRef.taxOfficeReference)
+              .withDelegatedAuthRule("ers-auth")
+          ) {
+            body(request)
+          } recover { case exception: AuthorisationException =>
+            logger.warn(
+              s"[Authorisation][authorisedAction] user is unauthorised for ${request.uri} with exception  ${exception.getMessage}",
+              exception
+            )
+            Unauthorized
+          }
+        )
+        .getOrElse {
+          logger.warn(
+            s"[Authorisation][authorisedAction] an invalid empRef was supplied when trying to hit ${request.uri}"
+          )
+          Future.successful(Unauthorized)
+        }
+    }
+
 }

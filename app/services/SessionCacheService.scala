@@ -26,21 +26,25 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SessionCacheService @Inject()(sessionCache: ERSFileValidatorSessionRepository,
-                                    implicit val ec: ExecutionContext) extends Logging {
+class SessionCacheService @Inject() (sessionCache: ERSFileValidatorSessionRepository, implicit val ec: ExecutionContext)
+    extends Logging {
 
   val CALLBACK_DATA_KEY = "callback_data_key"
 
-  def storeCallbackData(data: UpscanCallback, totalRows: Int)(implicit request: Request[_]): Future[Option[UpscanCallback]] = {
+  def storeCallbackData(data: UpscanCallback, totalRows: Int)(implicit
+    request: Request[_]
+  ): Future[Option[UpscanCallback]] = {
     val callbackData = data.copy(noOfRows = Some(totalRows))
 
-    sessionCache.putSession[UpscanCallback](DataKey(CALLBACK_DATA_KEY), callbackData).map { _ =>
-      Some(callbackData)
-    }.recover {
-      case e: Throwable =>
-      logger.error("Failed to store callback data with no of rows: " + e)
-      None
-    }
+    sessionCache
+      .putSession[UpscanCallback](DataKey(CALLBACK_DATA_KEY), callbackData)
+      .map { _ =>
+        Some(callbackData)
+      }
+      .recover { case e: Throwable =>
+        logger.error("Failed to store callback data with no of rows: " + e)
+        None
+      }
   }
 
   def createCallbackRecord(implicit request: Request[_]): Future[(String, String)] =
@@ -51,4 +55,5 @@ class SessionCacheService @Inject()(sessionCache: ERSFileValidatorSessionReposit
 
   def updateCallbackRecord(uploadStatus: UploadStatus)(implicit request: Request[_]): Future[(String, String)] =
     sessionCache.putSession[UploadStatus](DataKey(CALLBACK_DATA_KEY), uploadStatus)
+
 }
