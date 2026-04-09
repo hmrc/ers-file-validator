@@ -129,19 +129,15 @@ class ProcessOdsServiceSpec
     }
 
     "return system error when generateSchemeData throws a RuntimeException" in {
-      val spiedService = spy(
+      val service =
         new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-          override val splitSchemes                               = false
-          override val maxNumberOfRows                            = 1
-          override def readFile(downloadUrl: String): InputStream = XMLTestData.getEMIAdjustmentsTemplateLarge
+          override def generateSchemeData(callbackData: UpscanCallback, schemeVersion: SchemeVersion)(implicit
+            schemeInfo: SchemeInfo
+          ): ListBuffer[SchemeData] =
+            throw new RuntimeException("exception detail")
         }
-      )
 
-      doThrow(new RuntimeException("exception detail"))
-        .when(spiedService)
-        .generateSchemeData(any(), any())(any())
-
-      val result = await(spiedService.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+      val result = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
 
       result.swap.map(
         _ mustBe ErsFileProcessingException(
@@ -287,7 +283,7 @@ class ProcessOdsServiceSpec
 
     "return ErsFileProcessingException for SystemErrorDuringValidationException" in {
       val result = await(
-        serviceWithReadFileException(new SystemErrorDuringValidationException("sys error"))
+        serviceWithReadFileException(SystemErrorDuringValidationException("sys error"))
           .processFile(callbackData, "")(headerCarrier, schemeInfo, request)
       )
 
@@ -296,7 +292,7 @@ class ProcessOdsServiceSpec
 
     "return ErsFileProcessingException for ParserFailureException" in {
       val result = await(
-        serviceWithReadFileException(new ParserFailureException())
+        serviceWithReadFileException(ParserFailureException())
           .processFile(callbackData, "")(headerCarrier, schemeInfo, request)
       )
 

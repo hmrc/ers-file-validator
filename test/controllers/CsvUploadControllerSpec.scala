@@ -216,19 +216,20 @@ class CsvUploadControllerSpec
     )
     val port    = binding.localAddress.getPort
 
-    val streamController = spy(
-      new CsvUploadController(
-        mockAuditEvents,
-        mockSessionService,
-        mockProcessCsvService,
-        mockAuthConnector,
-        stubControllerComponents(),
-        defaultActionBuilder
-      ) {
-        override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
-          mockAuthorisedActionWithBody(empRef)(body)
-      }
-    )
+    class SpyableController
+        extends CsvUploadController(
+          mockAuditEvents,
+          mockSessionService,
+          mockProcessCsvService,
+          mockAuthConnector,
+          stubControllerComponents(),
+          defaultActionBuilder
+        ) {
+      override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
+        mockAuthorisedActionWithBody(empRef)(body)
+    }
+
+    val streamController = spy(new SpyableController)
 
     "process the response" in {
       val result    = streamController.streamFile(s"http://localhost:$port").runWith(Sink.seq)
