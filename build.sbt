@@ -4,7 +4,6 @@ import play.sbt.PlayImport.PlayKeys
 import play.sbt.routes.RoutesKeys.{InjectedRoutesGenerator, routesGenerator}
 import sbt.Keys.*
 import sbt.*
-import scoverage.ScoverageKeys
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
 import uk.gov.hmrc.versioning.SbtGitVersioning.autoImport.majorVersion
 
@@ -13,23 +12,14 @@ lazy val IntegrationTest = config("it") extend Test
 val appName: String = "ers-file-validator"
 
 ThisBuild / majorVersion := 1
-ThisBuild / scalaVersion := "2.13.16"
+ThisBuild / scalaVersion := "2.13.18"
 
 lazy val plugins: Seq[Plugins] = Seq(play.sbt.PlayScala, SbtDistributablesPlugin)
-
-lazy val scoverageSettings =
-  Seq(
-    ScoverageKeys.coverageExcludedPackages := "<empty>;app.*;config.*;testOnlyDoNotUseInAppConf.*;views.*;uk.gov.hmrc.*;prod.*;models.*;services.ERSRequest",
-    ScoverageKeys.coverageMinimumStmtTotal := 94,
-    ScoverageKeys.coverageFailOnMinimum := true,
-    ScoverageKeys.coverageHighlighting := true,
-    Test / parallelExecution := false
-  )
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(plugins *)
   .disablePlugins(JUnitXmlReportPlugin)
-  .settings(scoverageSettings *)
+  .settings(CodeCoverageSettings())
   .settings(scalaSettings *)
   .settings(defaultSettings() *)
   .settings(
