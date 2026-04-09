@@ -44,10 +44,10 @@ class UploadStatusSpec extends AnyWordSpecLike {
 
     "read UploadedSuccessfully" in {
       val json = Json.obj(
-        "_type" -> "UploadedSuccessfully",
-        "name" -> "file.csv",
+        "_type"       -> "UploadedSuccessfully",
+        "name"        -> "file.csv",
         "downloadUrl" -> "http://example.com/file.csv",
-        "noOfRows" -> 12
+        "noOfRows"    -> 12
       )
 
       json.as[UploadStatus](UploadStatus.readsUploadStatus) mustBe
@@ -101,10 +101,10 @@ class UploadStatusSpec extends AnyWordSpecLike {
         UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12))
 
       Json.toJson(status)(UploadStatus.writesUploadStatus) mustBe Json.obj(
-        "name" -> "file.csv",
+        "name"        -> "file.csv",
         "downloadUrl" -> "http://example.com/file.csv",
-        "noOfRows" -> 12,
-        "_type" -> "UploadedSuccessfully"
+        "noOfRows"    -> 12,
+        "_type"       -> "UploadedSuccessfully"
       )
     }
   }
@@ -120,7 +120,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
 
     "handle missing optional noOfRows" in {
       val json = Json.obj(
-        "name" -> "file.csv",
+        "name"        -> "file.csv",
         "downloadUrl" -> "http://example.com/file.csv"
       )
 
@@ -128,4 +128,5 @@ class UploadStatusSpec extends AnyWordSpecLike {
         UploadedSuccessfully("file.csv", "http://example.com/file.csv", None)
     }
   }
+
 }

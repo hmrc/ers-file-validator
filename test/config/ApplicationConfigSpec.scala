@@ -25,6 +25,7 @@ import scala.concurrent.duration.DurationInt
 class ApplicationConfigSpec extends AnyWordSpecLike {
 
   private class FakeServicesConfig extends ServicesConfig(null) {
+
     override def getString(key: String): String = key match {
       case "appName"                          => "ers-frontend"
       case "assets.url"                       => "http://assets/"
@@ -59,13 +60,16 @@ class ApplicationConfigSpec extends AnyWordSpecLike {
       case "features.csop-v5.enabled" => true
       case _                          => defBool
     }
+
   }
 
   private class FakeServicesConfigCsopFalse extends FakeServicesConfig {
+
     override def getConfBool(key: String, defBool: => Boolean): Boolean = key match {
       case "features.csop-v5.enabled" => false
       case _                          => defBool
     }
+
   }
 
   "ApplicationConfig" when {
@@ -74,20 +78,20 @@ class ApplicationConfigSpec extends AnyWordSpecLike {
       "return the correct values" in {
         val appConfig = new ApplicationConfig(new FakeServicesConfig)
 
-        appConfig.appName mustBe "ers-frontend"
-        appConfig.assetsPrefix mustBe "http://assets/v1"
-        appConfig.analyticsHost mustBe "http://analytics"
-        appConfig.analyticsToken mustBe "token-123"
-        appConfig.ersTimeOut mustBe 30.seconds
+        appConfig.appName                      mustBe "ers-frontend"
+        appConfig.assetsPrefix                 mustBe "http://assets/v1"
+        appConfig.analyticsHost                mustBe "http://analytics"
+        appConfig.analyticsToken               mustBe "token-123"
+        appConfig.ersTimeOut                   mustBe 30.seconds
         appConfig.maxNumberOfRowsPerSubmission mustBe 1000
-        appConfig.sessionCacheBaseUri mustBe "http://session-cache"
-        appConfig.sessionCacheDomain mustBe "session-cache-domain"
-        appConfig.splitLargeSchemes mustBe true
-        appConfig.submissionsUrl mustBe "http://ers-submissions"
-        appConfig.validationChunkSize mustBe 250
-        appConfig.uploadFileSizeLimit mustBe 5000
-        appConfig.mongoTTLInSeconds mustBe 3600
-        appConfig.csopV5Enabled mustBe true
+        appConfig.sessionCacheBaseUri          mustBe "http://session-cache"
+        appConfig.sessionCacheDomain           mustBe "session-cache-domain"
+        appConfig.splitLargeSchemes            mustBe true
+        appConfig.submissionsUrl               mustBe "http://ers-submissions"
+        appConfig.validationChunkSize          mustBe 250
+        appConfig.uploadFileSizeLimit          mustBe 5000
+        appConfig.mongoTTLInSeconds            mustBe 3600
+        appConfig.csopV5Enabled                mustBe true
       }
     }
 
@@ -99,4 +103,5 @@ class ApplicationConfigSpec extends AnyWordSpecLike {
       }
     }
   }
+
 }

@@ -27,16 +27,16 @@ import java.net.InetAddress
 class RequestWithUpdatedSessionSpec extends AnyWordSpec with Matchers {
 
   private def stubRequest(
-                           bodyValue: String = "test-body",
-                           remoteAddressValue: String = "127.0.0.1",
-                           methodValue: String = "GET",
-                           uriValue: String = "/test?x=1",
-                           pathValue: String = "/test",
-                           versionValue: String = "HTTP/1.1",
-                           headersValue: Headers = Headers("X-Test" -> "123"),
-                           attrsValue: TypedMap = TypedMap.empty,
-                           sessionValue: Session = Session()
-                         ): Request[String] =
+    bodyValue: String = "test-body",
+    remoteAddressValue: String = "127.0.0.1",
+    methodValue: String = "GET",
+    uriValue: String = "/test?x=1",
+    pathValue: String = "/test",
+    versionValue: String = "HTTP/1.1",
+    headersValue: Headers = Headers("X-Test" -> "123"),
+    attrsValue: TypedMap = TypedMap.empty,
+    sessionValue: Session = Session()
+  ): Request[String] =
     new Request[String] {
       override def body: String = bodyValue
 
@@ -68,7 +68,7 @@ class RequestWithUpdatedSessionSpec extends AnyWordSpec with Matchers {
   "RequestWithUpdatedSession" should {
 
     "delegate all request fields to the original request" in {
-      val attrs = TypedMap.empty
+      val attrs   = TypedMap.empty
       val headers = Headers("X-Test" -> "123", "X-Trace" -> "abc")
 
       val request = stubRequest(
@@ -85,14 +85,14 @@ class RequestWithUpdatedSessionSpec extends AnyWordSpec with Matchers {
 
       val updatedRequest = RequestWithUpdatedSession(request, "session-1")
 
-      updatedRequest.body shouldBe "my-body"
+      updatedRequest.body                     shouldBe "my-body"
       updatedRequest.connection.remoteAddress shouldBe InetAddress.getByName("10.0.0.1")
-      updatedRequest.method shouldBe "POST"
-      updatedRequest.target.uriString shouldBe "/path?x=1"
-      updatedRequest.target.path shouldBe "/path"
-      updatedRequest.version shouldBe "HTTP/2.0"
-      updatedRequest.headers shouldBe headers
-      updatedRequest.attrs shouldBe attrs
+      updatedRequest.method                   shouldBe "POST"
+      updatedRequest.target.uriString         shouldBe "/path?x=1"
+      updatedRequest.target.path              shouldBe "/path"
+      updatedRequest.version                  shouldBe "HTTP/2.0"
+      updatedRequest.headers                  shouldBe headers
+      updatedRequest.attrs                    shouldBe attrs
     }
 
     "add sessionId and preserve existing session values" in {
@@ -102,7 +102,7 @@ class RequestWithUpdatedSessionSpec extends AnyWordSpec with Matchers {
 
       val updatedRequest = RequestWithUpdatedSession(request, "session-999")
 
-      updatedRequest.session.get("userId") shouldBe Some("user-123")
+      updatedRequest.session.get("userId")    shouldBe Some("user-123")
       updatedRequest.session.get("sessionId") shouldBe Some("session-999")
     }
 
@@ -124,7 +124,8 @@ class RequestWithUpdatedSessionSpec extends AnyWordSpec with Matchers {
       val updatedRequest = RequestWithUpdatedSession(request, "new")
 
       updatedRequest.session.get("sessionId") shouldBe Some("new")
-      updatedRequest.session.get("foo") shouldBe Some("bar")
+      updatedRequest.session.get("foo")       shouldBe Some("bar")
     }
   }
+
 }

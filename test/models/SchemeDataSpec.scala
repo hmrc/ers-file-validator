@@ -56,7 +56,7 @@ class SchemeDataSpec extends AnyWordSpecLike {
         data = ListBuffer(Seq("a", "b"), Seq("c", "d"))
       )
 
-      val json = Json.toJson(schemeData)
+      val json   = Json.toJson(schemeData)
       val result = json.as[SchemeData]
 
       result mustBe schemeData
@@ -72,7 +72,7 @@ class SchemeDataSpec extends AnyWordSpecLike {
         numberOfRows = 10
       )
 
-      val json = Json.toJson(submissionsSchemeData)
+      val json   = Json.toJson(submissionsSchemeData)
       val result = json.as[SubmissionsSchemeData]
 
       result mustBe submissionsSchemeData
@@ -105,7 +105,7 @@ class SchemeDataSpec extends AnyWordSpecLike {
 
   "SchemeInfo format" should {
     "write and read SchemeInfo correctly" in {
-      val json = Json.toJson(schemeInfo)
+      val json   = Json.toJson(schemeInfo)
       val result = json.as[SchemeInfo]
 
       result mustBe schemeInfo
@@ -116,23 +116,23 @@ class SchemeDataSpec extends AnyWordSpecLike {
     "write callback with UploadedSuccessfully type" in {
       val json = Json.toJson(upscanCallback)
 
-      (json \ "name").as[String] mustBe "test.csv"
-      (json \ "downloadUrl").as[String] mustBe "http://example.com/file.csv"
-      (json \ "length").as[Long] mustBe 123L
-      (json \ "contentType").as[String] mustBe "text/csv"
+      (json \ "name").as[String]             mustBe "test.csv"
+      (json \ "downloadUrl").as[String]      mustBe "http://example.com/file.csv"
+      (json \ "length").as[Long]             mustBe 123L
+      (json \ "contentType").as[String]      mustBe "text/csv"
       (json \ "customMetadata").as[JsObject] mustBe Json.obj("foo" -> "bar")
-      (json \ "noOfRows").as[Int] mustBe 10
-      (json \ "_type").as[String] mustBe "UploadedSuccessfully"
+      (json \ "noOfRows").as[Int]            mustBe 10
+      (json \ "_type").as[String]            mustBe "UploadedSuccessfully"
     }
 
     "read callback correctly" in {
       val json = Json.obj(
-        "name" -> "test.csv",
-        "downloadUrl" -> "http://example.com/file.csv",
-        "length" -> 123L,
-        "contentType" -> "text/csv",
+        "name"           -> "test.csv",
+        "downloadUrl"    -> "http://example.com/file.csv",
+        "length"         -> 123L,
+        "contentType"    -> "text/csv",
         "customMetadata" -> Json.obj("foo" -> "bar"),
-        "noOfRows" -> 10
+        "noOfRows"       -> 10
       )
 
       val result = json.as[UpscanCallback]
@@ -142,7 +142,7 @@ class SchemeDataSpec extends AnyWordSpecLike {
 
     "read callback correctly when optional fields are missing" in {
       val json = Json.obj(
-        "name" -> "test.csv",
+        "name"        -> "test.csv",
         "downloadUrl" -> "http://example.com/file.csv"
       )
 
@@ -158,4 +158,5 @@ class SchemeDataSpec extends AnyWordSpecLike {
       )
     }
   }
+
 }
