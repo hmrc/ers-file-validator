@@ -18,7 +18,6 @@ package services
 
 import _root_.utils.ErrorResponseMessages
 import ch.qos.logback.classic.Level
-import connectors.ERSFileValidatorConnector
 import fixtures.{LogCapturePerTest, TestFixtures}
 import models._
 import models.upscan.UpscanCallback
@@ -29,6 +28,8 @@ import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
+import play.api.mvc.Request
+import play.api.test.FakeRequest
 import play.api.test.Helpers.await
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
 import uk.gov.hmrc.validator._
@@ -79,6 +80,33 @@ class ProcessOdsServiceSpec
 
       val result: Future[Either[ErsException, Int]] =
         processOdsService.processFile(callbackData, "")(headerCarrier, schemeInfo, request)
+
+      await(result) mustBe Right(1)
+    }
+
+    "yield a list of scheme data from file data when HeaderCarrier has no sessionId" in {
+      val headerCarrierWithoutSession = HeaderCarrier()
+
+      when(
+        mockErsFileValidatorConnector
+          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+      ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+
+      when(mockSessionService.storeCallbackData(any(), any())(any()))
+        .thenAnswer { invocation =>
+          val updatedRequest = invocation.getArgument(2).asInstanceOf[Request[_]]
+          updatedRequest.session.get("sessionId").isDefined mustBe true
+          Future.successful(Some(callbackData))
+        }
+
+      when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
+
+      val result: Future[Either[ErsException, Int]] =
+        processOdsService.processFile(callbackData, "")(
+          headerCarrierWithoutSession,
+          schemeInfo,
+          FakeRequest().withSession()
+        )
 
       await(result) mustBe Right(1)
     }

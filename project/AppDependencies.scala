@@ -3,7 +3,7 @@ import sbt.*
 
 object AppDependencies {
 
-  val bootstrapVersion = "9.19.0"
+  val bootstrapVersion = "10.7.0"
   val pekkoVersion     = "1.0.2"
   val mongoVersion     = "2.12.0"
 
@@ -12,7 +12,7 @@ object AppDependencies {
     "org.scala-lang.modules" %% "scala-xml"                 % "2.4.0",
     "uk.gov.hmrc"            %% "bootstrap-backend-play-30" % bootstrapVersion,
     "uk.gov.hmrc"            %% "domain-play-30"            % "11.0.0",
-    "commons-codec"           % "commons-codec"             % "1.19.0",
+    "commons-codec"           % "commons-codec"             % "1.21.0",
     "uk.gov.hmrc.mongo"      %% "hmrc-mongo-play-30"        % mongoVersion,
     "org.apache.pekko"       %% "pekko-connectors-csv"      % pekkoVersion,
     "uk.gov.hmrc"            %% "ers-file-validator-config" % "0.12.0"
