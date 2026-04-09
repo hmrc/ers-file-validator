@@ -216,6 +216,11 @@ class ProcessOdsService @Inject() (
 
     val filesWithData = result.filter(_.data.nonEmpty)
 
+    if (filesWithData.isEmpty) {
+      logger.warn(s"[ProcessOdsService][processSchemeData] No data found in file, schemeRef: ${schemeInfo.schemeRef}")
+      return Future.successful(Left(FileValidatorNoDataException(ErrorResponseMessages.dataParserNoData, ErrorResponseMessages.dataParserNoData)))
+    }
+
     val totalRows = filesWithData.map(_.data.size).sum
 
     Future

@@ -32,6 +32,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.test.Helpers.await
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
 import uk.gov.hmrc.validator._
+import uk.gov.hmrc.validator.models.ods.ValidDataRow
 
 import java.io.InputStream
 import scala.collection.mutable.ListBuffer
@@ -257,9 +258,23 @@ class ProcessOdsServiceSpec
       result.left.value mustBe a[FileValidatorNoDataException]
     }
 
+    "return FileValidatorNoDataException when generateSchemeData returns empty data (empty ODS file)" in {
+      val spiedService = spy(
+        new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+      )
+
+      doReturn(ListBuffer.empty[ValidDataRow])
+        .when(spiedService)
+        .generateSchemeData(any(), any())(any())
+
+      val result = await(spiedService.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+
+      result.left.value mustBe a[FileValidatorNoDataException]
+    }
+
     "return ErsFileProcessingException for SystemErrorDuringValidationException" in {
       val result = await(
-        serviceWithReadFileException(new SystemErrorDuringValidationException("sys error"))
+        serviceWithReadFileException(SystemErrorDuringValidationException("sys error"))
           .processFile(callbackData, "")(headerCarrier, schemeInfo, request)
       )
 
@@ -268,7 +283,7 @@ class ProcessOdsServiceSpec
 
     "return ErsFileProcessingException for ParserFailureException" in {
       val result = await(
-        serviceWithReadFileException(new ParserFailureException())
+        serviceWithReadFileException(ParserFailureException())
           .processFile(callbackData, "")(headerCarrier, schemeInfo, request)
       )
 
