@@ -34,23 +34,21 @@ import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
-class FileValidatorControllerSpec extends PlaySpec with MockitoSugar with GuiceOneAppPerSuite with WithMockedAuthActions with Results {
+class FileValidatorControllerSpec
+    extends PlaySpec with MockitoSugar with GuiceOneAppPerSuite with WithMockedAuthActions with Results {
 
-  val mockSessionService: SessionCacheService = mock[SessionCacheService]
+  val mockSessionService: SessionCacheService    = mock[SessionCacheService]
   val controllerComponents: ControllerComponents = stubControllerComponents()
-  val mockAuthConnector: DefaultAuthConnector = mock[DefaultAuthConnector]
+  val mockAuthConnector: DefaultAuthConnector    = mock[DefaultAuthConnector]
   val defaultActionBuilder: DefaultActionBuilder = app.injector.instanceOf(classOf[DefaultActionBuilder])
-  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  implicit def materializer: Materializer = Play.materializer
+  implicit val ec: ExecutionContextExecutor      = ExecutionContext.global
+  implicit def materializer: Materializer        = Play.materializer
 
-  val controller = new FileValidatorController(
-    mockSessionService,
-    controllerComponents,
-    defaultActionBuilder)
+  val controller = new FileValidatorController(mockSessionService, controllerComponents, defaultActionBuilder)
 
-  val empRef = "testEmpRef"
+  val empRef    = "testEmpRef"
   val sessionId = "testSessionId"
-  val request = FakeRequest()
+  val request   = FakeRequest()
 
   "FileValidatorController" should {
     "createCallbackRecord" should {
@@ -91,7 +89,7 @@ class FileValidatorControllerSpec extends PlaySpec with MockitoSugar with GuiceO
 
         val result = controller.getCallbackRecord(sessionId)(request)
 
-        status(result) mustBe NOT_FOUND
+        status(result)        mustBe NOT_FOUND
         contentAsString(result) must include("No callback record found")
       }
 
@@ -113,7 +111,7 @@ class FileValidatorControllerSpec extends PlaySpec with MockitoSugar with GuiceO
         .thenReturn(Future.successful(("key", sessionId)))
 
       val fakeRequest = request.withBody(uploadStatus)
-      val result = controller.updateCallbackRecord(sessionId)(fakeRequest)
+      val result      = controller.updateCallbackRecord(sessionId)(fakeRequest)
 
       status(result) mustBe NO_CONTENT
     }
@@ -122,7 +120,7 @@ class FileValidatorControllerSpec extends PlaySpec with MockitoSugar with GuiceO
       val invalidJson = Json.toJson(Map("_type" -> "invalid"))
 
       val fakeRequest = request.withBody(invalidJson)
-      val result = controller.updateCallbackRecord(sessionId).apply(fakeRequest)
+      val result      = controller.updateCallbackRecord(sessionId).apply(fakeRequest)
 
       status(result) mustBe BAD_REQUEST
     }
@@ -134,9 +132,10 @@ class FileValidatorControllerSpec extends PlaySpec with MockitoSugar with GuiceO
         .thenReturn(Future.failed(new Exception()))
 
       val fakeRequest = request.withBody(uploadStatus)
-      val result = controller.updateCallbackRecord(sessionId)(fakeRequest)
+      val result      = controller.updateCallbackRecord(sessionId)(fakeRequest)
 
       status(result) mustBe INTERNAL_SERVER_ERROR
     }
   }
+
 }

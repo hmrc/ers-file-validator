@@ -57,7 +57,7 @@ class OdsUploadController @Inject() (
                 implicit val schemeInfo: SchemeInfo = upscanFileData.schemeInfo
 
                 processOdsService.processFile(upscanFileData.callbackData, empRef).map {
-                  case Right(result)         =>
+                  case Right(result)             =>
                     deliverFileProcessingMetrics(startTime)
                     Ok(result.toString)
                   case Left(error: ErsException) =>

@@ -81,7 +81,7 @@ class SchemeResolverSpec extends AnyWordSpecLike with Matchers with MockitoSugar
       "return InvalidTaxYearException when tax year has no slash separator" in {
         when(mockAppConfig.csopV5Enabled).thenReturn(true)
         val result = SchemeResolver.getSchemeVersion("invalid", mockAppConfig)
-        result.isLeft mustBe true
+        result.isLeft     mustBe true
         result.left.value mustBe a[InvalidTaxYearException]
       }
 
@@ -91,16 +91,17 @@ class SchemeResolverSpec extends AnyWordSpecLike with Matchers with MockitoSugar
         result.isLeft mustBe true
         val error = result.left.value.asInstanceOf[InvalidTaxYearException]
         error.message mustBe "Invalid tax year format"
-        error.context must include("ABCD/EF")
-        error.context must include("expected format YYYY/YY")
+        error.context   must include("ABCD/EF")
+        error.context   must include("expected format YYYY/YY")
       }
 
       "return InvalidTaxYearException for an empty string" in {
         when(mockAppConfig.csopV5Enabled).thenReturn(true)
         val result = SchemeResolver.getSchemeVersion("", mockAppConfig)
-        result.isLeft mustBe true
+        result.isLeft     mustBe true
         result.left.value mustBe a[InvalidTaxYearException]
       }
     }
   }
+
 }

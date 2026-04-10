@@ -22,27 +22,31 @@ import play.api.libs.json._
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import scala.collection.mutable.ListBuffer
 
-case class SchemeData (schemeInfo: SchemeInfo, sheetName: String, numberOfParts: Option[Int], data: ListBuffer[Seq[String]])
+case class SchemeData(
+  schemeInfo: SchemeInfo,
+  sheetName: String,
+  numberOfParts: Option[Int],
+  data: ListBuffer[Seq[String]]
+)
 
 object SchemeData {
   implicit val formatSchemeData: OFormat[SchemeData] = Json.format[SchemeData]
 }
 
-case class SubmissionsSchemeData(schemeInfo: SchemeInfo,
-                                 sheetName: String,
-                                 data: UpscanCallback,
-                                 numberOfRows: Int)
+case class SubmissionsSchemeData(schemeInfo: SchemeInfo, sheetName: String, data: UpscanCallback, numberOfRows: Int)
 
 object SubmissionsSchemeData {
   implicit val formatSubmissionsSchemeData: OFormat[SubmissionsSchemeData] = Json.format[SubmissionsSchemeData]
 }
 
-case class SchemeInfo (schemeRef:String,
-                       timestamp: ZonedDateTime = ZonedDateTime.now,
-                       schemeId: String,
-                       taxYear: String,
-                       schemeName: String,
-                       schemeType: String)
+case class SchemeInfo(
+  schemeRef: String,
+  timestamp: ZonedDateTime = ZonedDateTime.now,
+  schemeId: String,
+  taxYear: String,
+  schemeName: String,
+  schemeType: String
+)
 
 object SchemeInfo {
 
@@ -50,7 +54,7 @@ object SchemeInfo {
 
     override def reads(json: JsValue): JsResult[ZonedDateTime] = json match {
       case JsNumber(d) => JsSuccess(ZonedDateTime.ofInstant(Instant.ofEpochMilli(d.toLong), ZoneId.of("UTC")))
-      case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
+      case _           => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.date"))))
     }
 
     override def writes(o: ZonedDateTime): JsValue = JsNumber(o.toInstant.toEpochMilli)

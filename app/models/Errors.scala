@@ -24,8 +24,7 @@ sealed abstract class ErsException(message: String) extends Exception(message) {
 sealed abstract class UserValidationException(message: String) extends ErsException(message)
 case class HeaderValidationException(message: String, context: String) extends UserValidationException(message)
 
-case class FileValidationException(message: String, context: String)
-    extends UserValidationException(message)
+case class FileValidationException(message: String, context: String) extends UserValidationException(message)
 
 case class SchemeTypeMismatchException(
   message: String,

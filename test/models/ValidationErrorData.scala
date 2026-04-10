@@ -16,4 +16,4 @@
 
 package models
 
-case class ValidationErrorData(id:String, errorId:String, errorMsg:String)
+case class ValidationErrorData(id: String, errorId: String, errorMsg: String)

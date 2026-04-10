@@ -29,52 +29,68 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class FileValidatorController @Inject()(sessionService: SessionCacheService,
-                                        val cc: ControllerComponents,
-                                        val defaultActionBuilder: DefaultActionBuilder)
-                                       (implicit val ec: ExecutionContext) extends BackendController(cc) with Logging {
+class FileValidatorController @Inject() (
+  sessionService: SessionCacheService,
+  val cc: ControllerComponents,
+  val defaultActionBuilder: DefaultActionBuilder
+)(implicit val ec: ExecutionContext)
+    extends BackendController(cc) with Logging {
 
-  def createCallbackRecord(sessionId: String): Action[AnyContent] = Action.async {
-    implicit request =>
-      sessionService.createCallbackRecord(RequestWithUpdatedSession(request, sessionId))
-        .map { case (_, sessionId) =>
-          Created(Json.toJson(Map("sessionId" -> sessionId)))
-        }.recover {
-          case e: Exception =>
-            logger.error(s"[FileValidatorController][createCallbackRecord] An error occurred while creating the callback record with exception: ${e.getMessage}", e)
-            InternalServerError("An error occurred while creating the callback record.")
-        }
+  def createCallbackRecord(sessionId: String): Action[AnyContent] = Action.async { implicit request =>
+    sessionService
+      .createCallbackRecord(RequestWithUpdatedSession(request, sessionId))
+      .map { case (_, sessionId) =>
+        Created(Json.toJson(Map("sessionId" -> sessionId)))
+      }
+      .recover { case e: Exception =>
+        logger.error(
+          s"[FileValidatorController][createCallbackRecord] An error occurred while creating the callback record with exception: ${e.getMessage}",
+          e
+        )
+        InternalServerError("An error occurred while creating the callback record.")
+      }
   }
 
   def getCallbackRecord(sessionId: String): Action[AnyContent] = Action.async { implicit request =>
-    sessionService.getCallbackRecord(RequestWithUpdatedSession(request, sessionId))
+    sessionService
+      .getCallbackRecord(RequestWithUpdatedSession(request, sessionId))
       .map {
         case Some(record) => Ok(Json.toJson(record))
-        case None => NotFound("No callback record found")
-      }.recover {
-        case ex: Exception =>
-          logger.error(s"[FileValidatorController][getCallbackRecord] An error occurred while retrieving the callback record with exception: ${ex.getMessage}", ex)
-          InternalServerError("An error occurred while retrieving the callback record.")
+        case None         => NotFound("No callback record found")
+      }
+      .recover { case ex: Exception =>
+        logger.error(
+          s"[FileValidatorController][getCallbackRecord] An error occurred while retrieving the callback record with exception: ${ex.getMessage}",
+          ex
+        )
+        InternalServerError("An error occurred while retrieving the callback record.")
       }
   }
 
   def updateCallbackRecord(sessionId: String): Action[JsValue] = Action.async(parse.json) {
     implicit request: Request[JsValue] =>
-      request.body.validate[UploadStatus].fold(
-        valid = uploadStatus => {
-          sessionService.updateCallbackRecord(uploadStatus)(RequestWithUpdatedSession(request, sessionId))
-            .map(_ => NoContent)
-            .recover {
-              case ex: Exception =>
-                logger.error(s"[FileValidatorController][updateCallbackRecord] An error occurred while updating the callback record with exception: ${ex.getMessage}", ex)
+      request.body
+        .validate[UploadStatus]
+        .fold(
+          valid = uploadStatus =>
+            sessionService
+              .updateCallbackRecord(uploadStatus)(RequestWithUpdatedSession(request, sessionId))
+              .map(_ => NoContent)
+              .recover { case ex: Exception =>
+                logger.error(
+                  s"[FileValidatorController][updateCallbackRecord] An error occurred while updating the callback record with exception: ${ex.getMessage}",
+                  ex
+                )
                 InternalServerError("An error occurred while updating the callback record.")
-            }
-        },
-        invalid = jsonValidationErrors => {
-          val parseErrors = LogUtils.formatErrorMessageFromJsonParseFailure(jsonValidationErrors)
-          logger.error(s"[FileValidatorController][updateCallbackRecord] invalid request body, parse errors: $parseErrors")
-          Future.successful(BadRequest(s"Invalid request body, parse errors: $parseErrors"))
-        }
-      )
+              },
+          invalid = jsonValidationErrors => {
+            val parseErrors = LogUtils.formatErrorMessageFromJsonParseFailure(jsonValidationErrors)
+            logger.error(
+              s"[FileValidatorController][updateCallbackRecord] invalid request body, parse errors: $parseErrors"
+            )
+            Future.successful(BadRequest(s"Invalid request body, parse errors: $parseErrors"))
+          }
+        )
   }
+
 }

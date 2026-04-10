@@ -27,13 +27,15 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.Duration
 
 @Singleton
-class ERSFileValidatorSessionRepository @Inject()(mongoComponent: MongoComponent,
-                                                  appConfig: ApplicationConfig,
-                                                  timestampSupport: TimestampSupport
-                                         )(implicit ec: ExecutionContext) extends SessionCacheRepository(
-  mongoComponent = mongoComponent,
-  collectionName = appConfig.appName,
-  ttl = Duration(appConfig.mongoTTLInSeconds, TimeUnit.SECONDS),
-  timestampSupport = timestampSupport,
-  sessionIdKey = SessionKeys.sessionId
-)(ec)
+class ERSFileValidatorSessionRepository @Inject() (
+  mongoComponent: MongoComponent,
+  appConfig: ApplicationConfig,
+  timestampSupport: TimestampSupport
+)(implicit ec: ExecutionContext)
+    extends SessionCacheRepository(
+      mongoComponent = mongoComponent,
+      collectionName = appConfig.appName,
+      ttl = Duration(appConfig.mongoTTLInSeconds, TimeUnit.SECONDS),
+      timestampSupport = timestampSupport,
+      sessionIdKey = SessionKeys.sessionId
+    )(ec)
