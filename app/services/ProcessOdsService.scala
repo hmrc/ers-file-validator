@@ -201,7 +201,7 @@ class ProcessOdsService @Inject() (
           case _               => Right(slices)
         }
       }
-    } else { // data enough to send in single slice
+    } else { // data small enough to send in single slice
       sendSchemeData(schemeData, empRef).map((sendResult: Either[ErsException, Unit]) =>
         sendResult.map(_ => 1)
       )
@@ -230,6 +230,7 @@ class ProcessOdsService @Inject() (
           case _               =>
             val totalSlices = results.collect { case Right(n) => n }.sum
             val sessionId   = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
+
             sessionService
               .storeCallbackData(callbackData, totalRows)(RequestWithUpdatedSession(request, sessionId))
               .map {
