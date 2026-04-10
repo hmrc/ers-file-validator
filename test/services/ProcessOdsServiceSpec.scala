@@ -16,7 +16,6 @@
 
 package services
 
-import _root_.utils.ErrorResponseMessages
 import _root_.utils.ErrorResponseMessages._
 import ch.qos.logback.classic.Level
 import fixtures.{LogCapturePerTest, TestFixtures}
