@@ -411,8 +411,10 @@ class ProcessOdsServiceSpec
           service.readFile("http://test.com/file.ods")
         }
 
-        exception.message mustBe ErrorResponseMessages.fileProcessingServiceFailedStream
-        exception.context mustBe ErrorResponseMessages.fileProcessingServiceBulkEntity
+        exception mustBe ErsFileProcessingException(
+          message = "Failed to stream the data from file",
+          context = "Exception bulk entity streaming"
+        )
       }
 
       "must close streams and rethrow when an exception occurs" in {
@@ -424,8 +426,11 @@ class ProcessOdsServiceSpec
           service.readFile("http://test.com/file.ods")
         }
 
-        exception.message mustBe "Failed to stream the data from file"
-        exception.context mustBe "Exception bulk entity streaming"
+        exception mustBe ErsFileProcessingException(
+          message = "Failed to stream the data from file",
+          context = "Exception bulk entity streaming"
+        )
+
       }
     }
 
