@@ -18,16 +18,16 @@ package utils
 
 object ErrorResponseMessages {
 
-  val fileProcessingServiceFailedStream                     = "Failed to stream the data from file"
-  val fileProcessingServiceBulkEntity                       = "Exception bulk entity streaming"
-  val fileValidatorConnectorFailedSendingData               = "Failed sending data"
-  val fileValidatorConnectorNotFound                        = "Submissions Service Not Found"
-  val fileValidatorConnectorBadRequest                      = "Submissions Service Bad Request"
-  val fileValidatorConnectorServiceUnavailable              = "Submissions Service Service Unavailable"
-  val dataParserIncorrectSheetName                          = "Incorrect ERS Template - Sheet Name isn't as expected"
-  val dataParserIncorrectHeader                             = "Incorrect ERS Template - Header doesn't match"
+  val fileProcessingServiceFailedStream        = "Failed to stream the data from file"
+  val fileProcessingServiceBulkEntity          = "Exception bulk entity streaming"
+  val fileValidatorConnectorFailedSendingData  = "Failed sending data"
+  val fileValidatorConnectorNotFound           = "Submissions Service Not Found"
+  val fileValidatorConnectorBadRequest         = "Submissions Service Bad Request"
+  val fileValidatorConnectorServiceUnavailable = "Submissions Service Service Unavailable"
+  val dataParserIncorrectSheetName             = "Incorrect ERS Template - Sheet Name isn't as expected"
+  val dataParserIncorrectHeader                = "Incorrect ERS Template - Header doesn't match"
 
-  val dataParserNoData                                      =
+  val dataParserNoData =
     """The file that you chose doesn’t have any data after row 9. The reportable events data must start in cell A10.<br/><a href="https://www.gov.uk/government/collections/employment-related-securities">Use the ERS guidance documents</a> to help you create error-free files."""
 
   def dataParserIncorrectSchemeType(
