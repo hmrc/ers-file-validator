@@ -56,7 +56,7 @@ class ApplicationConfigSpec extends AnyWordSpecLike with GuiceOneAppPerSuite {
     "csop v5 flag is false" should {
       "return false" in {
         val overriddenApp = buildAppWithOverrides(
-          "features.csop-v5.enabled" -> false
+          "microservice.services.features.csop-v5.enabled" -> false
         )
 
         val overriddenConfig = overriddenApp.injector.instanceOf[ApplicationConfig]

@@ -38,13 +38,13 @@ class RequestWithUpdatedSessionSpec extends AnyWordSpec with Matchers {
 
       val updatedRequest = RequestWithUpdatedSession(request, "session-1")
 
-      updatedRequest.body             shouldBe "my-body"
-      updatedRequest.method           shouldBe "POST"
-      updatedRequest.target.uriString shouldBe "/path?x=1"
-      updatedRequest.target.path      shouldBe "/path"
-      updatedRequest.version          shouldBe request.version
-      updatedRequest.headers          shouldBe headers
-      updatedRequest.attrs            shouldBe attrs
+      updatedRequest.body       shouldBe request.body
+      updatedRequest.connection shouldBe request.connection
+      updatedRequest.method     shouldBe request.method
+      updatedRequest.target     shouldBe request.target
+      updatedRequest.version    shouldBe request.version
+      updatedRequest.headers    shouldBe request.headers
+      updatedRequest.attrs      shouldBe request.attrs
     }
 
     "add sessionId and preserve existing session values" in {
