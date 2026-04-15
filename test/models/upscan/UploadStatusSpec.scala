@@ -24,22 +24,24 @@ class UploadStatusSpec extends AnyWordSpecLike {
 
   "UploadStatus.readsUploadStatus" should {
 
+    implicit val reads: Reads[UploadStatus] = UploadStatus.readsUploadStatus
+
     "read NotStarted" in {
       val json = Json.obj("_type" -> "NotStarted")
 
-      json.as[UploadStatus](UploadStatus.readsUploadStatus) mustBe NotStarted
+      json.as[UploadStatus] mustBe NotStarted
     }
 
     "read InProgress" in {
       val json = Json.obj("_type" -> "InProgress")
 
-      json.as[UploadStatus](UploadStatus.readsUploadStatus) mustBe InProgress
+      json.as[UploadStatus] mustBe InProgress
     }
 
     "read Failed" in {
       val json = Json.obj("_type" -> "Failed")
 
-      json.as[UploadStatus](UploadStatus.readsUploadStatus) mustBe Failed
+      json.as[UploadStatus] mustBe Failed
     }
 
     "read UploadedSuccessfully" in {
@@ -50,14 +52,14 @@ class UploadStatusSpec extends AnyWordSpecLike {
         "noOfRows"    -> 12
       )
 
-      json.as[UploadStatus](UploadStatus.readsUploadStatus) mustBe
+      json.as[UploadStatus] mustBe
         UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12))
     }
 
     "return JsError for unexpected _type value" in {
       val json = Json.obj("_type" -> "SomethingElse")
 
-      val result = UploadStatus.readsUploadStatus.reads(json)
+      val result = reads.reads(json)
 
       result mustBe JsError("Unexpected value of _type: \"SomethingElse\"")
     }
@@ -65,7 +67,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
     "return JsError when _type field is missing" in {
       val json = Json.obj("name" -> "file.csv")
 
-      val result = UploadStatus.readsUploadStatus.reads(json)
+      val result = reads.reads(json)
 
       result mustBe JsError("Missing _type field")
     }
@@ -73,7 +75,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
     "return JsError when json is not an object" in {
       val json = JsString("not-an-object")
 
-      val result = UploadStatus.readsUploadStatus.reads(json)
+      val result = reads.reads(json)
 
       result mustBe JsError("Expected a JSON object")
     }
@@ -81,18 +83,20 @@ class UploadStatusSpec extends AnyWordSpecLike {
 
   "UploadStatus.writesUploadStatus" should {
 
+    implicit val writes: Writes[UploadStatus] = UploadStatus.writesUploadStatus
+
     "write NotStarted" in {
-      Json.toJson(NotStarted: UploadStatus)(UploadStatus.writesUploadStatus) mustBe
+      Json.toJson(NotStarted: UploadStatus) mustBe
         Json.obj("_type" -> "NotStarted")
     }
 
     "write InProgress" in {
-      Json.toJson(InProgress: UploadStatus)(UploadStatus.writesUploadStatus) mustBe
+      Json.toJson(InProgress: UploadStatus) mustBe
         Json.obj("_type" -> "InProgress")
     }
 
     "write Failed" in {
-      Json.toJson(Failed: UploadStatus)(UploadStatus.writesUploadStatus) mustBe
+      Json.toJson(Failed: UploadStatus) mustBe
         Json.obj("_type" -> "Failed")
     }
 
@@ -100,7 +104,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
       val status: UploadStatus =
         UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12))
 
-      Json.toJson(status)(UploadStatus.writesUploadStatus) mustBe Json.obj(
+      Json.toJson(status) mustBe Json.obj(
         "name"        -> "file.csv",
         "downloadUrl" -> "http://example.com/file.csv",
         "noOfRows"    -> 12,
@@ -110,6 +114,8 @@ class UploadStatusSpec extends AnyWordSpecLike {
   }
 
   "UploadedSuccessfully format" should {
+
+    implicit val format: Format[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
 
     "read and write correctly" in {
       val value = UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12))

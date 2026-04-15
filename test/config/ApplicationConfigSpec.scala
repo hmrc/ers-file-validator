@@ -18,78 +18,36 @@ package config
 
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import org.scalatest.wordspec.AnyWordSpecLike
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 
 import scala.concurrent.duration.DurationInt
 
-class ApplicationConfigSpec extends AnyWordSpecLike {
+class ApplicationConfigSpec extends AnyWordSpecLike with GuiceOneAppPerSuite {
 
-  private class FakeServicesConfig extends ServicesConfig(null) {
+  private val appConfig: ApplicationConfig = app.injector.instanceOf[ApplicationConfig]
 
-    override def getString(key: String): String = key match {
-      case "appName"                          => "ers-frontend"
-      case "assets.url"                       => "http://assets/"
-      case "assets.version"                   => "v1"
-      case "google-analytics.host"            => "http://analytics"
-      case "govuk-tax.google-analytics.token" => "token-123"
-    }
-
-    override def getInt(key: String): Int = key match {
-      case "ers-file-validator-timeout-seconds" => 30
-      case "largefiles.maxrowspersheet"         => 1000
-      case "validationChunkSize"                => 250
-      case "file-size.uploadSizeLimit"          => 5000
-      case "mongodb.timeToLiveInSeconds"        => 3600
-    }
-
-    override def getBoolean(key: String): Boolean = key match {
-      case "largefiles.enabled" => true
-    }
-
-    override def baseUrl(serviceName: String): String = serviceName match {
-      case "cachable.session-cache" => "http://session-cache"
-      case "ers-submissions"        => "http://ers-submissions"
-    }
-
-    override def getConfString(key: String, default: => String): String = key match {
-      case "cachable.session-cache.domain" => "session-cache-domain"
-      case _                               => default
-    }
-
-    override def getConfBool(key: String, defBool: => Boolean): Boolean = key match {
-      case "features.csop-v5.enabled" => true
-      case _                          => defBool
-    }
-
-  }
-
-  private class FakeServicesConfigCsopFalse extends FakeServicesConfig {
-
-    override def getConfBool(key: String, defBool: => Boolean): Boolean = key match {
-      case "features.csop-v5.enabled" => false
-      case _                          => defBool
-    }
-
-  }
+  private def buildAppWithOverrides(configOverrides: (String, Any)*): Application =
+    new GuiceApplicationBuilder()
+      .configure(configOverrides: _*)
+      .build()
 
   "ApplicationConfig" when {
 
-    "all config values are present" should {
+    "using the default application config" should {
       "return the correct values" in {
-        val appConfig = new ApplicationConfig(new FakeServicesConfig)
-
-        appConfig.appName                      mustBe "ers-frontend"
-        appConfig.assetsPrefix                 mustBe "http://assets/v1"
-        appConfig.analyticsHost                mustBe "http://analytics"
-        appConfig.analyticsToken               mustBe "token-123"
-        appConfig.ersTimeOut                   mustBe 30.seconds
-        appConfig.maxNumberOfRowsPerSubmission mustBe 1000
-        appConfig.sessionCacheBaseUri          mustBe "http://session-cache"
-        appConfig.sessionCacheDomain           mustBe "session-cache-domain"
+        appConfig.appName                      mustBe "ers-file-validator"
+        appConfig.assetsPrefix                 mustBe "http://localhost:9032/assets/2.54.0"
+        appConfig.analyticsHost                mustBe "auto"
+        appConfig.ersTimeOut                   mustBe 70.seconds
+        appConfig.maxNumberOfRowsPerSubmission mustBe 10000
+        appConfig.sessionCacheBaseUri          mustBe "http://localhost:8400"
+        appConfig.sessionCacheDomain           mustBe "keystore"
         appConfig.splitLargeSchemes            mustBe true
-        appConfig.submissionsUrl               mustBe "http://ers-submissions"
-        appConfig.validationChunkSize          mustBe 250
-        appConfig.uploadFileSizeLimit          mustBe 5000
+        appConfig.submissionsUrl               mustBe "http://localhost:9292"
+        appConfig.validationChunkSize          mustBe 25000
+        appConfig.uploadFileSizeLimit          mustBe 104857600
         appConfig.mongoTTLInSeconds            mustBe 3600
         appConfig.csopV5Enabled                mustBe true
       }
@@ -97,9 +55,13 @@ class ApplicationConfigSpec extends AnyWordSpecLike {
 
     "csop v5 flag is false" should {
       "return false" in {
-        val appConfig = new ApplicationConfig(new FakeServicesConfigCsopFalse)
+        val overriddenApp = buildAppWithOverrides(
+          "features.csop-v5.enabled" -> false
+        )
 
-        appConfig.csopV5Enabled mustBe false
+        val overriddenConfig = overriddenApp.injector.instanceOf[ApplicationConfig]
+
+        overriddenConfig.csopV5Enabled mustBe false
       }
     }
   }
