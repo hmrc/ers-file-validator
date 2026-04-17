@@ -169,6 +169,43 @@ class CsvUploadControllerSpec
 
       logExistsContaining(Level.WARN, "[CsvUploadController][processCsvFile] Invalid request body") shouldBe true
     }
+
+    "streamFile function passed into processFiles should be usable" in {
+
+      var capturedStream: String => org.apache.pekko.stream.scaladsl.Source[HttpResponse, _] = null
+
+      when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
+        .thenAnswer { invocation =>
+          capturedStream = invocation.getArgument(2)
+          List(Future.successful(Right(CsvFileSubmissions("sheet", 1, callbackData))))
+        }
+
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+        .thenReturn(Future.successful(Right(CsvFileLengthInfo(1, 1))))
+
+      when(mockSessionService.storeCallbackData(any(), any())(any()))
+        .thenReturn(Future.successful(Some(callbackData)))
+
+      val result =
+        csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+
+      status(result) shouldBe OK
+
+      val binding = Await.result(
+        Http().newServerAt("localhost", 0).bindSync(_ => HttpResponse(StatusCodes.OK)),
+        Duration.Inf
+      )
+      val port    = binding.localAddress.getPort
+
+      val responses = Await.result(
+        capturedStream(s"http://localhost:$port").runWith(Sink.seq),
+        Duration.Inf
+      )
+
+      responses.head.status shouldBe StatusCodes.OK
+
+      Await.result(binding.unbind(), Duration.Inf)
+    }
   }
 
   "streamFile" should {
@@ -179,19 +216,20 @@ class CsvUploadControllerSpec
     )
     val port    = binding.localAddress.getPort
 
-    val streamController = spy(
-      new CsvUploadController(
-        mockAuditEvents,
-        mockSessionService,
-        mockProcessCsvService,
-        mockAuthConnector,
-        stubControllerComponents(),
-        defaultActionBuilder
-      ) {
-        override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
-          mockAuthorisedActionWithBody(empRef)(body)
-      }
-    )
+    class SpyableController
+        extends CsvUploadController(
+          mockAuditEvents,
+          mockSessionService,
+          mockProcessCsvService,
+          mockAuthConnector,
+          stubControllerComponents(),
+          defaultActionBuilder
+        ) {
+      override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
+        mockAuthorisedActionWithBody(empRef)(body)
+    }
+
+    val streamController = spy(new SpyableController)
 
     "process the response" in {
       val result    = streamController.streamFile(s"http://localhost:$port").runWith(Sink.seq)

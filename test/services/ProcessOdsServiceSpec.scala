@@ -22,13 +22,14 @@ import fixtures.{LogCapturePerTest, TestFixtures}
 import models._
 import models.upscan.UpscanCallback
 import org.apache.pekko.util.Timeout
-import org.mockito.ArgumentMatchers.{any, eq => argEq}
+import org.mockito.ArgumentMatchers.{any, argThat, eq => argEq}
 import org.mockito.Mockito._
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import org.scalatestplus.mockito.MockitoSugar
+import play.api.mvc.Request
 import play.api.test.Helpers.await
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
 import uk.gov.hmrc.validator._
@@ -53,8 +54,10 @@ class ProcessOdsServiceSpec
     }
 
   override def beforeEach(): Unit = {
+    reset(mockAuditEvents)
     reset(mockErsFileValidatorConnector)
     reset(mockSessionService)
+    reset(mockAppConfig)
     super.beforeEach()
   }
 
@@ -92,10 +95,79 @@ class ProcessOdsServiceSpec
 
         when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
 
+        attachLogger(processOdsService)
+
         val result = await(processOdsService.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
         result mustBe Right(1)
 
         verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier])
+
+        verify(mockSessionService, times(1)).storeCallbackData(
+          argEq(callbackData),
+          argEq(3)
+        )(
+          argThat((updatedRequest: Request[_]) =>
+            updatedRequest match {
+              case req: RequestWithUpdatedSession[_] =>
+                req.originalRequest == request &&
+                req.sessionId == "sessionId"
+              case _                                 => false
+            }
+          )
+        )
+
+        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(any())
+        verify(mockAuditEvents, times(1)).totalRows(any(), argEq(schemeInfo))(any())
+
+        logExistsContaining(Level.DEBUG, "2.1 result contains:") mustBe true
+      }
+
+      "must successfully process valid EMI ODS data when no session id exists in header carrier" in {
+        implicit val hcWithoutSession: HeaderCarrier = HeaderCarrier()
+
+        when(
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+        ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+
+        when(mockSessionService.storeCallbackData(any(), any())(any()))
+          .thenReturn(Future.successful(Some(callbackData)))
+
+        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
+
+        val result = await(processOdsService.processFile(callbackData, "")(hcWithoutSession, schemeInfo, request))
+        result mustBe Right(1)
+
+        verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier])
+
+        verify(mockSessionService, times(1)).storeCallbackData(
+          argEq(callbackData),
+          argEq(3)
+        )(
+          argThat((updatedRequest: Request[_]) =>
+            updatedRequest match {
+              case req: RequestWithUpdatedSession[_] =>
+                req.originalRequest == request &&
+                req.sessionId.nonEmpty
+              case _                                 => false
+            }
+          )
+        )
+
+        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(any())
+        verify(mockAuditEvents, times(1)).totalRows(any(), argEq(schemeInfo))(any())
+      }
+
+      "must return Left when processFile reaches processSchemeData and sendScheme fails" in {
+        when(
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+        ).thenReturn(Future.successful(Left(new RuntimeException("submission failed during processFile"))))
+
+        val result = await(processOdsService.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+
+        result.left.value mustBe ErsFileProcessingException(
+          message = "java.lang.RuntimeException: submission failed during processFile",
+          context = "submission failed during processFile"
+        )
       }
 
       "must return FileValidationException when ODS data contains ampersands" in {
@@ -228,6 +300,8 @@ class ProcessOdsServiceSpec
         verify(mockErsFileValidatorConnector, times(1))
           .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
 
+        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(any())
+
         logExistsContaining(Level.DEBUG, "Sheetdata sending to ers-submission") mustBe true
       }
 
@@ -249,6 +323,8 @@ class ProcessOdsServiceSpec
 
         verify(mockErsFileValidatorConnector, times(1))
           .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+
+        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(any())
       }
 
       "must return 2 slices and call sendSchemeData twice" in {
@@ -270,6 +346,8 @@ class ProcessOdsServiceSpec
 
         verify(mockErsFileValidatorConnector, times(2))
           .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+
+        verify(mockAuditEvents, times(2)).fileValidatorAudit(any(), any())(any())
       }
 
       "must return 3 slices and call sendSchemeData 3 times" in {
@@ -279,7 +357,6 @@ class ProcessOdsServiceSpec
 
         when(mockAppConfig.splitLargeSchemes).thenReturn(true)
         when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(40)
-        // pass in 100 records, 100/40 results in 3 calls to sendScheme
 
         val service =
           new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
@@ -294,7 +371,9 @@ class ProcessOdsServiceSpec
           any[HeaderCarrier]
         )
 
-        logExistsContaining(Level.DEBUG, "The size of the scheme data is ")
+        verify(mockAuditEvents, times(3)).fileValidatorAudit(any(), any())(any())
+
+        logExistsContaining(Level.DEBUG, "The size of the scheme data is ") mustBe true
       }
 
       "must return a Left when sendSchemeData fails with splitSchemes enabled" in {
@@ -316,6 +395,8 @@ class ProcessOdsServiceSpec
           message = "java.lang.RuntimeException: submission failed",
           context = "submission failed"
         )
+
+        verify(mockAuditEvents, times(2)).auditRunTimeError(any(), any(), any(), any())(any())
 
         logExistsContaining(Level.ERROR, "An exception occurred") mustBe true
       }
