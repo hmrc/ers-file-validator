@@ -26,7 +26,7 @@ class RequestWithUpdatedSessionSpec extends AnyWordSpec with Matchers {
 
   "RequestWithUpdatedSession" should {
 
-    "delegate all request fields to the original request" in {
+    "preserve the original request fields and add or replace the sessionId" in {
       val attrs   = TypedMap.empty
       val headers = Headers("X-Test" -> "123", "X-Trace" -> "abc")
 
@@ -34,9 +34,9 @@ class RequestWithUpdatedSessionSpec extends AnyWordSpec with Matchers {
         .withBody("my-body")
         .withHeaders(headers.headers: _*)
         .withAttrs(attrs)
-        .withSession("foo" -> "bar")
+        .withSession("foo" -> "bar", "sessionId" -> "old-session")
 
-      val updatedRequest = RequestWithUpdatedSession(request, "session-1")
+      val updatedRequest = RequestWithUpdatedSession(request, "new-session")
 
       updatedRequest.body       shouldBe request.body
       updatedRequest.connection shouldBe request.connection
@@ -45,37 +45,9 @@ class RequestWithUpdatedSessionSpec extends AnyWordSpec with Matchers {
       updatedRequest.version    shouldBe request.version
       updatedRequest.headers    shouldBe request.headers
       updatedRequest.attrs      shouldBe request.attrs
-    }
 
-    "add sessionId and preserve existing session values" in {
-      val request = FakeRequest("GET", "/test")
-        .withBody("test-body")
-        .withSession("userId" -> "user-123")
-
-      val updatedRequest = RequestWithUpdatedSession(request, "session-999")
-
-      updatedRequest.session.get("userId")    shouldBe Some("user-123")
-      updatedRequest.session.get("sessionId") shouldBe Some("session-999")
-    }
-
-    "add sessionId when original session is empty" in {
-      val request = FakeRequest("GET", "/test")
-        .withBody("test-body")
-
-      val updatedRequest = RequestWithUpdatedSession(request, "new-session")
-
-      updatedRequest.session.data shouldBe Map("sessionId" -> "new-session")
-    }
-
-    "replace existing sessionId and preserve other values" in {
-      val request = FakeRequest("GET", "/test")
-        .withBody("test-body")
-        .withSession("sessionId" -> "old", "foo" -> "bar")
-
-      val updatedRequest = RequestWithUpdatedSession(request, "new")
-
-      updatedRequest.session.get("sessionId") shouldBe Some("new")
       updatedRequest.session.get("foo")       shouldBe Some("bar")
+      updatedRequest.session.get("sessionId") shouldBe Some("new-session")
     }
   }
 

@@ -159,7 +159,7 @@ class ProcessOdsService @Inject() (
     }
   }
 
-  def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit
+  private def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit
     hc: HeaderCarrier
   ): Future[Either[ErsException, Unit]] = {
     logger.debug("Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
