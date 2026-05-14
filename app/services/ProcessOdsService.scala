@@ -25,7 +25,7 @@ import models.upscan.UpscanCallback
 import play.api.Logging
 import play.api.mvc.Request
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
-import uk.gov.hmrc.validator.models.ods.ValidDataRow
+import uk.gov.hmrc.validator.models.ods.ValidDataSheet
 import uk.gov.hmrc.validator.ods.OdsValidator
 import uk.gov.hmrc.validator._
 import _root_.utils.{ErrorResponseMessages, SchemeResolver, ValidationUtils}
@@ -61,7 +61,7 @@ class ProcessOdsService @Inject() (
         schemeInfo.schemeType,
         callbackData.name
       )
-      .map((validDataRow: ValidDataRow) => SchemeData(schemeInfo, validDataRow.sheetName, None, validDataRow.data))
+      .map((validDataSheet: ValidDataSheet) => SchemeData(schemeInfo, validDataSheet.sheetName, None, validDataSheet.data))
 
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit
     hc: HeaderCarrier,
