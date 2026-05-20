@@ -49,11 +49,12 @@ class UploadStatusSpec extends AnyWordSpecLike {
         "_type"       -> "UploadedSuccessfully",
         "name"        -> "file.csv",
         "downloadUrl" -> "http://example.com/file.csv",
-        "noOfRows"    -> 12
+        "noOfRows"    -> 12,
+        "mimeType"    -> "text/csv"
       )
 
       json.as[UploadStatus] mustBe
-        UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12))
+        UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = "text/csv")
     }
 
     "return JsError for unexpected _type value" in {
@@ -102,12 +103,13 @@ class UploadStatusSpec extends AnyWordSpecLike {
 
     "write UploadedSuccessfully" in {
       val status: UploadStatus =
-        UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12))
+        UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = "text/csv")
 
       Json.toJson(status) mustBe Json.obj(
         "name"        -> "file.csv",
         "downloadUrl" -> "http://example.com/file.csv",
         "noOfRows"    -> 12,
+        "mimeType"    -> "text/csv",
         "_type"       -> "UploadedSuccessfully"
       )
     }
@@ -118,7 +120,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
     implicit val format: Format[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
 
     "read and write correctly" in {
-      val value = UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12))
+      val value = UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = "text/csv")
 
       val json = Json.toJson(value)
       json.as[UploadedSuccessfully] mustBe value
@@ -127,11 +129,12 @@ class UploadStatusSpec extends AnyWordSpecLike {
     "handle missing optional noOfRows" in {
       val json = Json.obj(
         "name"        -> "file.csv",
-        "downloadUrl" -> "http://example.com/file.csv"
+        "downloadUrl" -> "http://example.com/file.csv",
+        "mimeType"    -> "text/csv"
       )
 
       json.as[UploadedSuccessfully] mustBe
-        UploadedSuccessfully("file.csv", "http://example.com/file.csv", None)
+        UploadedSuccessfully("file.csv", "http://example.com/file.csv", None, mimeType = "text/csv")
     }
   }
 
