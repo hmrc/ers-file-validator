@@ -21,6 +21,7 @@
     <logger name="com.google.inject" level="ERROR"/>
 
     <logger name="uk.gov" level="WARN"/>
+    <logger name="uk.gov.hmrc.validator" level="INFO"/>
 
     <logger name="application" level="TRACE"/>
 
