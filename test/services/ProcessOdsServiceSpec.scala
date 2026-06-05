@@ -228,16 +228,6 @@ class ProcessOdsServiceSpec
 
     "when mocking library errors with readFile exceptions" - {
 
-      "must return ErsFileProcessingException when a SystemErrorDuringValidationException is thrown" in {
-        val service = serviceWithReadFileException(SystemErrorDuringValidationException("something went wrong"))
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
-
-        result.left.value mustBe ErsFileProcessingException(
-          message = "System error during validation: something went wrong",
-          context = "System error during ODS processing, schemeRef: XA11000001231275"
-        )
-      }
-
       "must return ErsFileProcessingException when a ParserFailureException is thrown" in {
         val service = serviceWithReadFileException(ParserFailureException())
         val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))

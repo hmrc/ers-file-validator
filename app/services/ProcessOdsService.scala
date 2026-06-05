@@ -61,7 +61,9 @@ class ProcessOdsService @Inject() (
         schemeInfo.schemeType,
         callbackData.name
       )
-      .map((validDataSheet: ValidDataSheet) => SchemeData(schemeInfo, validDataSheet.sheetName, None, validDataSheet.data))
+      .map((validDataSheet: ValidDataSheet) =>
+        SchemeData(schemeInfo, validDataSheet.sheetName, None, validDataSheet.data)
+      )
 
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit
     hc: HeaderCarrier,
@@ -84,8 +86,8 @@ class ProcessOdsService @Inject() (
   }
 
   private def isSystemError(e: ValidatorException): Boolean = e match {
-    case _: SystemErrorDuringValidationException | _: ParserFailureException => true
-    case _                                                                   => false
+    case _: ParserFailureException => true
+    case _                         => false
   }
 
   private def mapValidatorException(
