@@ -54,7 +54,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
       )
 
       json.as[UploadStatus] mustBe
-        UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = "text/csv")
+        UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = Some("text/csv"))
     }
 
     "return JsError for unexpected _type value" in {
@@ -103,7 +103,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
 
     "write UploadedSuccessfully" in {
       val status: UploadStatus =
-        UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = "text/csv")
+        UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = Some("text/csv"))
 
       Json.toJson(status) mustBe Json.obj(
         "name"        -> "file.csv",
@@ -120,7 +120,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
     implicit val format: Format[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
 
     "read and write correctly" in {
-      val value = UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = "text/csv")
+      val value = UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = Some("text/csv"))
 
       val json = Json.toJson(value)
       json.as[UploadedSuccessfully] mustBe value
@@ -134,7 +134,18 @@ class UploadStatusSpec extends AnyWordSpecLike {
       )
 
       json.as[UploadedSuccessfully] mustBe
-        UploadedSuccessfully("file.csv", "http://example.com/file.csv", None, mimeType = "text/csv")
+        UploadedSuccessfully("file.csv", "http://example.com/file.csv", None, mimeType = Some("text/csv"))
+    }
+
+    "handle missing optional mimeType (backward compatibility with callers that do not send mimeType)" in {
+      val json = Json.obj(
+        "name"        -> "file.csv",
+        "downloadUrl" -> "http://example.com/file.csv",
+        "noOfRows"    -> 12
+      )
+
+      json.as[UploadedSuccessfully] mustBe
+        UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = None)
     }
   }
 
