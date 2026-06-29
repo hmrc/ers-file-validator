@@ -97,7 +97,7 @@ class SessionCacheServiceSpec extends PlaySpec with ScalaFutures with MockitoSug
 
   "updateCallbackRecord" must {
     "successfully update the UploadStatus in the session cache" in {
-      val newStatus: UploadStatus = UploadedSuccessfully("fileId", "downloadUrl", Some(1), mimeType = "")
+      val newStatus: UploadStatus = UploadedSuccessfully("fileId", "downloadUrl", Some(1), mimeType = None)
 
       when(mockSessionCache.putSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)), meq(newStatus))(any(), any()))
         .thenReturn(Future.successful(sessionPair))

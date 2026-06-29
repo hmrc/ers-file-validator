@@ -23,8 +23,12 @@ case object NotStarted extends UploadStatus
 case object InProgress extends UploadStatus
 case object Failed extends UploadStatus
 
-case class UploadedSuccessfully(name: String, downloadUrl: String, noOfRows: Option[Int] = None, mimeType: String)
-    extends UploadStatus
+case class UploadedSuccessfully(
+  name: String,
+  downloadUrl: String,
+  noOfRows: Option[Int] = None,
+  mimeType: Option[String] = None
+) extends UploadStatus
 
 object UploadedSuccessfully {
   implicit val uploadedSuccessfullyFormat: OFormat[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
