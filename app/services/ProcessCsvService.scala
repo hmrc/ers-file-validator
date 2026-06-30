@@ -99,7 +99,7 @@ class ProcessCsvService @Inject() (
         for {
           schemeVersion <- SchemeResolver.getSchemeVersion(schemeInfo.taxYear, appConfig)
           dataEngine    <- DataEngine(sheetName, schemeVersion).left.map(e =>
-                             ErsSystemError(e.getMessage, s"Error processing CSV file: ${successUpload.name}")
+                             ErsSystemError(e.message, s"Error processing CSV file: ${successUpload.name}")
                            )
         } yield processSource(
           source(successUpload.downloadUrl),
@@ -132,7 +132,7 @@ class ProcessCsvService @Inject() (
                   case Right(results: RowValidationResults)               =>
 
                     val errorDetail = results.validationErrors
-                      .map(error => s"column - ${error.cell.column}, error - ${error.errorId} : ${error.errorMsg}")
+                      .map(error => s"column - ${error.cell.columnName}, error - ${error.errorId} : ${error.errorMsg}")
                       .mkString("\n")
 
                     Left(

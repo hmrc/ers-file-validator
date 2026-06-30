@@ -68,8 +68,8 @@ class AuditEvents @Inject() (auditService: AuditService) {
     auditService.sendEvent(
       "ERSValidationError",
       Map(
-        "Column"       -> validationErrors.head.cell.column,
-        "Row"          -> validationErrors.head.cell.row.toString,
+        "Column"       -> validationErrors.head.cell.columnName,
+        "Row"          -> validationErrors.head.cell.rowNumber.toString,
         "Value"        -> validationErrors.head.cell.value,
         "ErrorMessage" -> validationErrors.head.errorMsg
       ) ++ eventMap(schemeInfo, sheetName)

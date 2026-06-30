@@ -17,6 +17,7 @@
 package services
 
 import _root_.services.audit.AuditEvents
+import _root_.utils.{ErrorResponseMessages, SchemeResolver, ValidationUtils}
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
 import metrics.Metrics
@@ -25,10 +26,9 @@ import models.upscan.UpscanCallback
 import play.api.Logging
 import play.api.mvc.Request
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
-import uk.gov.hmrc.validator.models.ods.ValidDataSheet
-import uk.gov.hmrc.validator.ods.OdsValidator
 import uk.gov.hmrc.validator._
-import _root_.utils.{ErrorResponseMessages, SchemeResolver, ValidationUtils}
+import uk.gov.hmrc.validator.models._
+import uk.gov.hmrc.validator.ods.OdsValidator
 
 import java.io.InputStream
 import java.util.UUID
@@ -37,7 +37,7 @@ import java.util.zip.ZipInputStream
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class ProcessOdsService @Inject() (
@@ -53,7 +53,7 @@ class ProcessOdsService @Inject() (
 
   def generateSchemeData(callbackData: UpscanCallback, schemeVersion: SchemeVersion)(implicit
     schemeInfo: SchemeInfo
-  ): ListBuffer[SchemeData] =
+  ): Either[ValidatorFailure, ListBuffer[SchemeData]] =
     OdsValidator
       .generateSchemeData(
         schemeVersion,
@@ -61,9 +61,7 @@ class ProcessOdsService @Inject() (
         schemeInfo.schemeType,
         callbackData.name
       )
-      .map((validDataSheet: ValidDataSheet) =>
-        SchemeData(schemeInfo, validDataSheet.sheetName, None, validDataSheet.data)
-      )
+      .map(_.map(validDataSheet => SchemeData(schemeInfo, validDataSheet.sheetName, None, validDataSheet.data)))
 
   def processFile(callbackData: UpscanCallback, empRef: String)(implicit
     hc: HeaderCarrier,
@@ -72,65 +70,73 @@ class ProcessOdsService @Inject() (
   ): Future[Either[ErsException, Int]] = {
     val startTime = System.currentTimeMillis()
 
-    val result = for {
-      schemeVersion <- SchemeResolver.getSchemeVersion(schemeInfo.taxYear, appConfig)
-      schemeData    <-
-        Try(generateSchemeData(callbackData, schemeVersion)).toEither.left
-          .map(error => mapValidatorException(error, startTime))
-    } yield schemeData
+    val result: Try[Either[ErsException, ListBuffer[SchemeData]]] = Try {
+      for {
+        schemeVersion <- SchemeResolver.getSchemeVersion(schemeInfo.taxYear, appConfig)
+        schemeData    <-
+          generateSchemeData(callbackData, schemeVersion).left
+            .map(failure => mapValidatorFailure(failure, startTime))
+      } yield schemeData
+    }
 
     result match {
-      case Left(error)       => Future.successful(Left(error))
-      case Right(schemeData) => processSchemeData(callbackData, schemeData, startTime, empRef)
+      case Failure(e)     =>
+        logger.error(s"Unexpected error processing file: ${e.getMessage}", e)
+        Future.successful(Left(ErsFileProcessingException(e.getMessage, "Unexpected error processing file")))
+      case Success(value) =>
+        value match {
+          case Left(error)       => Future.successful(Left(error))
+          case Right(schemeData) => processSchemeData(callbackData, schemeData, startTime, empRef)
+        }
     }
   }
 
-  private def isSystemError(e: ValidatorException): Boolean = e match {
-    case _: ParserFailureException => true
-    case _                         => false
+  private def isSystemFailure(vf: ValidatorFailure): Boolean = vf match {
+    case _: ParserFailure => true
+    case _                => false
   }
 
-  private def mapValidatorException(
-    e: Throwable,
+  private def mapValidatorFailure(
+    validatorFailure: ValidatorFailure,
     startTime: Long
   )(implicit schemeInfo: SchemeInfo): ErsException = {
     deliverBESMetrics(startTime)
 
     val logStart = "[ProcessOdsService][processFile]"
 
-    e match {
-      case e: IncorrectSchemeException               =>
-        logger.warn(s"$logStart Scheme type mismatch: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
+    validatorFailure match {
+      case vf: IncorrectSchemeFailure                  =>
+        logger.warn(s"$logStart Scheme type mismatch: ${vf.message}, schemeRef: ${schemeInfo.schemeRef}")
 
         SchemeTypeMismatchException(
           message = ErrorResponseMessages.dataParserIncorrectSheetName,
           context = ErrorResponseMessages
-            .dataParserIncorrectSchemeType(Some(e.uploadedFileSchemeType), Some(e.selectedSchemeType)),
-          expectedSchemeType = e.uploadedFileSchemeType,
-          requestSchemeType = e.selectedSchemeType
+            .dataParserIncorrectSchemeType(Some(vf.uploadedFileSchemeType), Some(vf.selectedSchemeType)),
+          expectedSchemeType = vf.uploadedFileSchemeType,
+          requestSchemeType = vf.selectedSchemeType
         )
-      case e: IncorrectSheetNameException            =>
-        logger.warn(s"$logStart Unknown sheet name: ${e.sheetName}, schemeRef: ${schemeInfo.schemeRef}")
+      case vf: IncorrectSheetNameFailure               =>
+        logger.warn(s"$logStart Unknown sheet name: ${vf.sheetName}, schemeRef: ${schemeInfo.schemeRef}")
 
         UnknownSheetException(
           ErrorResponseMessages.dataParserIncorrectSheetName,
-          s"Couldn't find config for given SheetName: ${e.sheetName}"
+          s"Couldn't find config for given SheetName: ${vf.sheetName}"
         )
-      case e: IncorrectHeaderException               =>
-        logger.warn(s"$logStart Incorrect header: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
-        HeaderValidationException(ErrorResponseMessages.dataParserIncorrectHeader, e.message)
-      case _: NoDataException                        =>
+      case vf: IncorrectHeaderFailure                  =>
+        logger.warn(s"$logStart Incorrect header: ${vf.message}, schemeRef: ${schemeInfo.schemeRef}")
+        HeaderValidationException(ErrorResponseMessages.dataParserIncorrectHeader, vf.message)
+      case _: NoDataFailure                            =>
         logger.warn(s"$logStart No data in file, schemeRef: ${schemeInfo.schemeRef}")
         FileValidatorNoDataException(ErrorResponseMessages.dataParserNoData, ErrorResponseMessages.dataParserNoData)
-      case e: ValidatorException if isSystemError(e) =>
-        logger.error(s"$logStart System error during validation: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
-        ErsFileProcessingException(e.message, s"System error during ODS processing, schemeRef: ${schemeInfo.schemeRef}")
-      case e: ValidatorException                     =>
-        logger.warn(s"$logStart File validation error: ${e.message}, schemeRef: ${schemeInfo.schemeRef}")
-        FileValidationException(e.message, e.message)
-      case e: Throwable                              =>
-        logger.error(s"$logStart Unexpected error processing file: ${e.getMessage}", e)
-        ErsFileProcessingException(e.getMessage, "Unexpected error processing file")
+      case vf: ValidatorFailure if isSystemFailure(vf) =>
+        logger.error(s"$logStart System error during validation: ${vf.message}, schemeRef: ${schemeInfo.schemeRef}")
+        ErsFileProcessingException(
+          vf.message,
+          s"System error during ODS processing, schemeRef: ${schemeInfo.schemeRef}"
+        )
+      case vf: ValidatorFailure                        =>
+        logger.warn(s"$logStart File validation error: ${vf.message}, schemeRef: ${schemeInfo.schemeRef}")
+        FileValidationException(vf.message, vf.message)
     }
   }
 

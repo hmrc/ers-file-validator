@@ -32,7 +32,6 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Request
 import play.api.test.Helpers.await
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
-import uk.gov.hmrc.validator._
 
 import java.io.InputStream
 import scala.collection.mutable.ListBuffer
@@ -227,16 +226,6 @@ class ProcessOdsServiceSpec
     }
 
     "when mocking library errors with readFile exceptions" - {
-
-      "must return ErsFileProcessingException when a ParserFailureException is thrown" in {
-        val service = serviceWithReadFileException(ParserFailureException())
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
-
-        result.left.value mustBe ErsFileProcessingException(
-          message = "Failed to retrieve file",
-          context = "System error during ODS processing, schemeRef: XA11000001231275"
-        )
-      }
 
       "must return ErsFileProcessingException when an unexpected Throwable is thrown" in {
         val service = serviceWithReadFileException(new RuntimeException("something unexpected"))
