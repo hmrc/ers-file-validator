@@ -81,7 +81,7 @@ class ProcessOdsService @Inject() (
 
     result match {
       case Failure(e)     =>
-        logger.error(s"Unexpected error processing file: ${e.getMessage}", e)
+        logger.error(s"[ProcessOdsService][processFile] Unexpected error processing file: ${e.getMessage}", e)
         Future.successful(Left(ErsFileProcessingException(e.getMessage, "Unexpected error processing file")))
       case Success(value) =>
         value match {
@@ -92,8 +92,8 @@ class ProcessOdsService @Inject() (
   }
 
   private def isSystemFailure(vf: ValidatorFailure): Boolean = vf match {
-    case _: ParserFailure => true
-    case _                => false
+    case ParserFailure => true
+    case _             => false
   }
 
   private def mapValidatorFailure(
@@ -102,7 +102,7 @@ class ProcessOdsService @Inject() (
   )(implicit schemeInfo: SchemeInfo): ErsException = {
     deliverBESMetrics(startTime)
 
-    val logStart = "[ProcessOdsService][processFile]"
+    val logStart = "[ProcessOdsService][mapValidatorFailure]"
 
     validatorFailure match {
       case vf: IncorrectSchemeFailure                  =>
@@ -125,7 +125,7 @@ class ProcessOdsService @Inject() (
       case vf: IncorrectHeaderFailure                  =>
         logger.warn(s"$logStart Incorrect header: ${vf.message}, schemeRef: ${schemeInfo.schemeRef}")
         HeaderValidationException(ErrorResponseMessages.dataParserIncorrectHeader, vf.message)
-      case _: NoDataFailure                            =>
+      case NoDataFailure                               =>
         logger.warn(s"$logStart No data in file, schemeRef: ${schemeInfo.schemeRef}")
         FileValidatorNoDataException(ErrorResponseMessages.dataParserNoData, ErrorResponseMessages.dataParserNoData)
       case vf: ValidatorFailure if isSystemFailure(vf) =>
