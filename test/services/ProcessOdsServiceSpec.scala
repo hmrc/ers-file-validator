@@ -32,6 +32,8 @@ import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Request
 import play.api.test.Helpers.await
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, SessionId}
+import uk.gov.hmrc.validator.SchemeVersion
+import uk.gov.hmrc.validator.models.{ParserFailure, ValidatorFailure}
 
 import java.io.InputStream
 import scala.collection.mutable.ListBuffer
@@ -50,6 +52,13 @@ class ProcessOdsServiceSpec
   def serviceWithReadFileException(ex: Throwable): ProcessOdsService =
     new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
       override def readFile(downloadUrl: String): InputStream = throw ex
+    }
+
+  def serviceWithGenerateSchemeDataFailure(failure: ValidatorFailure): ProcessOdsService =
+    new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+      override def generateSchemeData(callbackData: UpscanCallback, schemeVersion: SchemeVersion)(implicit
+        schemeInfo: SchemeInfo
+      ): Either[ValidatorFailure, ListBuffer[SchemeData]] = Left(failure)
     }
 
   override def beforeEach(): Unit = {
@@ -226,6 +235,16 @@ class ProcessOdsServiceSpec
     }
 
     "when mocking library errors with readFile exceptions" - {
+
+      "must return ErsFileProcessingException when generateSchemeData returns a ParserFailure" in {
+        val service = serviceWithGenerateSchemeDataFailure(ParserFailure)
+        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+
+        result.left.value mustBe ErsFileProcessingException(
+          message = "Failed to retrieve file",
+          context = s"System error during ODS processing, schemeRef: ${schemeInfo.schemeRef}"
+        )
+      }
 
       "must return ErsFileProcessingException when an unexpected Throwable is thrown" in {
         val service = serviceWithReadFileException(new RuntimeException("something unexpected"))
