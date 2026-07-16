@@ -67,8 +67,8 @@ class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
     val cell    = Cell("B", 11, "abc")
     val cell2   = Cell("C", 0, "def")
     val details = Map(
-      "Column"       -> cell.column,
-      "Row"          -> cell.row.toString,
+      "Column"       -> cell.columnName,
+      "Row"          -> cell.rowNumber.toString,
       "Value"        -> cell.value,
       "ErrorMessage" -> "This entry must be a number made up of digits.",
       "schemeRef"    -> schemeInfo.schemeRef,
