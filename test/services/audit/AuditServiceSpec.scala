@@ -40,7 +40,7 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
     val mockAuditConnector = mock[DefaultAuditConnector]
 
     val auditService = new AuditService(mockAuditConnector, ec) {
-      override protected def getDateTime: ZonedDateTime = dateTime
+      override def getDateTime: ZonedDateTime = dateTime
     }
 
     val details: Map[String, String] = Map("details1" -> "randomDetail")
@@ -60,13 +60,13 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
   "getDateTime should return a ZonedDateTime representing the current time" in {
     val mockAuditConnector = mock[DefaultAuditConnector]
 
-    val auditService = new AuditService(mockAuditConnector, ec) {
-      def exposedGetDateTime: ZonedDateTime = getDateTime
+    val auditService: AuditService = new AuditService(mockAuditConnector, ec) {
+      override def getDateTime: ZonedDateTime = super.getDateTime
     }
 
     val tolerance               = 10L // milliseconds
     val expected: ZonedDateTime = ZonedDateTime.now()
-    val result                  = auditService.exposedGetDateTime
+    val result                  = auditService.getDateTime
 
     assert(Math.abs(result.toInstant.toEpochMilli - expected.toInstant.toEpochMilli) < tolerance)
   }
