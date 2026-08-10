@@ -13,8 +13,6 @@ lazy val microservice = Project("ers-file-validator", file("."))
   .settings(CodeCoverageSettings())
   .settings(
     libraryDependencies ++= AppDependencies(),
-    Test / parallelExecution := false,
-    Test / fork := true,
     scalacOptions ++= Seq(
       "-feature",
       "-Wconf:cat=unused-imports&src=routes/.*:s"

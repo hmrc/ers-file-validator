@@ -46,5 +46,6 @@ class AuditService @Inject() (auditConnector: DefaultAuditConnector, implicit va
         "dateTime" -> getDateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"))
       )
 
-  protected def getDateTime: ZonedDateTime = ZonedDateTime.now()
+  def getDateTime: ZonedDateTime = ZonedDateTime.now()
+
 }
