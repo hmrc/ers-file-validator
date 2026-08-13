@@ -52,14 +52,13 @@ class ERSFileValidatorConnector @Inject() (
   ): Future[Either[Throwable, HttpResponse]] = {
     import java.net.URLEncoder
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
-    val url: String = s"${appConfig.submissionsUrl}/ers/$encodedEmpRef/submit-presubmission"
+    val url: String   = s"${appConfig.submissionsUrl}/ers/$encodedEmpRef/submit-presubmission"
     val startTime     = System.currentTimeMillis()
     httpClient
       .post(url"$url")
       .withBody(Json.toJson(schemeData))
       .execute[HttpResponse]
       .map { response =>
-        println("inside response"+response)
         deliverSendToSubmissionsMetrics(startTime)
         Right(response)
       }
@@ -78,7 +77,6 @@ class ERSFileValidatorConnector @Inject() (
     val startTime = System.currentTimeMillis()
 
     val url = s"${appConfig.submissionsUrl}/ers/v2/$encodedEmpRef/submit-presubmission"
-    println("submissionsSchemeData--------"+submissionsSchemeData)
     httpClient
       .post(url"$url")
       .withBody(Json.toJson(submissionsSchemeData))
