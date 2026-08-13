@@ -40,7 +40,10 @@ import services.audit.AuditEvents
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.test.WireMockSupport
-import utils.ErrorResponseMessages.{fileValidatorConnectorBadRequest, fileValidatorConnectorFailedSendingData, fileValidatorConnectorNotFound, fileValidatorConnectorServiceUnavailable}
+import utils.ErrorResponseMessages.{
+  fileValidatorConnectorBadRequest, fileValidatorConnectorFailedSendingData, fileValidatorConnectorNotFound,
+  fileValidatorConnectorServiceUnavailable
+}
 
 import java.time.ZonedDateTime
 import scala.collection.mutable.ListBuffer
@@ -56,7 +59,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
     )
     .build()
 
-  lazy val injector: Injector                 = app.injector
+  lazy val injector: Injector = app.injector
 
   implicit def materializer: Materializer = Play.materializer
 

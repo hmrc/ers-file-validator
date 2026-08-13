@@ -25,7 +25,6 @@ import services.audit.AuditEvents
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
 import utils.ErrorResponseMessages
 
 import java.io.InputStream
