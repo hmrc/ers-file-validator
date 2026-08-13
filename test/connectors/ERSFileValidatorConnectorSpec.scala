@@ -25,8 +25,7 @@ import models.upscan.UpscanCallback
 import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
-import org.scalatest.{BeforeAndAfterEach, EitherValues}
-import org.scalatestplus.mockito.MockitoSugar
+import org.scalatest.EitherValues
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
@@ -41,33 +40,31 @@ import services.audit.AuditEvents
 import uk.gov.hmrc.http._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.test.WireMockSupport
-import utils.ErrorResponseMessages.{
-  fileValidatorConnectorBadRequest, fileValidatorConnectorFailedSendingData, fileValidatorConnectorNotFound,
-  fileValidatorConnectorServiceUnavailable
-}
+import utils.ErrorResponseMessages.{fileValidatorConnectorBadRequest, fileValidatorConnectorFailedSendingData, fileValidatorConnectorNotFound, fileValidatorConnectorServiceUnavailable}
 
 import java.time.ZonedDateTime
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
-class ERSFileValidatorConnectorSpec
-    extends PlaySpec
-    with MockitoSugar
-    with BeforeAndAfterEach
-    with EitherValues
-    with GuiceOneAppPerSuite
-    with WireMockSupport {
+class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with GuiceOneAppPerSuite with WireMockSupport {
 
-  implicit override lazy val app: Application = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
+  implicit override lazy val app: Application = GuiceApplicationBuilder()
+    .configure(
+      "metrics.enabled"                            -> false,
+      "microservice.services.ers-submissions.port" -> wireMockPort,
+      "microservice.services.ers-submissions.host" -> "localhost"
+    )
+    .build()
+
   lazy val injector: Injector                 = app.injector
 
   implicit def materializer: Materializer = Play.materializer
 
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   implicit val hc: HeaderCarrier            = new HeaderCarrier
-  val mockAppConfig: ApplicationConfig      = mock[ApplicationConfig]
+  val mockAppConfig: ApplicationConfig      = app.injector.instanceOf[ApplicationConfig]
 
-  val mockAuditEvents: AuditEvents = mock[AuditEvents]
+  val mockAuditEvents: AuditEvents = app.injector.instanceOf[AuditEvents]
   val mockHttpClient: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
 
   val ersFileValidatorConnector: ERSFileValidatorConnector =
@@ -94,8 +91,6 @@ class ERSFileValidatorConnectorSpec
   val empRef                      = "1234/ABCD"
 
   implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-
-  when(mockAppConfig.submissionsUrl).thenReturn(wireMockUrl)
 
   override protected def beforeEach(): Unit = {
     reset(ersFileValidatorConnector)
