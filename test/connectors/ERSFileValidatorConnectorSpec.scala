@@ -65,13 +65,13 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
 
   implicit val ec: ExecutionContextExecutor = ExecutionContext.global
   implicit val hc: HeaderCarrier            = new HeaderCarrier
-  val mockAppConfig: ApplicationConfig      = app.injector.instanceOf[ApplicationConfig]
+  val appConfig: ApplicationConfig          = app.injector.instanceOf[ApplicationConfig]
 
-  val mockAuditEvents: AuditEvents = app.injector.instanceOf[AuditEvents]
-  val mockHttpClient: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
+  val auditEvents: AuditEvents = app.injector.instanceOf[AuditEvents]
+  val httpClient: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
 
   val ersFileValidatorConnector: ERSFileValidatorConnector =
-    spy(new ERSFileValidatorConnector(mockAppConfig, mockHttpClient, mockAuditEvents, ec))
+    spy(new ERSFileValidatorConnector(appConfig, httpClient, auditEvents, ec))
 
   val data: ListBuffer[Seq[String]] = ListBuffer[Seq[String]](Seq("abc"))
 
@@ -111,7 +111,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
         )
     )
 
-  private def setupMockPostforFailure(url: String): StubMapping =
+  private def setupMockPostForFailure(url: String): StubMapping =
 
     wireMockServer.stubFor(
       post(urlPathEqualTo(url))
@@ -144,7 +144,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
     }
 
     "return a ErsFileProcessingException when receiving a BadRequestException" in {
-      setupMockPostforFailure(mockEncodedSubmissionsUrl)
+      setupMockPostForFailure(mockEncodedSubmissionsUrl)
       val result = await(ersFileValidatorConnector.sendToSubmissions(submissionData, empRef))
       result.isLeft mustBe true
 
@@ -174,7 +174,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
     }
 
     "return a ErsFileProcessingException when receiving a BadRequestException" in {
-      setupMockPostforFailure(mockEncodedSubmissionsUrlV2)
+      setupMockPostForFailure(mockEncodedSubmissionsUrlV2)
 
       val result = await(ersFileValidatorConnector.sendToSubmissionsNew(submissionSchemeData, empRef))
       result.isLeft mustBe true
@@ -184,7 +184,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
 
   }
 
-  "ERSFileValidator Connector" must {
+  "When an error is returned, the ERSFileValidatorConnector" must {
 
     "handle BadRequestException" in {
       val exception = new BadRequestException("Submissions Service Bad Request")
