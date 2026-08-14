@@ -20,10 +20,11 @@ import config.ApplicationConfig
 import metrics.Metrics
 import models.{ErsFileProcessingException, SchemeData, SchemeInfo, SubmissionsSchemeData}
 import play.api.Logging
+import play.api.libs.json.Json
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http._
-import uk.gov.hmrc.play.bootstrap.http.DefaultHttpClient
+import uk.gov.hmrc.http.client.HttpClientV2
 import utils.ErrorResponseMessages
 
 import java.io.InputStream
@@ -35,7 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ERSFileValidatorConnector @Inject() (
   appConfig: ApplicationConfig,
-  http: DefaultHttpClient,
+  httpClient: HttpClientV2,
   auditEvents: AuditEvents,
   implicit val ec: ExecutionContext
 ) extends Metrics with Logging {
@@ -50,13 +51,12 @@ class ERSFileValidatorConnector @Inject() (
   ): Future[Either[Throwable, HttpResponse]] = {
     import java.net.URLEncoder
     val encodedEmpRef = URLEncoder.encode(empRef, "UTF-8")
-
-    val startTime = System.currentTimeMillis()
-    http
-      .POST[SchemeData, HttpResponse](
-        s"${appConfig.submissionsUrl}/ers/$encodedEmpRef/submit-presubmission",
-        schemeData
-      )
+    val url: String   = s"${appConfig.submissionsUrl}/ers/$encodedEmpRef/submit-presubmission"
+    val startTime     = System.currentTimeMillis()
+    httpClient
+      .post(url"$url")
+      .withBody(Json.toJson(schemeData))
+      .execute[HttpResponse]
       .map { response =>
         deliverSendToSubmissionsMetrics(startTime)
         Right(response)
@@ -75,11 +75,11 @@ class ERSFileValidatorConnector @Inject() (
 
     val startTime = System.currentTimeMillis()
 
-    http
-      .POST[SubmissionsSchemeData, HttpResponse](
-        s"${appConfig.submissionsUrl}/ers/v2/$encodedEmpRef/submit-presubmission",
-        submissionsSchemeData
-      )
+    val url = s"${appConfig.submissionsUrl}/ers/v2/$encodedEmpRef/submit-presubmission"
+    httpClient
+      .post(url"$url")
+      .withBody(Json.toJson(submissionsSchemeData))
+      .execute[HttpResponse]
       .map { response =>
         deliverSendToSubmissionsMetrics(startTime)
         Right(response)
