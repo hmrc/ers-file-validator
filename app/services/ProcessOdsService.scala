@@ -72,7 +72,7 @@ class ProcessOdsService @Inject() (
 
     val result: Try[Either[ErsException, ListBuffer[SchemeData]]] = Try {
       for {
-        schemeVersion <- SchemeResolver.getSchemeVersion(schemeInfo.taxYear, appConfig)
+        schemeVersion <- SchemeResolver.getSchemeVersion(schemeInfo.taxYear, appConfig, schemeInfo.schemeType)
         schemeData    <-
           generateSchemeData(callbackData, schemeVersion).left
             .map(failure => mapValidatorFailure(failure, startTime))

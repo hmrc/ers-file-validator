@@ -28,11 +28,6 @@ class ApplicationConfigSpec extends AnyWordSpecLike with GuiceOneAppPerSuite {
 
   private val appConfig: ApplicationConfig = app.injector.instanceOf[ApplicationConfig]
 
-  private def buildAppWithOverrides(configOverrides: (String, Any)*): Application =
-    new GuiceApplicationBuilder()
-      .configure(configOverrides: _*)
-      .build()
-
   "ApplicationConfig" when {
 
     "using the default application config" should {
@@ -49,21 +44,11 @@ class ApplicationConfigSpec extends AnyWordSpecLike with GuiceOneAppPerSuite {
         appConfig.validationChunkSize          mustBe 25000
         appConfig.uploadFileSizeLimit          mustBe 104857600
         appConfig.mongoTTLInSeconds            mustBe 3600
-        appConfig.csopV5Enabled                mustBe true
+        appConfig.useV6andV7Scheme             mustBe false
+        appConfig.useV4andV5Scheme             mustBe true
       }
     }
 
-    "csop v5 flag is false" should {
-      "return false" in {
-        val overriddenApp = buildAppWithOverrides(
-          "microservice.services.features.csop-v5.enabled" -> false
-        )
-
-        val overriddenConfig = overriddenApp.injector.instanceOf[ApplicationConfig]
-
-        overriddenConfig.csopV5Enabled mustBe false
-      }
-    }
   }
 
 }
