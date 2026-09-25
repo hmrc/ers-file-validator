@@ -27,7 +27,7 @@ import org.mockito.Mockito._
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
+import org.scalatest.matchers.must.Matchers.{a, convertToAnyMustWrapper}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Request
 import play.api.test.Helpers.await
@@ -207,6 +207,16 @@ class ProcessOdsServiceSpec
         val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
 
         result.left.value mustBe FileValidationException("Error when validating row", "Error when validating row")
+      }
+
+      "must return UnknownSheetException when uploading EMI V7 ods when useV4andV5Scheme is true" in {
+
+        val service = serviceWithOverrides(readFileOverride = EMIV7XMLTestData.getEMIAdjustmentsV7TemplateTestData)
+        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+
+        val error = result.left.value
+        error            mustBe a[UnknownSheetException]
+        error.getMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
       }
 
       "must return UnknownSheetException when ODS sheet name is unknown" in {
