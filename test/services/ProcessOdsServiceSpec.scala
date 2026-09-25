@@ -219,6 +219,25 @@ class ProcessOdsServiceSpec
         error.getMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
       }
 
+      "must successfully process valid EMI ODS data when useV6andV7Scheme is true" in {
+        when(mockAppConfig.useV6andV7Scheme).thenReturn(true)
+        when(mockAppConfig.useV4andV5Scheme).thenReturn(false)
+
+        when(
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+        ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+
+        when(mockSessionService.storeCallbackData(any(), any())(any()))
+          .thenReturn(Future.successful(Some(callbackData)))
+
+        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
+        val service = serviceWithOverrides(readFileOverride = EMIV7XMLTestData.getEMIAdjustmentsV7TemplateTestData)
+        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+
+        result mustBe Right(1)
+
+      }
+
       "must return UnknownSheetException when ODS sheet name is unknown" in {
         val service =
           serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplateWithIncorrectSheetName)
