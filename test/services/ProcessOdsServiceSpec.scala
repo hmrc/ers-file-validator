@@ -36,6 +36,7 @@ import uk.gov.hmrc.validator.SchemeVersion
 import uk.gov.hmrc.validator.models.{ParserFailure, ValidatorFailure}
 
 import java.io.InputStream
+import java.time.ZonedDateTime
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
@@ -209,9 +210,9 @@ class ProcessOdsServiceSpec
         result.left.value mustBe FileValidationException("Error when validating row", "Error when validating row")
       }
 
-      "must return UnknownSheetException when uploading EMI V7 ods when useV4andV5Scheme is true" in {
+      "must return UnknownSheetException when uploading SIP V7 ods when useV4andV5Scheme is true" in {
 
-        val service = serviceWithOverrides(readFileOverride = EMIV7XMLTestData.getEMIAdjustmentsV7TemplateTestData)
+        val service = serviceWithOverrides(readFileOverride = SIPV7XMLTestData.getSIPAwardsV7TemplateTestData)
         val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
 
         val error = result.left.value
@@ -219,7 +220,7 @@ class ProcessOdsServiceSpec
         error.getMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
       }
 
-      "must successfully process valid EMI ODS data when useV6andV7Scheme is true" in {
+      "must successfully process valid SIP ODS data when useV6andV7Scheme is true" in {
         when(mockAppConfig.useV6andV7Scheme).thenReturn(true)
         when(mockAppConfig.useV4andV5Scheme).thenReturn(false)
 
@@ -230,9 +231,17 @@ class ProcessOdsServiceSpec
         when(mockSessionService.storeCallbackData(any(), any())(any()))
           .thenReturn(Future.successful(Some(callbackData)))
 
+        val sipSchemeInfo: SchemeInfo = SchemeInfo(
+          schemeRef = "XA11000001231275",
+          timestamp = ZonedDateTime.now,
+          schemeId = "123PA12345678",
+          taxYear = "2014/F15",
+          schemeName = "MyScheme",
+          schemeType = "SIP"
+        )
         when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
-        val service = serviceWithOverrides(readFileOverride = EMIV7XMLTestData.getEMIAdjustmentsV7TemplateTestData)
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val service                   = serviceWithOverrides(readFileOverride = SIPV7XMLTestData.getSIPAwardsV7TemplateTestData)
+        val result                    = await(service.processFile(callbackData, "")(headerCarrier, sipSchemeInfo, request))
 
         result mustBe Right(1)
 

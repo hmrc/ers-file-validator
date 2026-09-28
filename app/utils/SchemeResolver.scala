@@ -17,10 +17,8 @@
 package utils
 
 import config.ApplicationConfig
-import models.{ErsException, InvalidTaxYearException}
+import models.ErsException
 import uk.gov.hmrc.validator.SchemeVersion
-
-import scala.util.{Failure, Success, Try}
 
 object SchemeResolver {
 
