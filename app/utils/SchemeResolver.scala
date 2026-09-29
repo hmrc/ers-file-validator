@@ -24,28 +24,28 @@ import scala.util.{Failure, Success, Try}
 
 object SchemeResolver {
 
-  def getSchemeVersion(taxYear: String, appConfig: ApplicationConfig): Either[ErsException, SchemeVersion] =
-    if (appConfig.csopV5Enabled) {
-      Try(taxYear.split("/")(0).toInt >= 2023) match {
-        case Success(v5Required) =>
-          Right {
-            if (v5Required) {
-              SchemeVersion.V5
-            } else {
-              SchemeVersion.V4
-            }
-          }
-        case Failure(_)          =>
-          Left(
-            InvalidTaxYearException(
-              "Invalid tax year format",
-              s"Invalid tax year format or conversion error: $taxYear, expected format YYYY/YY"
-            )
-          )
-      }
+  def getSchemeVersion(
+    taxYear: String,
+    appConfig: ApplicationConfig
+  ): Either[ErsException, SchemeVersion] =
+    Try(taxYear.split("/")(0).toInt >= 2023) match {
+      case Success(submissionAfter2023: Boolean) =>
 
-    } else {
-      Right(SchemeVersion.V4)
+        val version = (appConfig.useV4andV5Scheme, appConfig.useV6andV7Scheme, submissionAfter2023) match {
+          case (true, _, true)      => SchemeVersion.V5
+          case (false, true, true)  => SchemeVersion.V7
+          case (false, true, false) => SchemeVersion.V6
+          case _                    => SchemeVersion.V4
+        }
+        Right(version)
+
+      case Failure(_) =>
+        Left(
+          InvalidTaxYearException(
+            "Invalid tax year format",
+            s"Invalid tax year format or conversion error: $taxYear, expected format YYYY/YY"
+          )
+        )
     }
 
 }

@@ -93,8 +93,7 @@ class ProcessCsvService @Inject() (
     source: String => Source[HttpResponse, _]
   ): Seq[Future[Either[ErsException, CsvFileSubmissions]]] =
     callback.callbackData.map { successUpload =>
-      val sheetName = stripExtension(successUpload.name)
-
+      val sheetName                                                                            = stripExtension(successUpload.name)
       val pipeline: Either[ErsException, Future[Seq[Either[Throwable, RowValidationResults]]]] =
         for {
           schemeVersion <- SchemeResolver.getSchemeVersion(schemeInfo.taxYear, appConfig)
