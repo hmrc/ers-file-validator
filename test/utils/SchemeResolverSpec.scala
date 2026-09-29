@@ -33,7 +33,7 @@ class SchemeResolverSpec extends AnyWordSpecLike with Matchers with MockitoSugar
 
     "useV4andV5Scheme is true and useV6andV7Scheme set to false" should {
 
-      "return V4 when tax year is before 2023/24" in {
+      "return V4 when tax year is before 2023" in {
         when(mockAppConfig.useV6andV7Scheme).thenReturn(false)
         when(mockAppConfig.useV4andV5Scheme).thenReturn(true)
 
@@ -41,7 +41,7 @@ class SchemeResolverSpec extends AnyWordSpecLike with Matchers with MockitoSugar
         result mustBe Right(SchemeVersion.V4)
       }
 
-      "return V5 for a tax year >= 2023 for CSOP scheme" in {
+      "return V5 for a tax year >= 2023" in {
         when(mockAppConfig.useV6andV7Scheme).thenReturn(false)
         when(mockAppConfig.useV4andV5Scheme).thenReturn(true)
 
@@ -53,7 +53,7 @@ class SchemeResolverSpec extends AnyWordSpecLike with Matchers with MockitoSugar
 
     "useV6andV7Scheme is true and useV4andV5Scheme set to false" should {
 
-      "return V7 when tax year start is >=2023 for CSOP scheme" in {
+      "return V7 for a tax year >=2023" in {
         when(mockAppConfig.useV6andV7Scheme).thenReturn(true)
         when(mockAppConfig.useV4andV5Scheme).thenReturn(false)
 
@@ -61,42 +61,34 @@ class SchemeResolverSpec extends AnyWordSpecLike with Matchers with MockitoSugar
         result mustBe Right(SchemeVersion.V7)
       }
 
-      "return V7 regardless of tax year for scheme type other than CSOP" in {
-        when(mockAppConfig.useV6andV7Scheme).thenReturn(true)
-        when(mockAppConfig.useV4andV5Scheme).thenReturn(false)
-
-        val result = SchemeResolver.getSchemeVersion("2024/25", mockAppConfig)
-        result mustBe Right(SchemeVersion.V7)
-      }
-
-      "return V6 when tax year start is < 2023 for CSOP scheme" in {
+      "return V6 for a tax year before 2023" in {
         when(mockAppConfig.useV6andV7Scheme).thenReturn(true)
         when(mockAppConfig.useV4andV5Scheme).thenReturn(false)
 
         val result = SchemeResolver.getSchemeVersion("2020/21", mockAppConfig)
         result mustBe Right(SchemeVersion.V6)
       }
+    }
 
-      "return InvalidTaxYearException when tax year has no slash separator" in {
-        val result = SchemeResolver.getSchemeVersion("invalid", mockAppConfig)
-        result.isLeft     mustBe true
-        result.left.value mustBe a[InvalidTaxYearException]
-      }
+    "return InvalidTaxYearException when tax year has no slash separator" in {
+      val result = SchemeResolver.getSchemeVersion("invalid", mockAppConfig)
+      result.isLeft     mustBe true
+      result.left.value mustBe a[InvalidTaxYearException]
+    }
 
-      "return InvalidTaxYearException when tax year start is not a number" in {
-        val result = SchemeResolver.getSchemeVersion("ABCD/EF", mockAppConfig)
-        result.isLeft mustBe true
-        val error = result.left.value.asInstanceOf[InvalidTaxYearException]
-        error.message mustBe "Invalid tax year format"
-        error.context   must include("ABCD/EF")
-        error.context   must include("expected format YYYY/YY")
-      }
+    "return InvalidTaxYearException when tax year start is not a number" in {
+      val result = SchemeResolver.getSchemeVersion("ABCD/EF", mockAppConfig)
+      result.isLeft mustBe true
+      val error = result.left.value.asInstanceOf[InvalidTaxYearException]
+      error.message mustBe "Invalid tax year format"
+      error.context   must include("ABCD/EF")
+      error.context   must include("expected format YYYY/YY")
+    }
 
-      "return InvalidTaxYearException for an empty string" in {
-        val result = SchemeResolver.getSchemeVersion("", mockAppConfig)
-        result.isLeft     mustBe true
-        result.left.value mustBe a[InvalidTaxYearException]
-      }
+    "return InvalidTaxYearException for an empty string" in {
+      val result = SchemeResolver.getSchemeVersion("", mockAppConfig)
+      result.isLeft     mustBe true
+      result.left.value mustBe a[InvalidTaxYearException]
     }
 
   }
