@@ -96,7 +96,7 @@ class ProcessCsvService @Inject() (
       val sheetName                                                                            = stripExtension(successUpload.name)
       val pipeline: Either[ErsException, Future[Seq[Either[Throwable, RowValidationResults]]]] =
         for {
-          schemeVersion <- SchemeResolver.getSchemeVersion(schemeInfo.taxYear, appConfig, schemeInfo.schemeType)
+          schemeVersion <- SchemeResolver.getSchemeVersion(schemeInfo.taxYear, appConfig)
           dataEngine    <- DataEngine(sheetName, schemeVersion).left.map(e =>
                              ErsSystemError(e.message, s"Error processing CSV file: ${successUpload.name}")
                            )

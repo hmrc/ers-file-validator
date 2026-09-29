@@ -24,27 +24,15 @@ object SchemeResolver {
 
   def getSchemeVersion(
     taxYear: String,
-    appConfig: ApplicationConfig,
-    schemeType: String
+    appConfig: ApplicationConfig
   ): Either[ErsException, SchemeVersion] = {
-    val isCsop  = schemeType.equalsIgnoreCase("CSOP")
-    val version =
-      (
-        appConfig.useV4andV5Scheme,
-        appConfig.useV6andV7Scheme,
-        isCsop,
-        taxYear.split("/")(0).toInt >= 2023
-      ) match {
-        case (true, false, true, true) => SchemeVersion.V5
-        case (true, false, _, _)       => SchemeVersion.V4
-
-        case (false, true, true, false) => SchemeVersion.V6
-        case (false, true, _, _)        => SchemeVersion.V7
-
-        case _ =>
-          SchemeVersion.V4
-      }
-
+    val submissionAfter2023 = taxYear.split("/")(0).toInt >= 2023
+    val version             = (appConfig.useV4andV5Scheme, appConfig.useV6andV7Scheme, submissionAfter2023) match {
+      case (true, _, true)      => SchemeVersion.V5
+      case (false, true, true)  => SchemeVersion.V7
+      case (false, true, false) => SchemeVersion.V6
+      case _                    => SchemeVersion.V4
+    }
     Right(version)
   }
 
