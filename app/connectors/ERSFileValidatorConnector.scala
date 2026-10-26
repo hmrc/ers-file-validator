@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.client.HttpClientV2
 import utils.ErrorResponseMessages
 
 import java.io.InputStream
-import java.net.URL
+import java.net.URI
 import java.util.concurrent.TimeUnit
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,10 +41,8 @@ class ERSFileValidatorConnector @Inject() (
   implicit val ec: ExecutionContext
 ) extends Metrics with Logging {
 
-  // $COVERAGE-OFF$
   def upscanFileStream(downloadUrl: String): InputStream =
-    new URL(downloadUrl).openStream()
-  // $COVERAGE-ON$
+    URI.create(downloadUrl).toURL.openStream()
 
   def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit
     hc: HeaderCarrier
