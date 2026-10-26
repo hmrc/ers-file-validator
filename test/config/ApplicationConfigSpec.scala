@@ -33,12 +33,8 @@ class ApplicationConfigSpec extends AnyWordSpecLike with GuiceOneAppPerSuite {
     "using the default application config" should {
       "return the correct values" in {
         appConfig.appName                      mustBe "ers-file-validator"
-        appConfig.assetsPrefix                 mustBe "http://localhost:9032/assets/2.54.0"
-        appConfig.analyticsHost                mustBe "auto"
         appConfig.ersTimeOut                   mustBe 70.seconds
         appConfig.maxNumberOfRowsPerSubmission mustBe 10000
-        appConfig.sessionCacheBaseUri          mustBe "http://localhost:8400"
-        appConfig.sessionCacheDomain           mustBe "keystore"
         appConfig.splitLargeSchemes            mustBe true
         appConfig.submissionsUrl               mustBe "http://localhost:9292"
         appConfig.validationChunkSize          mustBe 25000

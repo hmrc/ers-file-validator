@@ -16,7 +16,7 @@
 
 package connectors
 
-import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, post, urlPathEqualTo}
+import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, getRequestedFor, post, urlPathEqualTo}
 import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import config.ApplicationConfig
@@ -29,7 +29,7 @@ import org.scalatest.EitherValues
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.http.Status
-import play.api.http.Status.{BAD_REQUEST, OK}
+import play.api.http.Status.{BAD_REQUEST, NOT_FOUND, OK}
 import play.api.inject.Injector
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.AnyContentAsEmpty
@@ -45,9 +45,11 @@ import utils.ErrorResponseMessages.{
   fileValidatorConnectorServiceUnavailable
 }
 
+import java.io.IOException
 import java.time.ZonedDateTime
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
+import scala.io.Source
 
 class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with GuiceOneAppPerSuite with WireMockSupport {
 
@@ -121,6 +123,16 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
         )
     )
 
+  private def setupMockGet(statusCode: Int, url: String, body: String): StubMapping =
+    wireMockServer.stubFor(
+      get(urlPathEqualTo(url))
+        .willReturn(
+          aResponse()
+            .withStatus(statusCode)
+            .withBody(body)
+        )
+    )
+
   "The ERSFileValidator Connector" must {
 
     "return a positive response on sending sheet data" in {
@@ -180,6 +192,29 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
       result.isLeft mustBe true
 
       verify(ersFileValidatorConnector, times(1)).deliverSendToSubmissionsMetrics(any())
+    }
+
+  }
+
+  "The ERSFileValidator Connector upscanFileStream" must {
+
+    "return a stream of the file content from the upscan download url" in {
+      val downloadPath = "/upscan/download"
+      val fileContent  = "name,value\nabc,123"
+      setupMockGet(OK, downloadPath, fileContent)
+
+      val stream = ersFileValidatorConnector.upscanFileStream(s"$wireMockUrl$downloadPath")
+      try Source.fromInputStream(stream).mkString mustBe fileContent
+      finally stream.close()
+
+      wireMockServer.verify(getRequestedFor(urlPathEqualTo(downloadPath)))
+    }
+
+    "throw an IOException when the file cannot be downloaded" in {
+      val downloadPath = "/upscan/missing"
+      setupMockGet(NOT_FOUND, downloadPath, "")
+
+      an[IOException] must be thrownBy ersFileValidatorConnector.upscanFileStream(s"$wireMockUrl$downloadPath")
     }
 
   }
