@@ -37,7 +37,7 @@ class AuditEvents @Inject() (auditService: AuditService) {
       "timestamp"  -> schemeInfo.timestamp.toString
     )
 
-  def auditRunTimeError(exception: Throwable, contextInfo: String, schemeInfo: SchemeInfo, sheetName: String)(implicit
+  def auditRunTimeError(exception: Throwable, contextInfo: String, schemeInfo: SchemeInfo, sheetName: String)(using
     hc: HeaderCarrier
   ): Unit =
     auditService.sendEvent(
@@ -50,19 +50,19 @@ class AuditEvents @Inject() (auditService: AuditService) {
       )
     )
 
-  def fileValidatorAudit(schemeInfo: SchemeInfo, sheetName: String)(implicit hc: HeaderCarrier): Boolean = {
+  def fileValidatorAudit(schemeInfo: SchemeInfo, sheetName: String)(using hc: HeaderCarrier): Boolean = {
     auditService.sendEvent("ERSFileValidatorAudit", eventMap(schemeInfo, sheetName))
     true
   }
 
-  def fileProcessingErrorAudit(schemeInfo: SchemeInfo, sheetName: String, errorMsg: String)(implicit
+  def fileProcessingErrorAudit(schemeInfo: SchemeInfo, sheetName: String, errorMsg: String)(using
     hc: HeaderCarrier
   ): Boolean = {
     auditService.sendEvent("ERSFileProcessingError", eventMap(schemeInfo, sheetName) ++ Map("ErrorMessage" -> errorMsg))
     true
   }
 
-  def validationErrorAudit(validationErrors: List[ValidationError], schemeInfo: SchemeInfo, sheetName: String)(implicit
+  def validationErrorAudit(validationErrors: List[ValidationError], schemeInfo: SchemeInfo, sheetName: String)(using
     hc: HeaderCarrier
   ): Boolean = {
     auditService.sendEvent(
@@ -77,7 +77,7 @@ class AuditEvents @Inject() (auditService: AuditService) {
     true
   }
 
-  def totalRows(totalRows: Int, schemeInfo: SchemeInfo)(implicit hc: HeaderCarrier): Boolean = {
+  def totalRows(totalRows: Int, schemeInfo: SchemeInfo)(using hc: HeaderCarrier): Boolean = {
 
     auditService.sendEvent(
       "ERStotalRowCount",

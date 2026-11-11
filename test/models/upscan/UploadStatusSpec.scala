@@ -16,15 +16,15 @@
 
 package models.upscan
 
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import org.scalatest.wordspec.AnyWordSpecLike
-import play.api.libs.json._
+import play.api.libs.json.*
+import org.scalatest.matchers.must.Matchers.mustBe
 
 class UploadStatusSpec extends AnyWordSpecLike {
 
   "UploadStatus.readsUploadStatus" should {
 
-    implicit val reads: Reads[UploadStatus] = UploadStatus.readsUploadStatus
+    given reads: Reads[UploadStatus] = UploadStatus.readsUploadStatus
 
     "read NotStarted" in {
       val json = Json.obj("_type" -> "NotStarted")

@@ -19,11 +19,11 @@ package controllers
 import ch.qos.logback.classic.Level
 import fixtures.{LogCapturePerTest, TestFixtures, WithMockedAuthActions}
 import metrics.Metrics
-import models._
+import models.*
 import models.scheme.SchemeMismatchError
 import models.upscan.{UpscanCallback, UpscanFileData}
-import org.mockito.ArgumentMatchers.{any, eq => argEq}
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.{any, eq as argEq}
+import org.mockito.Mockito.*
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -32,9 +32,9 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.{Action, AnyContent, DefaultActionBuilder, Result}
+import play.api.mvc.{Action, AnyContent, DefaultActionBuilder}
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import services.ProcessOdsService
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import utils.ErrorResponseMessages
@@ -74,7 +74,7 @@ class OdsUploadControllerSpec
 
   override def logCaptureTargets: Seq[OdsUploadController] = Seq(odsUploadController)
 
-  override val request          = FakeRequest()
+  val fakeReq                   = FakeRequest()
   val l: ListBuffer[SchemeData] = new ListBuffer()
 
   val metaData: JsObject = Json.obj(
@@ -94,7 +94,7 @@ class OdsUploadControllerSpec
   val d: UpscanFileData = UpscanFileData(callbackData, schemeInfo)
 
   def serviceProcessFileReturns(result: Either[ErsException, Int]): Unit =
-    when(mockProcessOdsService.processFile(any(), argEq(empRef))(any(), any(), any()))
+    when(mockProcessOdsService.processFile(any(), argEq(empRef))(using any(), any(), any()))
       .thenReturn(Future.successful(result))
 
   "processOdsFile" must {
@@ -102,14 +102,14 @@ class OdsUploadControllerSpec
     "successfully receive data" in {
       serviceProcessFileReturns(Right(l.size))
 
-      val result = odsUploadController.processOdsFile(empRef).apply(request.withJsonBody(Json.toJson(d)))
+      val result = odsUploadController.processOdsFile(empRef).apply(fakeReq.withJsonBody(Json.toJson(d)))
       status(result) shouldBe OK
     }
 
     "return BAD_REQUEST when an incorrect JSON object is sent" in {
       serviceProcessFileReturns(Right(l.size))
 
-      val result = odsUploadController.processOdsFile(empRef).apply(request.withJsonBody(Json.toJson(metaData)))
+      val result = odsUploadController.processOdsFile(empRef).apply(fakeReq.withJsonBody(Json.toJson(metaData)))
 
       status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe
@@ -122,7 +122,7 @@ class OdsUploadControllerSpec
     }
 
     "return BAD_REQUEST with no JSON body" in {
-      val result = odsUploadController.processOdsFile(empRef).apply(request)
+      val result = odsUploadController.processOdsFile(empRef).apply(fakeReq)
       status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "No JSON body in request"
 
@@ -132,7 +132,7 @@ class OdsUploadControllerSpec
     "return INTERNAL_SERVER_ERROR when a SystemError occurs" in {
       serviceProcessFileReturns(Left(ErsSystemError("System configuration error", "Config failure")))
 
-      val result = odsUploadController.processOdsFile(empRef).apply(request.withJsonBody(Json.toJson(d)))
+      val result = odsUploadController.processOdsFile(empRef).apply(fakeReq.withJsonBody(Json.toJson(d)))
       status(result) shouldBe INTERNAL_SERVER_ERROR
 
       logExistsContaining(
@@ -155,7 +155,7 @@ class OdsUploadControllerSpec
 
       serviceProcessFileReturns(Left(userError))
 
-      val result = odsUploadController.processOdsFile(empRef).apply(request.withJsonBody(Json.toJson(d)))
+      val result = odsUploadController.processOdsFile(empRef).apply(fakeReq.withJsonBody(Json.toJson(d)))
       status(result) shouldBe BAD_REQUEST
 
       val mismatchError = contentAsJson(result).as[SchemeMismatchError]
@@ -169,11 +169,12 @@ class OdsUploadControllerSpec
     "return BAD_REQUEST when a UserValidationException occurs" in {
       val userError = HeaderValidationException("Header error", "Invalid header format")
 
-      when(mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(any(), any[SchemeInfo](), any()))
+      when(
+        mockProcessOdsService.processFile(any[UpscanCallback](), argEq(empRef))(using any(), any[SchemeInfo](), any())
+      )
         .thenReturn(Future.successful(Left(userError)))
 
-      val result: Future[Result] =
-        odsUploadController.processOdsFile(empRef).apply(request.withJsonBody(Json.toJson(d)))
+      val result = odsUploadController.processOdsFile(empRef).apply(fakeReq.withJsonBody(Json.toJson(d)))
 
       status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "Header error"

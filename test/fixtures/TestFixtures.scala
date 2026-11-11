@@ -39,11 +39,11 @@ trait TestFixtures {
     schemeType = "EMI"
   )
 
-  implicit val request: Request[_]          = mock[Request[_]]
-  implicit val headerCarrier: HeaderCarrier = mock[HeaderCarrier]
-  val mockAuditEvents: AuditEvents          = mock[AuditEvents]
+  given request: Request[?]          = mock[Request[?]]
+  given headerCarrier: HeaderCarrier = mock[HeaderCarrier]
+  val mockAuditEvents: AuditEvents   = mock[AuditEvents]
 
-  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
+  given ec: ExecutionContextExecutor = ExecutionContext.global
 
   val empRef: String = "1234/ABCD"
 

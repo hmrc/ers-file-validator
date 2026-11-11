@@ -17,7 +17,7 @@
 package models.upscan
 
 import models.SchemeInfo
-import play.api.libs.json._
+import play.api.libs.json.*
 
 case class UpscanCallback(
   name: String,
@@ -30,27 +30,27 @@ case class UpscanCallback(
 
 object UpscanCallback {
 
-  implicit val upscanCallbackWrites: Writes[UpscanCallback] = Json
+  given upscanCallbackWrites: Writes[UpscanCallback] = Json
     .writes[UpscanCallback]
     .transform((js: JsValue) => js.as[JsObject] + ("_type" -> JsString("UploadedSuccessfully")))
 
-  implicit val upscanCallbackReads: Reads[UpscanCallback] = Json.reads[UpscanCallback]
+  given upscanCallbackReads: Reads[UpscanCallback] = Json.reads[UpscanCallback]
 }
 
 case class UpscanFileData(callbackData: UpscanCallback, schemeInfo: SchemeInfo)
 
 object UpscanFileData {
-  implicit val formatUpscanFileData: OFormat[UpscanFileData] = Json.format[UpscanFileData]
+  given formatUpscanFileData: OFormat[UpscanFileData] = Json.format[UpscanFileData]
 }
 
 case class UpscanCsvFilesList(files: List[UpscanCallback])
 
 object UpscanCsvFilesList {
-  implicit val formatUpscanCsvFilesList: OFormat[UpscanCsvFilesList] = Json.format[UpscanCsvFilesList]
+  given formatUpscanCsvFilesList: OFormat[UpscanCsvFilesList] = Json.format[UpscanCsvFilesList]
 }
 
 case class UpscanCsvFileData(callbackData: List[UpscanCallback], schemeInfo: SchemeInfo)
 
 object UpscanCsvFileData {
-  implicit val formatUpscanCsvFileData: OFormat[UpscanCsvFileData] = Json.format[UpscanCsvFileData]
+  given formatUpscanCsvFileData: OFormat[UpscanCsvFileData] = Json.format[UpscanCsvFileData]
 }

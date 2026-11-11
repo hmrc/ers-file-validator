@@ -16,18 +16,18 @@
 
 package services
 
-import _root_.utils.ErrorResponseMessages._
+import _root_.utils.ErrorResponseMessages.*
 import ch.qos.logback.classic.Level
 import fixtures.{LogCapturePerTest, TestFixtures}
-import models._
+import models.*
 import models.upscan.UpscanCallback
 import org.apache.pekko.util.Timeout
-import org.mockito.ArgumentMatchers.{any, argThat, eq => argEq}
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.{any, argThat, eq as argEq}
+import org.mockito.Mockito.*
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.freespec.AnyFreeSpec
-import org.scalatest.matchers.must.Matchers.{a, convertToAnyMustWrapper}
+import org.scalatest.matchers.must.Matchers.{a, mustBe}
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.mvc.Request
 import play.api.test.Helpers.await
@@ -51,12 +51,12 @@ class ProcessOdsServiceSpec
   val callbackData: UpscanCallback = UpscanCallback("csop.ods", "downloadUrl", Some(1024), Some("ods"), None, None)
 
   def serviceWithReadFileException(ex: Throwable): ProcessOdsService =
-    new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+    new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using ec) {
       override def readFile(downloadUrl: String): InputStream = throw ex
     }
 
   def serviceWithGenerateSchemeDataFailure(failure: ValidatorFailure): ProcessOdsService =
-    new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+    new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using ec) {
       override def generateSchemeData(callbackData: UpscanCallback, schemeVersion: SchemeVersion)(implicit
         schemeInfo: SchemeInfo
       ): Either[ValidatorFailure, ListBuffer[SchemeData]] = Left(failure)
@@ -71,7 +71,7 @@ class ProcessOdsServiceSpec
   }
 
   val processOdsService: ProcessOdsService =
-    new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
+    new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using ec) {
       override val splitSchemes    = false
       override val maxNumberOfRows = 1
 
@@ -84,9 +84,9 @@ class ProcessOdsServiceSpec
     readFileOverride: InputStream
   ): ProcessOdsService =
 
-    new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec) {
-      override val splitSchemes                               = splitSchemesOverride
-      override val maxNumberOfRows                            = maxNumberOfRowsOverride
+    new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using ec) {
+      override val splitSchemes: Boolean                      = splitSchemesOverride
+      override val maxNumberOfRows: Int                       = maxNumberOfRowsOverride
       override def readFile(downloadUrl: String): InputStream = readFileOverride
     }
 
@@ -96,25 +96,27 @@ class ProcessOdsServiceSpec
 
       "must successfully process valid EMI ODS data" in {
         when(
-          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
         ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
-        when(mockSessionService.storeCallbackData(any(), any())(any()))
+        when(mockSessionService.storeCallbackData(any(), any())(using any()))
           .thenReturn(Future.successful(Some(callbackData)))
 
-        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
+        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(using any())).thenReturn(true)
 
         attachLogger(processOdsService)
 
-        val result = await(processOdsService.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result = await(processOdsService.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
         result mustBe Right(1)
 
-        verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier])
+        verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any(), any[String]())(using
+          any[HeaderCarrier]
+        )
 
         verify(mockSessionService, times(1)).storeCallbackData(
           argEq(callbackData),
           argEq(3)
-        )(
+        )(using
           argThat((updatedRequest: Request[_]) =>
             updatedRequest match {
               case req: RequestWithUpdatedSession[_] =>
@@ -125,8 +127,8 @@ class ProcessOdsServiceSpec
           )
         )
 
-        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(any())
-        verify(mockAuditEvents, times(1)).totalRows(any(), argEq(schemeInfo))(any())
+        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(using any())
+        verify(mockAuditEvents, times(1)).totalRows(any(), argEq(schemeInfo))(using any())
 
         logExistsContaining(Level.DEBUG, "2.1 result contains:") mustBe true
       }
@@ -135,23 +137,25 @@ class ProcessOdsServiceSpec
         implicit val hcWithoutSession: HeaderCarrier = HeaderCarrier()
 
         when(
-          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
         ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
-        when(mockSessionService.storeCallbackData(any(), any())(any()))
+        when(mockSessionService.storeCallbackData(any(), any())(using any()))
           .thenReturn(Future.successful(Some(callbackData)))
 
-        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
+        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(using any())).thenReturn(true)
 
-        val result = await(processOdsService.processFile(callbackData, "")(hcWithoutSession, schemeInfo, request))
+        val result = await(processOdsService.processFile(callbackData, "")(using hcWithoutSession, schemeInfo, request))
         result mustBe Right(1)
 
-        verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any(), any[String]())(any[HeaderCarrier])
+        verify(mockErsFileValidatorConnector, times(1)).sendToSubmissions(any(), any[String]())(using
+          any[HeaderCarrier]
+        )
 
         verify(mockSessionService, times(1)).storeCallbackData(
           argEq(callbackData),
           argEq(3)
-        )(
+        )(using
           argThat((updatedRequest: Request[_]) =>
             updatedRequest match {
               case req: RequestWithUpdatedSession[_] =>
@@ -162,16 +166,16 @@ class ProcessOdsServiceSpec
           )
         )
 
-        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(any())
-        verify(mockAuditEvents, times(1)).totalRows(any(), argEq(schemeInfo))(any())
+        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(using any())
+        verify(mockAuditEvents, times(1)).totalRows(any(), argEq(schemeInfo))(using any())
       }
 
       "must return Left when processFile reaches processSchemeData and sendScheme fails" in {
         when(
-          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
         ).thenReturn(Future.successful(Left(new RuntimeException("submission failed during processFile"))))
 
-        val result = await(processOdsService.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result = await(processOdsService.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         result.left.value mustBe ErsFileProcessingException(
           message = "java.lang.RuntimeException: submission failed during processFile",
@@ -181,21 +185,21 @@ class ProcessOdsServiceSpec
 
       "must return FileValidationException when ODS data contains ampersands" in {
         val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplateWithAmpersand)
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         result.left.value mustBe FileValidationException("Must not contain ampersands.", "Must not contain ampersands.")
       }
 
       "must return FileValidatorNoDataException when ODS data is empty" in {
         val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplateWithNoData)
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         result.left.value mustBe FileValidatorNoDataException(dataParserNoData, dataParserNoData)
       }
 
       "must return HeaderValidationException when ODS header is invalid" in {
         val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplateWithIncorrectHeader)
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         result.left.value mustBe HeaderValidationException(
           "Incorrect ERS Template - Header doesn't match",
@@ -205,7 +209,7 @@ class ProcessOdsServiceSpec
 
       "must return FileValidationException when ODS data is invalid" in {
         val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplateWithInvalidData)
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         result.left.value mustBe FileValidationException("Error when validating row", "Error when validating row")
       }
@@ -213,7 +217,7 @@ class ProcessOdsServiceSpec
       "must return UnknownSheetException when uploading SIP V7 ods when useV4andV5Scheme is true" in {
 
         val service = serviceWithOverrides(readFileOverride = SIPV7XMLTestData.getSIPAwardsV7TemplateTestData)
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         val error = result.left.value
         error            mustBe a[UnknownSheetException]
@@ -225,10 +229,10 @@ class ProcessOdsServiceSpec
         when(mockAppConfig.useV4andV5Scheme).thenReturn(false)
 
         when(
-          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
         ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
-        when(mockSessionService.storeCallbackData(any(), any())(any()))
+        when(mockSessionService.storeCallbackData(any(), any())(using any()))
           .thenReturn(Future.successful(Some(callbackData)))
 
         val sipSchemeInfo: SchemeInfo = SchemeInfo(
@@ -239,9 +243,9 @@ class ProcessOdsServiceSpec
           schemeName = "MyScheme",
           schemeType = "SIP"
         )
-        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
+        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(using any())).thenReturn(true)
         val service                   = serviceWithOverrides(readFileOverride = SIPV7XMLTestData.getSIPAwardsV7TemplateTestData)
-        val result                    = await(service.processFile(callbackData, "")(headerCarrier, sipSchemeInfo, request))
+        val result                    = await(service.processFile(callbackData, "")(using headerCarrier, sipSchemeInfo, request))
 
         result mustBe Right(1)
 
@@ -251,7 +255,7 @@ class ProcessOdsServiceSpec
         val service =
           serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplateWithIncorrectSheetName)
 
-        val result = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
         result.left.value mustBe UnknownSheetException(
           "Incorrect ERS Template - Sheet Name isn't as expected",
           "Couldn't find config for given SheetName: EMI40_Adjustments_V4_With_A_Typo"
@@ -260,7 +264,7 @@ class ProcessOdsServiceSpec
 
       "must return SchemeTypeMismatchException when ODS sheet belongs to a different scheme type" in {
         val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplateWithCsopSchemeType)
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         result.left.value mustBe SchemeTypeMismatchException(
           message = "Incorrect ERS Template - Sheet Name isn't as expected",
@@ -276,7 +280,7 @@ class ProcessOdsServiceSpec
 
       "must return ErsFileProcessingException when generateSchemeData returns a ParserFailure" in {
         val service = serviceWithGenerateSchemeDataFailure(ParserFailure)
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         result.left.value mustBe ErsFileProcessingException(
           message = "Failed to retrieve file",
@@ -286,7 +290,7 @@ class ProcessOdsServiceSpec
 
       "must return ErsFileProcessingException when an unexpected Throwable is thrown" in {
         val service = serviceWithReadFileException(new RuntimeException("something unexpected"))
-        val result  = await(service.processFile(callbackData, "")(headerCarrier, schemeInfo, request))
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         result.left.value mustBe ErsFileProcessingException(
           message = "something unexpected",
@@ -318,14 +322,16 @@ class ProcessOdsServiceSpec
 
       "must return 1 and call sendSchemeData once when splitSchemes is set to false in config even if number of records > max number of rows/sub" in {
         when(
-          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
         ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
         when(mockAppConfig.splitLargeSchemes).thenReturn(false)
         when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(50)
 
         val service =
-          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using
+            ec
+          )
 
         attachLogger(service)
 
@@ -334,19 +340,21 @@ class ProcessOdsServiceSpec
         result mustBe Right(1)
 
         verify(mockErsFileValidatorConnector, times(1))
-          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          .sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
 
-        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(any())
+        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(using any())
 
         logExistsContaining(Level.DEBUG, "Sheetdata sending to ers-submission") mustBe true
       }
 
       "must return 1 and call sendSchemeData once when splitSchemes is set to true but the number of records does not exceed max" in {
         val service =
-          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using
+            ec
+          )
 
         when(
-          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
         ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
         when(mockAppConfig.splitLargeSchemes).thenReturn(true)
@@ -358,15 +366,15 @@ class ProcessOdsServiceSpec
         result mustBe Right(1)
 
         verify(mockErsFileValidatorConnector, times(1))
-          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          .sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
 
-        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(any())
+        verify(mockAuditEvents, times(1)).fileValidatorAudit(any(), any())(using any())
       }
 
       "must return 2 slices and call sendSchemeData twice" in {
         when(
           mockErsFileValidatorConnector
-            .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+            .sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
         ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
         when(mockAppConfig.splitLargeSchemes).thenReturn(true)
@@ -374,28 +382,32 @@ class ProcessOdsServiceSpec
         // pass in 100 records, 100/50 = 2 -> call sendScheme twice
 
         val service =
-          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using
+            ec
+          )
 
         val result = await(service.sendScheme(SchemeData(schemeInfo, "", None, oneHundredRecords), ""))
 
         result mustBe Right(2)
 
         verify(mockErsFileValidatorConnector, times(2))
-          .sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          .sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
 
-        verify(mockAuditEvents, times(2)).fileValidatorAudit(any(), any())(any())
+        verify(mockAuditEvents, times(2)).fileValidatorAudit(any(), any())(using any())
       }
 
       "must return 3 slices and call sendSchemeData 3 times" in {
         when(
-          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
         ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
         when(mockAppConfig.splitLargeSchemes).thenReturn(true)
         when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(40)
 
         val service =
-          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using
+            ec
+          )
 
         attachLogger(service)
 
@@ -403,25 +415,27 @@ class ProcessOdsServiceSpec
 
         result mustBe Right(3)
 
-        verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any[SchemeData](), any[String]())(
+        verify(mockErsFileValidatorConnector, times(3)).sendToSubmissions(any[SchemeData](), any[String]())(using
           any[HeaderCarrier]
         )
 
-        verify(mockAuditEvents, times(3)).fileValidatorAudit(any(), any())(any())
+        verify(mockAuditEvents, times(3)).fileValidatorAudit(any(), any())(using any())
 
         logExistsContaining(Level.DEBUG, "The size of the scheme data is ") mustBe true
       }
 
       "must return a Left when sendSchemeData fails with splitSchemes enabled" in {
         when(
-          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
         ).thenReturn(Future.successful(Left(new RuntimeException("submission failed"))))
 
         when(mockAppConfig.splitLargeSchemes).thenReturn(true)
         when(mockAppConfig.maxNumberOfRowsPerSubmission).thenReturn(50)
 
         val service =
-          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig, ec)
+          new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using
+            ec
+          )
 
         attachLogger(service)
 
@@ -432,23 +446,23 @@ class ProcessOdsServiceSpec
           context = "submission failed"
         )
 
-        verify(mockAuditEvents, times(2)).auditRunTimeError(any(), any(), any(), any())(any())
+        verify(mockAuditEvents, times(2)).auditRunTimeError(any(), any(), any(), any())(using any())
 
         logExistsContaining(Level.ERROR, "An exception occurred") mustBe true
       }
 
       "must return ErsFileProcessingException error when the callback data isn't stored correctly" in {
-        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(any())).thenReturn(true)
+        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(using any())).thenReturn(true)
 
         when(
-          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(any[HeaderCarrier])
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
         ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
 
-        when(mockSessionService.storeCallbackData(any[UpscanCallback], any[Int])(any()))
+        when(mockSessionService.storeCallbackData(any[UpscanCallback], any[Int])(using any()))
           .thenReturn(Future.successful(None))
 
         val result = await(
-          processOdsService.processFile(callbackData, "")(headerCarrier, schemeInfo, request)
+          processOdsService.processFile(callbackData, "")(using headerCarrier, schemeInfo, request)
         )
 
         result.left.value mustBe
@@ -474,13 +488,10 @@ class ProcessOdsServiceSpec
         new java.io.ByteArrayInputStream(byteOutputStream.toByteArray)
       }
 
-      val service = new ProcessOdsService(
-        mockAuditEvents,
-        mockErsFileValidatorConnector,
-        mockSessionService,
-        mockAppConfig,
-        ec
-      )
+      val service =
+        new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using
+          ec
+        )
 
       "must return an InputStream when the zip contains content.xml" in {
         val xmlContent = "<document>test</document>".getBytes

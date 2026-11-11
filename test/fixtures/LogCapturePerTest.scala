@@ -23,7 +23,7 @@ import org.scalatest.{BeforeAndAfterEach, TestSuite}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 trait LogCapturePerTest extends BeforeAndAfterEach { this: TestSuite =>
 

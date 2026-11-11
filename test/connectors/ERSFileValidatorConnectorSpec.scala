@@ -20,11 +20,11 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, getReque
 import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import config.ApplicationConfig
-import models._
+import models.*
 import models.upscan.UpscanCallback
 import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito._
+import org.mockito.Mockito.*
 import org.scalatest.EitherValues
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -37,7 +37,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import play.api.{Application, Play}
 import services.audit.AuditEvents
-import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.test.WireMockSupport
 import utils.ErrorResponseMessages.{
@@ -73,7 +73,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
   val httpClient: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
 
   val ersFileValidatorConnector: ERSFileValidatorConnector =
-    spy(new ERSFileValidatorConnector(appConfig, httpClient, auditEvents, ec))
+    spy(new ERSFileValidatorConnector(appConfig, httpClient, auditEvents)(using ec))
 
   val data: ListBuffer[Seq[String]] = ListBuffer[Seq[String]](Seq("abc"))
 

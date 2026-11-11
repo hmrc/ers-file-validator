@@ -21,13 +21,13 @@ import _root_.utils.{ErrorResponseMessages, SchemeResolver, ValidationUtils}
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
 import metrics.Metrics
-import models._
+import models.*
 import models.upscan.UpscanCallback
 import play.api.Logging
 import play.api.mvc.Request
 import uk.gov.hmrc.http.{HeaderCarrier, SessionId}
-import uk.gov.hmrc.validator._
-import uk.gov.hmrc.validator.models._
+import uk.gov.hmrc.validator.*
+import uk.gov.hmrc.validator.models.*
 import uk.gov.hmrc.validator.ods.OdsValidator
 
 import java.io.InputStream
@@ -44,14 +44,14 @@ class ProcessOdsService @Inject() (
   auditEvents: AuditEvents,
   ersConnector: ERSFileValidatorConnector,
   sessionService: SessionCacheService,
-  appConfig: ApplicationConfig,
-  implicit val ec: ExecutionContext
-) extends Metrics with Logging {
+  appConfig: ApplicationConfig
+)(using val ec: ExecutionContext)
+    extends Metrics with Logging {
 
   val splitSchemes: Boolean = appConfig.splitLargeSchemes
   val maxNumberOfRows: Int  = appConfig.maxNumberOfRowsPerSubmission
 
-  def generateSchemeData(callbackData: UpscanCallback, schemeVersion: SchemeVersion)(implicit
+  def generateSchemeData(callbackData: UpscanCallback, schemeVersion: SchemeVersion)(using
     schemeInfo: SchemeInfo
   ): Either[ValidatorFailure, ListBuffer[SchemeData]] =
     OdsValidator
@@ -63,7 +63,7 @@ class ProcessOdsService @Inject() (
       )
       .map(_.map(validDataSheet => SchemeData(schemeInfo, validDataSheet.sheetName, None, validDataSheet.data)))
 
-  def processFile(callbackData: UpscanCallback, empRef: String)(implicit
+  def processFile(callbackData: UpscanCallback, empRef: String)(using
     hc: HeaderCarrier,
     schemeInfo: SchemeInfo,
     request: Request[_]
@@ -99,7 +99,7 @@ class ProcessOdsService @Inject() (
   private def mapValidatorFailure(
     validatorFailure: ValidatorFailure,
     startTime: Long
-  )(implicit schemeInfo: SchemeInfo): ErsException = {
+  )(using schemeInfo: SchemeInfo): ErsException = {
     deliverBESMetrics(startTime)
 
     val logStart = "[ProcessOdsService][mapValidatorFailure]"
@@ -125,7 +125,7 @@ class ProcessOdsService @Inject() (
       case vf: IncorrectHeaderFailure                  =>
         logger.warn(s"$logStart Incorrect header: ${vf.message}, schemeRef: ${schemeInfo.schemeRef}")
         HeaderValidationException(ErrorResponseMessages.dataParserIncorrectHeader, vf.message)
-      case NoDataFailure                               =>
+      case e: NoDataFailure                            =>
         logger.warn(s"$logStart No data in file, schemeRef: ${schemeInfo.schemeRef}")
         FileValidatorNoDataException(ErrorResponseMessages.dataParserNoData, ErrorResponseMessages.dataParserNoData)
       case vf: ValidatorFailure if isSystemFailure(vf) =>
@@ -167,7 +167,7 @@ class ProcessOdsService @Inject() (
     }
   }
 
-  private def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(implicit
+  private def sendSchemeData(ersSchemeData: SchemeData, empRef: String)(using
     hc: HeaderCarrier
   ): Future[Either[ErsException, Unit]] = {
     logger.debug("Sheetdata sending to ers-submission " + ersSchemeData.sheetName)
@@ -182,7 +182,7 @@ class ProcessOdsService @Inject() (
     }
   }
 
-  def sendScheme(schemeData: SchemeData, empRef: String)(implicit
+  def sendScheme(schemeData: SchemeData, empRef: String)(using
     hc: HeaderCarrier
   ): Future[Either[ErsException, Int]] =
 
@@ -218,7 +218,7 @@ class ProcessOdsService @Inject() (
     result: ListBuffer[SchemeData],
     startTime: Long,
     empRef: String
-  )(implicit hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsException, Int]] = {
+  )(using hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsException, Int]] = {
     logger.debug("2.1 result contains: " + result)
     deliverBESMetrics(startTime)
 
@@ -230,7 +230,7 @@ class ProcessOdsService @Inject() (
       .sequence(
         filesWithData.map(schemeData => sendScheme(schemeData, empRef))
       )
-      .flatMap { results: ListBuffer[Either[ErsException, Int]] =>
+      .flatMap { (results: ListBuffer[Either[ErsException, Int]]) =>
         results.find(_.isLeft) match {
           case Some(Left(err)) => Future.successful(Left(err))
           case _               =>
@@ -238,7 +238,7 @@ class ProcessOdsService @Inject() (
             val sessionId   = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
 
             sessionService
-              .storeCallbackData(callbackData, totalRows)(RequestWithUpdatedSession(request, sessionId))
+              .storeCallbackData(callbackData, totalRows)(using RequestWithUpdatedSession(request, sessionId))
               .map {
                 case Some(_) =>
                   logger.info(

@@ -20,7 +20,7 @@ import models.RequestWithUpdatedSession
 import models.upscan.UploadStatus
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc._
+import play.api.mvc.*
 import services.SessionCacheService
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import utils.LogUtils
@@ -33,12 +33,12 @@ class FileValidatorController @Inject() (
   sessionService: SessionCacheService,
   val cc: ControllerComponents,
   val defaultActionBuilder: DefaultActionBuilder
-)(implicit val ec: ExecutionContext)
+)(using val ec: ExecutionContext)
     extends BackendController(cc) with Logging {
 
   def createCallbackRecord(sessionId: String): Action[AnyContent] = Action.async { implicit request =>
     sessionService
-      .createCallbackRecord(RequestWithUpdatedSession(request, sessionId))
+      .createCallbackRecord(using RequestWithUpdatedSession(request, sessionId))
       .map { case (_, sessionId) =>
         Created(Json.toJson(Map("sessionId" -> sessionId)))
       }
@@ -53,7 +53,7 @@ class FileValidatorController @Inject() (
 
   def getCallbackRecord(sessionId: String): Action[AnyContent] = Action.async { implicit request =>
     sessionService
-      .getCallbackRecord(RequestWithUpdatedSession(request, sessionId))
+      .getCallbackRecord(using RequestWithUpdatedSession(request, sessionId))
       .map {
         case Some(record) => Ok(Json.toJson(record))
         case None         => NotFound("No callback record found")
@@ -74,7 +74,7 @@ class FileValidatorController @Inject() (
         .fold(
           valid = uploadStatus =>
             sessionService
-              .updateCallbackRecord(uploadStatus)(RequestWithUpdatedSession(request, sessionId))
+              .updateCallbackRecord(uploadStatus)(using RequestWithUpdatedSession(request, sessionId))
               .map(_ => NoContent)
               .recover { case ex: Exception =>
                 logger.error(

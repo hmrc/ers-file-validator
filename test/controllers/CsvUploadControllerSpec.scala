@@ -82,7 +82,7 @@ class CsvUploadControllerSpec
 
   override def logCaptureTargets: Seq[CsvUploadController] = Seq(csvUploadController)
 
-  override val request = FakeRequest()
+  val fakeReq = FakeRequest()
 
   val metaData: JsObject = Json.obj(
     "scon"                   -> "S1401234Z",
@@ -106,23 +106,23 @@ class CsvUploadControllerSpec
       .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
 
     "successfully receive data" in {
-      when(mockSessionService.storeCallbackData(any(), any())(any()))
+      when(mockSessionService.storeCallbackData(any(), any())(using any()))
         .thenReturn(Future.successful(Some(callbackData)))
 
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(using any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
 
-      val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result = csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson(csvData)))
       status(result) shouldBe OK
     }
 
     "return BAD_REQUEST when a UserValidationException occurs in extractSchemeData" in {
       val userError = FileValidatorNoDataException("No data found", "File contains no data")
 
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(using any()))
         .thenReturn(Future(Left(userError)))
 
-      val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result = csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson(csvData)))
       status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "No data found"
 
@@ -131,24 +131,24 @@ class CsvUploadControllerSpec
     }
 
     "return INTERNAL_SERVER_ERROR when a SystemError occurs" in {
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(using any()))
         .thenReturn(Future.successful(Left(ErsSystemError("System configuration error", "Config failure"))))
 
-      val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result = csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson(csvData)))
       status(result) shouldBe INTERNAL_SERVER_ERROR
 
       logExistsContaining(Level.ERROR, "[CsvUploadController][handleCsvResults] System error:") shouldBe true
     }
 
     "return ACCEPTED when failing to store callback data" in {
-      when(mockSessionService.storeCallbackData(any(), any())(any()))
+      when(mockSessionService.storeCallbackData(any(), any())(using any()))
         .thenReturn(Future.successful(None))
 
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(using any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
 
       val result: Future[Result] =
-        csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+        csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson(csvData)))
       status(result)          shouldBe ACCEPTED
       contentAsString(result) shouldBe "csv callback data storage in sessioncache failed"
 
@@ -161,7 +161,7 @@ class CsvUploadControllerSpec
 
     "return BAD_REQUEST if the body cannot be parsed into an UpscanCsvFileData object" in {
       val result: Future[Result] =
-        csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson("bad json")))
+        csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson("bad json")))
 
       status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe
@@ -180,14 +180,14 @@ class CsvUploadControllerSpec
           List(Future.successful(Right(CsvFileSubmissions("sheet", 1, callbackData))))
         }
 
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(using any()))
         .thenReturn(Future.successful(Right(CsvFileLengthInfo(1, 1))))
 
-      when(mockSessionService.storeCallbackData(any(), any())(any()))
+      when(mockSessionService.storeCallbackData(any(), any())(using any()))
         .thenReturn(Future.successful(Some(callbackData)))
 
       val result =
-        csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+        csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson(csvData)))
 
       status(result) shouldBe OK
 

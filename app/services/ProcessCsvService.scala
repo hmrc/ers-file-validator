@@ -18,7 +18,7 @@ package services
 
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
-import models._
+import models.*
 import models.upscan.UpscanCsvFileData
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.HttpResponse
@@ -41,7 +41,7 @@ class ProcessCsvService @Inject() (
   auditEvents: AuditEvents,
   appConfig: ApplicationConfig,
   ersConnector: ERSFileValidatorConnector
-)(implicit executionContext: ExecutionContext, actorSystem: ActorSystem)
+)(using val executionContext: ExecutionContext, val actorSystem: ActorSystem)
     extends Logging {
 
   private val uploadCsvSizeLimit: Int = appConfig.uploadFileSizeLimit
@@ -155,8 +155,8 @@ class ProcessCsvService @Inject() (
       }
     }
 
-  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[ErsException, CsvFileSubmissions])(
-    implicit hc: HeaderCarrier
+  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[ErsException, CsvFileSubmissions])(using
+    hc: HeaderCarrier
   ): Future[Either[ErsException, CsvFileLengthInfo]] =
     result.fold(
       error => Future.successful(Left(error)),
@@ -182,7 +182,7 @@ class ProcessCsvService @Inject() (
       }
     )
 
-  def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(implicit
+  def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(using
     hc: HeaderCarrier
   ): Future[Option[Throwable]] = {
     logger.debug(

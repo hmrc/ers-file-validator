@@ -16,12 +16,11 @@
 
 package config
 
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-
+import org.scalatest.matchers.must.Matchers.mustBe
 import scala.concurrent.duration.DurationInt
 
 class ApplicationConfigSpec extends AnyWordSpecLike with GuiceOneAppPerSuite {

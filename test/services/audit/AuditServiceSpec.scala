@@ -17,7 +17,7 @@
 package services.audit
 
 import org.mockito.ArgumentMatchers.{any, eq => argEq}
-import org.mockito.Mockito._
+import org.mockito.Mockito.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
@@ -30,16 +30,16 @@ import java.time.ZonedDateTime
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
 
 class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
-  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
+  given ec: ExecutionContextExecutor = ExecutionContext.global
 
   "auditService sendEvent should send the event" in {
 
-    implicit val hc: HeaderCarrier = new HeaderCarrier
+    given hc: HeaderCarrier = new HeaderCarrier
 
     val dateTime           = ZonedDateTime.now()
     val mockAuditConnector = mock[DefaultAuditConnector]
 
-    val auditService = new AuditService(mockAuditConnector, ec) {
+    val auditService = new AuditService(mockAuditConnector)(using ec) {
       override def getDateTime: ZonedDateTime = dateTime
     }
 
@@ -60,7 +60,7 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
   "getDateTime should return a ZonedDateTime representing the current time" in {
     val mockAuditConnector = mock[DefaultAuditConnector]
 
-    val auditService: AuditService = new AuditService(mockAuditConnector, ec) {
+    val auditService: AuditService = new AuditService(mockAuditConnector)(using ec) {
       override def getDateTime: ZonedDateTime = super.getDateTime
     }
 

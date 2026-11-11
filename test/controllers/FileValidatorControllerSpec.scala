@@ -18,7 +18,7 @@ package controllers
 
 import org.apache.pekko.stream.Materializer
 import fixtures.WithMockedAuthActions
-import models.upscan._
+import models.upscan.*
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar
@@ -26,9 +26,9 @@ import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Play
 import play.api.libs.json.{JsObject, JsString, Json}
-import play.api.mvc._
+import play.api.mvc.*
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import services.SessionCacheService
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 
@@ -53,7 +53,7 @@ class FileValidatorControllerSpec
   "FileValidatorController" should {
     "createCallbackRecord" should {
       "create a new callback record and return Created" in {
-        when(mockSessionService.createCallbackRecord(any[Request[_]]))
+        when(mockSessionService.createCallbackRecord(using any[Request[?]]))
           .thenReturn(Future.successful(("key", sessionId)))
 
         val result = controller.createCallbackRecord(sessionId)(request)
@@ -63,7 +63,7 @@ class FileValidatorControllerSpec
       }
 
       "return InternalServerError when exception occurred" in {
-        when(mockSessionService.createCallbackRecord(any[Request[_]]))
+        when(mockSessionService.createCallbackRecord(using any[Request[?]]))
           .thenReturn(Future.failed(new Exception()))
 
         val result = controller.createCallbackRecord(sessionId)(request)
@@ -74,7 +74,7 @@ class FileValidatorControllerSpec
 
     "getCallbackRecord" should {
       "return Ok with record data if found" in {
-        when(mockSessionService.getCallbackRecord(any[Request[_]]))
+        when(mockSessionService.getCallbackRecord(using any[Request[?]]))
           .thenReturn(Future.successful(Some(InProgress)))
 
         val result = controller.getCallbackRecord(sessionId)(request)
@@ -84,7 +84,7 @@ class FileValidatorControllerSpec
       }
 
       "return NotFound when no record is found" in {
-        when(mockSessionService.getCallbackRecord(any[Request[_]]))
+        when(mockSessionService.getCallbackRecord(using any[Request[?]]))
           .thenReturn(Future.successful(None))
 
         val result = controller.getCallbackRecord(sessionId)(request)
@@ -94,7 +94,7 @@ class FileValidatorControllerSpec
       }
 
       "return InternalServerError when exception occurred" in {
-        when(mockSessionService.getCallbackRecord(any[Request[_]]))
+        when(mockSessionService.getCallbackRecord(using any[Request[?]]))
           .thenReturn(Future.failed(new Exception()))
 
         val result = controller.getCallbackRecord(sessionId)(request)
@@ -107,7 +107,7 @@ class FileValidatorControllerSpec
   "updateCallbackRecord" should {
     "update record and return NoContent" in {
       val uploadStatus = Json.toJson(Map("_type" -> JsString("InProgress")))
-      when(mockSessionService.updateCallbackRecord(any[UploadStatus])(any[Request[_]]))
+      when(mockSessionService.updateCallbackRecord(any[UploadStatus])(using any[Request[?]]))
         .thenReturn(Future.successful(("key", sessionId)))
 
       val fakeRequest = request.withBody(uploadStatus)
@@ -128,7 +128,7 @@ class FileValidatorControllerSpec
     "return InternalServerError when exception occurred" in {
       val uploadStatus = Json.toJson(Map("_type" -> JsString("InProgress")))
 
-      when(mockSessionService.updateCallbackRecord(any[UploadStatus])(any[Request[_]]))
+      when(mockSessionService.updateCallbackRecord(any[UploadStatus])(using any[Request[?]]))
         .thenReturn(Future.failed(new Exception()))
 
       val fakeRequest = request.withBody(uploadStatus)
