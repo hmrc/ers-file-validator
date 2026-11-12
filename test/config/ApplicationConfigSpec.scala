@@ -16,16 +16,18 @@
 
 package config
 
+import org.scalatest.matchers.must.Matchers.mustBe
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
-import org.scalatest.matchers.must.Matchers.mustBe
+import play.api.Configuration
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
 import scala.concurrent.duration.DurationInt
 
 class ApplicationConfigSpec extends AnyWordSpecLike with GuiceOneAppPerSuite {
 
   private val appConfig: ApplicationConfig = app.injector.instanceOf[ApplicationConfig]
+  private val baseConfig: Configuration    = app.injector.instanceOf[Configuration]
 
   "ApplicationConfig" when {
 
@@ -41,6 +43,18 @@ class ApplicationConfigSpec extends AnyWordSpecLike with GuiceOneAppPerSuite {
         appConfig.mongoTTLInSeconds            mustBe 3600
         appConfig.useV6andV7Scheme             mustBe false
         appConfig.useV4andV5Scheme             mustBe true
+      }
+
+      "fall back to the default values for useV4andV5Scheme and useV6andV7Scheme when values are missing" in {
+        val stripped = Configuration(
+          baseConfig.underlying
+            .withoutPath("microservice.services.features.scheme-version.use-V4-and-V5")
+            .withoutPath("microservice.services.features.scheme-version.use-V6-and-V7")
+        )
+        val config   = new ApplicationConfig(new ServicesConfig(stripped))
+        config.useV4andV5Scheme mustBe true
+        config.useV6andV7Scheme mustBe false
+
       }
     }
 

@@ -46,14 +46,13 @@ import utils.ErrorResponseMessages.{
 }
 
 import java.io.IOException
-import java.time.ZonedDateTime
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.io.Source
 
 class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with GuiceOneAppPerSuite with WireMockSupport {
 
-  implicit override lazy val app: Application = GuiceApplicationBuilder()
+  override lazy val app: Application = GuiceApplicationBuilder()
     .configure(
       "metrics.enabled"                            -> false,
       "microservice.services.ers-submissions.port" -> wireMockPort,
@@ -61,13 +60,14 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
     )
     .build()
 
+  given Application           = app
   lazy val injector: Injector = app.injector
 
-  implicit def materializer: Materializer = Play.materializer
+  given materializer: Materializer = Play.materializer
 
-  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  implicit val hc: HeaderCarrier            = new HeaderCarrier
-  val appConfig: ApplicationConfig          = app.injector.instanceOf[ApplicationConfig]
+  given ec: ExecutionContextExecutor = ExecutionContext.global
+  given hc: HeaderCarrier            = new HeaderCarrier
+  val appConfig: ApplicationConfig   = app.injector.instanceOf[ApplicationConfig]
 
   val auditEvents: AuditEvents = app.injector.instanceOf[AuditEvents]
   val httpClient: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
@@ -79,7 +79,6 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
 
   val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11000001231275",
-    timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
     taxYear = "2014/F15",
     schemeName = "MyScheme",
@@ -95,7 +94,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
   val mockEncodedSubmissionsUrlV2 = "/ers/v2/1234%2FABCD/submit-presubmission"
   val empRef                      = "1234/ABCD"
 
-  implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+  given request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
   override protected def beforeEach(): Unit = {
     reset(ersFileValidatorConnector)

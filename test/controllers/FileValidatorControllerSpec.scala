@@ -41,8 +41,8 @@ class FileValidatorControllerSpec
   val controllerComponents: ControllerComponents = stubControllerComponents()
   val mockAuthConnector: DefaultAuthConnector    = mock[DefaultAuthConnector]
   val defaultActionBuilder: DefaultActionBuilder = app.injector.instanceOf(classOf[DefaultActionBuilder])
-  implicit val ec: ExecutionContextExecutor      = ExecutionContext.global
-  implicit def materializer: Materializer        = Play.materializer
+  given ec: ExecutionContextExecutor             = ExecutionContext.global
+  given materializer: Materializer               = Play.materializer
 
   val controller = new FileValidatorController(mockSessionService, controllerComponents, defaultActionBuilder)
 

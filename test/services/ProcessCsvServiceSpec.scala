@@ -18,7 +18,7 @@ package services
 
 import ch.qos.logback.classic.Level
 import fixtures.{LogCapturePerTest, TestFixtures}
-import models._
+import models.*
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
@@ -26,8 +26,8 @@ import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.testkit.TestKit
 import org.apache.pekko.util.{ByteString, Timeout}
-import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.*
+import org.mockito.Mockito.*
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
@@ -49,7 +49,7 @@ class ProcessCsvServiceSpec
     with LogCapturePerTest
     with TestFixtures {
 
-  implicit val defaultTimeout: Timeout                      = 5.seconds
+  given defaultTimeout: Timeout                             = 5.seconds
   private def awaitSequence[T](seq: Seq[Future[T]]): Seq[T] = await(Future.sequence(seq))
 
   when(mockAppConfig.uploadFileSizeLimit).thenReturn(10000)
@@ -58,8 +58,8 @@ class ProcessCsvServiceSpec
   private def stubSource(data: String): String => Source[HttpResponse, NotUsed] =
     _ => Source.single(HttpResponse(entity = data))
 
-  type BodyExtractor   = Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _]
-  type EntityExtractor = HttpResponse => Source[ByteString, _]
+  type BodyExtractor   = Source[HttpResponse, ?] => Source[Either[Throwable, List[ByteString]], ?]
+  type EntityExtractor = HttpResponse => Source[ByteString, ?]
 
   private def processCsvService(
     extractBodyOverride: Option[BodyExtractor] = None,
@@ -71,13 +71,13 @@ class ProcessCsvServiceSpec
       override def extractRequestBody: BodyExtractor =
         extractBodyOverride.getOrElse(super.extractRequestBody)
 
-      override def extractEntityData(response: HttpResponse): Source[ByteString, _] =
+      override def extractEntityData(response: HttpResponse): Source[ByteString, ?] =
         extractEntityOverride match {
           case Some(httpResponseToSource) => httpResponseToSource(response)
           case None                       => super.extractEntityData(response)
         }
 
-      override def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(implicit
+      override def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(using
         hc: HeaderCarrier
       ): Future[Option[Throwable]] =
         sendSchemeOverride.getOrElse(super.sendSchemeCsv(ersSchemeData, empRef)(using hc))

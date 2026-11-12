@@ -19,7 +19,7 @@ package controllers
 import ch.qos.logback.classic.Level
 import fixtures.{LogCapturePerTest, TestFixtures, WithMockedAuthActions}
 import metrics.Metrics
-import models._
+import models.*
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
@@ -27,7 +27,7 @@ import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.testkit.TestKit
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito._
+import org.mockito.Mockito.*
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -39,7 +39,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Action, DefaultActionBuilder, Result}
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import services.ProcessCsvService
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 
@@ -61,9 +61,6 @@ class CsvUploadControllerSpec
   val mockProcessCsvService: ProcessCsvService = mock[ProcessCsvService]
   val mockAuthConnector: DefaultAuthConnector  = mock[DefaultAuthConnector]
   val metrics: Metrics                         = mock[Metrics]
-
-  implicit override lazy val app: Application =
-    GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
 
   val defaultActionBuilder: DefaultActionBuilder =
     app.injector.instanceOf(classOf[DefaultActionBuilder])
@@ -172,7 +169,7 @@ class CsvUploadControllerSpec
 
     "streamFile function passed into processFiles should be usable" in {
 
-      var capturedStream: String => org.apache.pekko.stream.scaladsl.Source[HttpResponse, _] = null
+      var capturedStream: String => org.apache.pekko.stream.scaladsl.Source[HttpResponse, ?] = null
 
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
         .thenAnswer { invocation =>

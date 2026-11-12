@@ -32,7 +32,7 @@ class RequestWithUpdatedSessionSpec extends AnyWordSpec with Matchers {
 
       val request = FakeRequest("POST", "/path?x=1")
         .withBody("my-body")
-        .withHeaders(headers.headers: _*)
+        .withHeaders(headers.headers*)
         .withAttrs(attrs)
         .withSession("foo" -> "bar", "sessionId" -> "old-session")
 

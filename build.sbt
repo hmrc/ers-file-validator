@@ -3,9 +3,11 @@ import sbt.*
 import sbt.Keys.*
 import uk.gov.hmrc.*
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
+import uk.gov.hmrc.DefaultBuildSettings.targetJvm
 
 ThisBuild / majorVersion := 2
-ThisBuild / scalaVersion := "3.3.9"
+ThisBuild / scalaVersion := "3.9.0"
+ThisBuild / targetJvm := "jvm-21"
 
 lazy val microservice = Project("ers-file-validator", file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)

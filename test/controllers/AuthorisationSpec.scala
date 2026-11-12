@@ -20,7 +20,7 @@ import ch.qos.logback.classic.Level
 import org.apache.pekko.stream.Materializer
 import controllers.auth.Authorisation
 import fixtures.LogCapturePerTest
-import org.mockito.ArgumentMatchers.{any, eq => argEq}
+import org.mockito.ArgumentMatchers.{any, eq as argEq}
 import org.mockito.Mockito.*
 import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatest.matchers.should.Matchers
@@ -39,6 +39,7 @@ import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.inject.guice.GuiceApplicationBuilder
 import org.scalatest.wordspec.AnyWordSpecLike
+import play.api.Application
 
 class AuthorisationSpec
     extends AnyWordSpecLike
@@ -49,9 +50,9 @@ class AuthorisationSpec
     with GuiceOneAppPerSuite
     with LogCapturePerTest {
 
-  val mockAuthConnector: AuthConnector    = mock[AuthConnector]
-  override lazy val app                   = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
-  implicit def materializer: Materializer = app.materializer
+  val mockAuthConnector: AuthConnector = mock[AuthConnector]
+  override lazy val app: Application   = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
+  given materializer: Materializer     = app.materializer
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -65,10 +66,10 @@ class AuthorisationSpec
       .withDelegatedAuthRule("ers-auth")
 
   class AuthorisationTestController extends Authorisation {
-    implicit val ec: ExecutionContext = ExecutionContext.global
-    val cc: ControllerComponents      = stubControllerComponents()
-    val authConnector: AuthConnector  = mockAuthConnector
-    val defaultActionBuilder          = app.injector.instanceOf(classOf[DefaultActionBuilder])
+    given ec: ExecutionContext                     = ExecutionContext.global
+    val cc: ControllerComponents                   = stubControllerComponents()
+    val authConnector: AuthConnector               = mockAuthConnector
+    val defaultActionBuilder: DefaultActionBuilder = app.injector.instanceOf(classOf[DefaultActionBuilder])
 
     def testAuthorisedAction(empRef: String): Action[AnyContent] = authorisedAction(empRef) { request =>
       Future.successful(Ok("Successful"))
@@ -86,7 +87,7 @@ class AuthorisationSpec
     "return a perform the action if the user is authorised " in {
       when(
         mockAuthConnector
-          .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(any(), any())
+          .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(using any(), any())
       ).thenReturn(Future.successful(()))
 
       val result = authorisationTestController.testAuthorisedAction("123/2343234")(FakeRequest())
@@ -98,7 +99,7 @@ class AuthorisationSpec
   "return a 401 if an Authorisation Exception is experienced" in {
     when(
       mockAuthConnector
-        .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(any(), any())
+        .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(using any(), any())
     ).thenReturn(Future.failed(InsufficientConfidenceLevel("failed")))
 
     attachLogger(authorisationTestController)
@@ -111,7 +112,7 @@ class AuthorisationSpec
   "return a 401 if an NoActiveSession Exception is experienced" in {
     when(
       mockAuthConnector
-        .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(any(), any())
+        .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(using any(), any())
     ).thenReturn(Future.failed(BearerTokenExpired("failed")))
 
     val result = authorisationTestController.testAuthorisedAction("123/2343234")(FakeRequest())
@@ -131,7 +132,7 @@ class AuthorisationSpec
     "return a perform the action if the user is authorised " in {
       when(
         mockAuthConnector
-          .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(any(), any())
+          .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(using any(), any())
       ).thenReturn(Future.successful(()))
 
       val result =
@@ -144,7 +145,7 @@ class AuthorisationSpec
     "return a 401 if an Authorisation Exception is experienced" in {
       when(
         mockAuthConnector
-          .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(any(), any())
+          .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(using any(), any())
       ).thenReturn(Future.failed(InsufficientConfidenceLevel("failed")))
 
       val result =
@@ -156,7 +157,7 @@ class AuthorisationSpec
     "return a 401 if an NoActiveSession Exception is experienced" in {
       when(
         mockAuthConnector
-          .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(any(), any())
+          .authorise(argEq(getEnrolmentPredicate("123", "2343234")), argEq(EmptyRetrieval))(using any(), any())
       ).thenReturn(Future.failed(BearerTokenExpired("failed")))
 
       val result =

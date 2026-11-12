@@ -164,13 +164,13 @@ class CsvUploadController @Inject() (
       }
   }
 
-  private[controllers] def streamFile(downloadUrl: String): Source[HttpResponse, _] =
+  private[controllers] def streamFile(downloadUrl: String): Source[HttpResponse, ?] =
     Source
       .single(HttpRequest(uri = downloadUrl))
       .mapAsync(parallelism = 1)(makeRequest)
 
   private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] =
-    Http()(actorSystem).singleRequest(request)
+    Http()(using actorSystem).singleRequest(request)
 
   private def deliverFileProcessingMetrics(startTime: Long): Unit =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)

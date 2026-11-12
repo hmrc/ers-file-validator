@@ -66,7 +66,7 @@ class ProcessOdsService @Inject() (
   def processFile(callbackData: UpscanCallback, empRef: String)(using
     hc: HeaderCarrier,
     schemeInfo: SchemeInfo,
-    request: Request[_]
+    request: Request[?]
   ): Future[Either[ErsException, Int]] = {
     val startTime = System.currentTimeMillis()
 
@@ -218,7 +218,7 @@ class ProcessOdsService @Inject() (
     result: ListBuffer[SchemeData],
     startTime: Long,
     empRef: String
-  )(using hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[_]): Future[Either[ErsException, Int]] = {
+  )(using hc: HeaderCarrier, schemeInfo: SchemeInfo, request: Request[?]): Future[Either[ErsException, Int]] = {
     logger.debug("2.1 result contains: " + result)
     deliverBESMetrics(startTime)
 

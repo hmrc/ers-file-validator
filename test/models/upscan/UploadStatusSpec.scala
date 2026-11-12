@@ -84,7 +84,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
 
   "UploadStatus.writesUploadStatus" should {
 
-    implicit val writes: Writes[UploadStatus] = UploadStatus.writesUploadStatus
+    given writes: Writes[UploadStatus] = UploadStatus.writesUploadStatus
 
     "write NotStarted" in {
       Json.toJson(NotStarted: UploadStatus) mustBe
@@ -117,7 +117,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
 
   "UploadedSuccessfully format" should {
 
-    implicit val format: Format[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
+    given format: Format[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
 
     "read and write correctly" in {
       val value = UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = Some("text/csv"))

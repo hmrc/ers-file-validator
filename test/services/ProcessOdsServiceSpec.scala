@@ -44,7 +44,7 @@ import scala.concurrent.duration.DurationInt
 class ProcessOdsServiceSpec
     extends AnyFreeSpec with ScalaFutures with MockitoSugar with EitherValues with LogCapturePerTest with TestFixtures {
 
-  implicit val timeout: Timeout = 5.seconds
+  given timeout: Timeout = 5.seconds
 
   when(headerCarrier.sessionId).thenReturn(Some(SessionId("sessionId")))
 
@@ -57,7 +57,7 @@ class ProcessOdsServiceSpec
 
   def serviceWithGenerateSchemeDataFailure(failure: ValidatorFailure): ProcessOdsService =
     new ProcessOdsService(mockAuditEvents, mockErsFileValidatorConnector, mockSessionService, mockAppConfig)(using ec) {
-      override def generateSchemeData(callbackData: UpscanCallback, schemeVersion: SchemeVersion)(implicit
+      override def generateSchemeData(callbackData: UpscanCallback, schemeVersion: SchemeVersion)(using
         schemeInfo: SchemeInfo
       ): Either[ValidatorFailure, ListBuffer[SchemeData]] = Left(failure)
     }
@@ -117,7 +117,7 @@ class ProcessOdsServiceSpec
           argEq(callbackData),
           argEq(3)
         )(using
-          argThat((updatedRequest: Request[_]) =>
+          argThat((updatedRequest: Request[?]) =>
             updatedRequest match {
               case req: RequestWithUpdatedSession[_] =>
                 req.originalRequest == request &&
@@ -134,7 +134,7 @@ class ProcessOdsServiceSpec
       }
 
       "must successfully process valid EMI ODS data when no session id exists in header carrier" in {
-        implicit val hcWithoutSession: HeaderCarrier = HeaderCarrier()
+        given hcWithoutSession: HeaderCarrier = HeaderCarrier()
 
         when(
           mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
@@ -156,7 +156,7 @@ class ProcessOdsServiceSpec
           argEq(callbackData),
           argEq(3)
         )(using
-          argThat((updatedRequest: Request[_]) =>
+          argThat((updatedRequest: Request[?]) =>
             updatedRequest match {
               case req: RequestWithUpdatedSession[_] =>
                 req.originalRequest == request &&

@@ -35,9 +35,9 @@ import scala.concurrent.ExecutionContext
 class ERSFileValidatorSessionRepositorySpec
     extends PlaySpec with ScalaFutures with MockitoSugar with GuiceOneServerPerSuite {
 
-  private val sessionId                         = "sessionId"
-  implicit private val ec: ExecutionContext     = scala.concurrent.ExecutionContext.global
-  implicit private val request: Request[AnyRef] = FakeRequest().withSession("sessionId" -> sessionId)
+  private val sessionId          = "sessionId"
+  given ec: ExecutionContext     = scala.concurrent.ExecutionContext.global
+  given request: Request[AnyRef] = FakeRequest().withSession("sessionId" -> sessionId)
 
   private val fakeAppConfig     = app.injector.instanceOf[ApplicationConfig]
   private val mongoComponent    = app.injector.instanceOf[MongoComponent]

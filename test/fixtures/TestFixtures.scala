@@ -25,14 +25,12 @@ import services.SessionCacheService
 import services.audit.AuditEvents
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.ZonedDateTime
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 trait TestFixtures {
 
   val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11000001231275",
-    timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
     taxYear = "2014/F15",
     schemeName = "MyScheme",

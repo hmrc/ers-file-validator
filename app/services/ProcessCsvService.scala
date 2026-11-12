@@ -46,7 +46,7 @@ class ProcessCsvService @Inject() (
 
   private val uploadCsvSizeLimit: Int = appConfig.uploadFileSizeLimit
 
-  def extractEntityData(response: HttpResponse): Source[ByteString, _] =
+  def extractEntityData(response: HttpResponse): Source[ByteString, ?] =
     response match {
       case HttpResponse(org.apache.pekko.http.scaladsl.model.StatusCodes.OK, _, entity, _) =>
         entity.withSizeLimit(uploadCsvSizeLimit).dataBytes
@@ -63,7 +63,7 @@ class ProcessCsvService @Inject() (
         )
     }
 
-  def extractRequestBody: Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _] =
+  def extractRequestBody: Source[HttpResponse, ?] => Source[Either[Throwable, List[ByteString]], ?] =
     _.flatMapConcat(extractEntityData)
       .via(CsvParsing.lineScanner())
       .via(Flow.fromFunction(Right(_)))
@@ -72,7 +72,7 @@ class ProcessCsvService @Inject() (
       }
 
   private def processSource(
-    source: Source[HttpResponse, _],
+    source: Source[HttpResponse, ?],
     dataEngine: DataEngine
   ): Future[Seq[Either[Throwable, RowValidationResults]]] =
     extractRequestBody(source)
@@ -90,7 +90,7 @@ class ProcessCsvService @Inject() (
   def processFiles(
     callback: UpscanCsvFileData,
     schemeInfo: SchemeInfo,
-    source: String => Source[HttpResponse, _]
+    source: String => Source[HttpResponse, ?]
   ): Seq[Future[Either[ErsException, CsvFileSubmissions]]] =
     callback.callbackData.map { successUpload =>
       val sheetName                                                                            = stripExtension(successUpload.name)
