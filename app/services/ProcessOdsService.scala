@@ -125,7 +125,7 @@ class ProcessOdsService @Inject() (
       case vf: IncorrectHeaderFailure                  =>
         logger.warn(s"$logStart Incorrect header: ${vf.message}, schemeRef: ${schemeInfo.schemeRef}")
         HeaderValidationException(ErrorResponseMessages.dataParserIncorrectHeader, vf.message)
-      case e: NoDataFailure                            =>
+      case _: NoDataFailure                            =>
         logger.warn(s"$logStart No data in file, schemeRef: ${schemeInfo.schemeRef}")
         FileValidatorNoDataException(ErrorResponseMessages.dataParserNoData, ErrorResponseMessages.dataParserNoData)
       case vf: ValidatorFailure if isSystemFailure(vf) =>

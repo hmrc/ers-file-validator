@@ -52,7 +52,7 @@ class AuditServiceSpec extends AnyWordSpecLike with MockitoSugar with Matchers {
       detail = details
     )
 
-    when(mockAuditConnector.sendEvent(argEq(dataEvent))(any[HeaderCarrier](), any[ExecutionContext]()))
+    when(mockAuditConnector.sendEvent(argEq(dataEvent))(using any[HeaderCarrier](), any[ExecutionContext]()))
       .thenReturn(Future.successful(Success))
     auditService.sendEvent("source", details)
   }

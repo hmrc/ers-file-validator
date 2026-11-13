@@ -44,7 +44,7 @@ object UploadStatus {
           case Some(JsString("InProgress"))           => JsSuccess(InProgress)
           case Some(JsString("Failed"))               => JsSuccess(Failed)
           case Some(JsString("UploadedSuccessfully")) =>
-            Json.fromJson[UploadedSuccessfully](jsObject)(UploadedSuccessfully.uploadedSuccessfullyFormat)
+            Json.fromJson[UploadedSuccessfully](jsObject)(using UploadedSuccessfully.uploadedSuccessfullyFormat)
           case Some(value)                            => JsError(s"Unexpected value of _type: $value")
           case None                                   => JsError("Missing _type field")
         }
@@ -59,7 +59,7 @@ object UploadStatus {
         case InProgress              => JsObject(Map("_type" -> JsString("InProgress")))
         case Failed                  => JsObject(Map("_type" -> JsString("Failed")))
         case s: UploadedSuccessfully =>
-          Json.toJson(s)(UploadedSuccessfully.uploadedSuccessfullyFormat).as[JsObject] + ("_type" -> JsString(
+          Json.toJson(s)(using UploadedSuccessfully.uploadedSuccessfullyFormat).as[JsObject] + ("_type" -> JsString(
             "UploadedSuccessfully"
           ))
       }

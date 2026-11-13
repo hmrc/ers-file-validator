@@ -29,11 +29,11 @@ trait WithMockedAuthActions {
   val cc: ControllerComponents                   = stubControllerComponents()
   val action: ActionBuilder[Request, AnyContent] = cc.actionBuilder
 
-  def mockAuthorisedAction(empRef: String)(body: AsyncRequest): Action[AnyContent] = action.async { implicit request =>
+  def mockAuthorisedAction(body: AsyncRequest): Action[AnyContent] = action.async { implicit request =>
     body(request)
   }
 
-  def mockAuthorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
+  def mockAuthorisedActionWithBody(body: AsyncRequestJson): Action[JsValue] =
     action.async(cc.parsers.json) { implicit request =>
       body(request)
     }

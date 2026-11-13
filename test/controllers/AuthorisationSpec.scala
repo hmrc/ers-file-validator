@@ -71,11 +71,11 @@ class AuthorisationSpec
     val authConnector: AuthConnector               = mockAuthConnector
     val defaultActionBuilder: DefaultActionBuilder = app.injector.instanceOf(classOf[DefaultActionBuilder])
 
-    def testAuthorisedAction(empRef: String): Action[AnyContent] = authorisedAction(empRef) { request =>
+    def testAuthorisedAction(empRef: String): Action[AnyContent] = authorisedAction(empRef) { _ =>
       Future.successful(Ok("Successful"))
     }
 
-    def testAuthorisedActionWithBody(empRef: String): Action[JsValue] = authorisedActionWithBody(empRef) { request =>
+    def testAuthorisedActionWithBody(empRef: String): Action[JsValue] = authorisedActionWithBody(empRef) { _ =>
       Future.successful(Ok("Successful"))
     }
 

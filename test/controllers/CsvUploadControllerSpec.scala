@@ -34,6 +34,8 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Action, DefaultActionBuilder, Result}
 import play.api.test.FakeRequest
@@ -59,6 +61,7 @@ class CsvUploadControllerSpec
   val mockProcessCsvService: ProcessCsvService = mock[ProcessCsvService]
   val mockAuthConnector: DefaultAuthConnector  = mock[DefaultAuthConnector]
   val metrics: Metrics                         = mock[Metrics]
+  override lazy val app: Application           = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
 
   val defaultActionBuilder: DefaultActionBuilder =
     app.injector.instanceOf(classOf[DefaultActionBuilder])
@@ -72,7 +75,7 @@ class CsvUploadControllerSpec
     defaultActionBuilder
   ) {
     override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
-      mockAuthorisedActionWithBody(empRef)(body)
+      mockAuthorisedActionWithBody(body)
   }
 
   override def logCaptureTargets: Seq[CsvUploadController] = Seq(csvUploadController)
@@ -221,7 +224,7 @@ class CsvUploadControllerSpec
           defaultActionBuilder
         ) {
       override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
-        mockAuthorisedActionWithBody(empRef)(body)
+        mockAuthorisedActionWithBody(body)
     }
 
     val streamController = spy(new SpyableController)
