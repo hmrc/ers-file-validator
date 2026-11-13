@@ -119,7 +119,7 @@ class ProcessOdsServiceSpec
         )(using
           argThat((updatedRequest: Request[?]) =>
             updatedRequest match {
-              case req: RequestWithUpdatedSession[_] =>
+              case req: RequestWithUpdatedSession[?] =>
                 req.originalRequest == request &&
                 req.sessionId == "sessionId"
               case _                                 => false
@@ -158,7 +158,7 @@ class ProcessOdsServiceSpec
         )(using
           argThat((updatedRequest: Request[?]) =>
             updatedRequest match {
-              case req: RequestWithUpdatedSession[_] =>
+              case req: RequestWithUpdatedSession[?] =>
                 req.originalRequest == request &&
                 req.sessionId.nonEmpty
               case _                                 => false
