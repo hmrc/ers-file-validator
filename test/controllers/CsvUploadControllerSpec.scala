@@ -19,7 +19,7 @@ package controllers
 import ch.qos.logback.classic.Level
 import fixtures.{LogCapturePerTest, TestFixtures, WithMockedAuthActions}
 import metrics.Metrics
-import models._
+import models.*
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
@@ -27,7 +27,7 @@ import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
 import org.apache.pekko.stream.scaladsl.Sink
 import org.apache.pekko.testkit.TestKit
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito._
+import org.mockito.Mockito.*
 import org.scalatest.OptionValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -39,7 +39,7 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsObject, JsValue, Json}
 import play.api.mvc.{Action, DefaultActionBuilder, Result}
 import play.api.test.FakeRequest
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import services.ProcessCsvService
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 
@@ -61,9 +61,7 @@ class CsvUploadControllerSpec
   val mockProcessCsvService: ProcessCsvService = mock[ProcessCsvService]
   val mockAuthConnector: DefaultAuthConnector  = mock[DefaultAuthConnector]
   val metrics: Metrics                         = mock[Metrics]
-
-  implicit override lazy val app: Application =
-    GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
+  override lazy val app: Application           = GuiceApplicationBuilder().configure("metrics.enabled" -> false).build()
 
   val defaultActionBuilder: DefaultActionBuilder =
     app.injector.instanceOf(classOf[DefaultActionBuilder])
@@ -77,12 +75,12 @@ class CsvUploadControllerSpec
     defaultActionBuilder
   ) {
     override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
-      mockAuthorisedActionWithBody(empRef)(body)
+      mockAuthorisedActionWithBody(body)
   }
 
   override def logCaptureTargets: Seq[CsvUploadController] = Seq(csvUploadController)
 
-  override val request = FakeRequest()
+  val fakeReq = FakeRequest()
 
   val metaData: JsObject = Json.obj(
     "scon"                   -> "S1401234Z",
@@ -106,23 +104,23 @@ class CsvUploadControllerSpec
       .thenReturn(List(Future(Right(CsvFileSubmissions("sheetName", 1, callbackData)))))
 
     "successfully receive data" in {
-      when(mockSessionService.storeCallbackData(any(), any())(any()))
+      when(mockSessionService.storeCallbackData(any(), any())(using any()))
         .thenReturn(Future.successful(Some(callbackData)))
 
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(using any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
 
-      val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result = csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson(csvData)))
       status(result) shouldBe OK
     }
 
     "return BAD_REQUEST when a UserValidationException occurs in extractSchemeData" in {
       val userError = FileValidatorNoDataException("No data found", "File contains no data")
 
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(using any()))
         .thenReturn(Future(Left(userError)))
 
-      val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result = csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson(csvData)))
       status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe "No data found"
 
@@ -131,24 +129,24 @@ class CsvUploadControllerSpec
     }
 
     "return INTERNAL_SERVER_ERROR when a SystemError occurs" in {
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(using any()))
         .thenReturn(Future.successful(Left(ErsSystemError("System configuration error", "Config failure"))))
 
-      val result = csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+      val result = csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson(csvData)))
       status(result) shouldBe INTERNAL_SERVER_ERROR
 
       logExistsContaining(Level.ERROR, "[CsvUploadController][handleCsvResults] System error:") shouldBe true
     }
 
     "return ACCEPTED when failing to store callback data" in {
-      when(mockSessionService.storeCallbackData(any(), any())(any()))
+      when(mockSessionService.storeCallbackData(any(), any())(using any()))
         .thenReturn(Future.successful(None))
 
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(using any()))
         .thenReturn(Future(Right(CsvFileLengthInfo(1, 1))))
 
       val result: Future[Result] =
-        csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+        csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson(csvData)))
       status(result)          shouldBe ACCEPTED
       contentAsString(result) shouldBe "csv callback data storage in sessioncache failed"
 
@@ -161,7 +159,7 @@ class CsvUploadControllerSpec
 
     "return BAD_REQUEST if the body cannot be parsed into an UpscanCsvFileData object" in {
       val result: Future[Result] =
-        csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson("bad json")))
+        csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson("bad json")))
 
       status(result)          shouldBe BAD_REQUEST
       contentAsString(result) shouldBe
@@ -172,7 +170,7 @@ class CsvUploadControllerSpec
 
     "streamFile function passed into processFiles should be usable" in {
 
-      var capturedStream: String => org.apache.pekko.stream.scaladsl.Source[HttpResponse, _] = null
+      var capturedStream: String => org.apache.pekko.stream.scaladsl.Source[HttpResponse, ?] = null
 
       when(mockProcessCsvService.processFiles(any[UpscanCsvFileData](), any[SchemeInfo], any()))
         .thenAnswer { invocation =>
@@ -180,14 +178,14 @@ class CsvUploadControllerSpec
           List(Future.successful(Right(CsvFileSubmissions("sheet", 1, callbackData))))
         }
 
-      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(any()))
+      when(mockProcessCsvService.extractSchemeData(any(), any(), any())(using any()))
         .thenReturn(Future.successful(Right(CsvFileLengthInfo(1, 1))))
 
-      when(mockSessionService.storeCallbackData(any(), any())(any()))
+      when(mockSessionService.storeCallbackData(any(), any())(using any()))
         .thenReturn(Future.successful(Some(callbackData)))
 
       val result =
-        csvUploadController.processCsvFile(empRef).apply(request.withBody(Json.toJson(csvData)))
+        csvUploadController.processCsvFile(empRef).apply(fakeReq.withBody(Json.toJson(csvData)))
 
       status(result) shouldBe OK
 
@@ -226,7 +224,7 @@ class CsvUploadControllerSpec
           defaultActionBuilder
         ) {
       override def authorisedActionWithBody(empRef: String)(body: AsyncRequestJson): Action[JsValue] =
-        mockAuthorisedActionWithBody(empRef)(body)
+        mockAuthorisedActionWithBody(body)
     }
 
     val streamController = spy(new SpyableController)

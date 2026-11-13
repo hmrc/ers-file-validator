@@ -3,7 +3,7 @@ import sbt.*
 
 object AppDependencies {
 
-  private val bootstrapVersion = "10.8.0"
+  private val bootstrapVersion = "10.9.0"
   private val pekkoVersion     = "1.0.2"
   private val mongoVersion     = "2.14.0"
 
@@ -14,7 +14,7 @@ object AppDependencies {
     "commons-codec"      % "commons-codec"             % "1.19.0",
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-30"        % mongoVersion,
     "org.apache.pekko"  %% "pekko-connectors-csv"      % pekkoVersion,
-    "uk.gov.hmrc"       %% "ers-file-validator-config" % "2.5.0"
+    "uk.gov.hmrc"       %% "ers-file-validator-config" % "3.0.0"
   )
 
   private val test: Seq[ModuleID] = Seq(

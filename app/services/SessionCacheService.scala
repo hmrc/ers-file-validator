@@ -26,13 +26,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SessionCacheService @Inject() (sessionCache: ERSFileValidatorSessionRepository, implicit val ec: ExecutionContext)
+class SessionCacheService @Inject() (sessionCache: ERSFileValidatorSessionRepository)(using val ec: ExecutionContext)
     extends Logging {
 
   val CALLBACK_DATA_KEY = "callback_data_key"
 
-  def storeCallbackData(data: UpscanCallback, totalRows: Int)(implicit
-    request: Request[_]
+  def storeCallbackData(data: UpscanCallback, totalRows: Int)(using
+    request: Request[?]
   ): Future[Option[UpscanCallback]] = {
     val callbackData = data.copy(noOfRows = Some(totalRows))
 
@@ -47,13 +47,13 @@ class SessionCacheService @Inject() (sessionCache: ERSFileValidatorSessionReposi
       }
   }
 
-  def createCallbackRecord(implicit request: Request[_]): Future[(String, String)] =
+  def createCallbackRecord(using request: Request[?]): Future[(String, String)] =
     sessionCache.putSession[UploadStatus](DataKey(CALLBACK_DATA_KEY), NotStarted)
 
-  def getCallbackRecord(implicit request: Request[_]): Future[Option[UploadStatus]] =
+  def getCallbackRecord(using request: Request[?]): Future[Option[UploadStatus]] =
     sessionCache.getFromSession[UploadStatus](DataKey(CALLBACK_DATA_KEY))
 
-  def updateCallbackRecord(uploadStatus: UploadStatus)(implicit request: Request[_]): Future[(String, String)] =
+  def updateCallbackRecord(uploadStatus: UploadStatus)(using request: Request[?]): Future[(String, String)] =
     sessionCache.putSession[UploadStatus](DataKey(CALLBACK_DATA_KEY), uploadStatus)
 
 }

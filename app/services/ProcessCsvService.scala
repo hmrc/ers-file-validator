@@ -18,7 +18,7 @@ package services
 
 import config.ApplicationConfig
 import connectors.ERSFileValidatorConnector
-import models._
+import models.*
 import models.upscan.UpscanCsvFileData
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.model.HttpResponse
@@ -41,12 +41,12 @@ class ProcessCsvService @Inject() (
   auditEvents: AuditEvents,
   appConfig: ApplicationConfig,
   ersConnector: ERSFileValidatorConnector
-)(implicit executionContext: ExecutionContext, actorSystem: ActorSystem)
+)(using val executionContext: ExecutionContext, val actorSystem: ActorSystem)
     extends Logging {
 
   private val uploadCsvSizeLimit: Int = appConfig.uploadFileSizeLimit
 
-  def extractEntityData(response: HttpResponse): Source[ByteString, _] =
+  def extractEntityData(response: HttpResponse): Source[ByteString, ?] =
     response match {
       case HttpResponse(org.apache.pekko.http.scaladsl.model.StatusCodes.OK, _, entity, _) =>
         entity.withSizeLimit(uploadCsvSizeLimit).dataBytes
@@ -63,7 +63,7 @@ class ProcessCsvService @Inject() (
         )
     }
 
-  def extractRequestBody: Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _] =
+  def extractRequestBody: Source[HttpResponse, ?] => Source[Either[Throwable, List[ByteString]], ?] =
     _.flatMapConcat(extractEntityData)
       .via(CsvParsing.lineScanner())
       .via(Flow.fromFunction(Right(_)))
@@ -72,7 +72,7 @@ class ProcessCsvService @Inject() (
       }
 
   private def processSource(
-    source: Source[HttpResponse, _],
+    source: Source[HttpResponse, ?],
     dataEngine: DataEngine
   ): Future[Seq[Either[Throwable, RowValidationResults]]] =
     extractRequestBody(source)
@@ -90,7 +90,7 @@ class ProcessCsvService @Inject() (
   def processFiles(
     callback: UpscanCsvFileData,
     schemeInfo: SchemeInfo,
-    source: String => Source[HttpResponse, _]
+    source: String => Source[HttpResponse, ?]
   ): Seq[Future[Either[ErsException, CsvFileSubmissions]]] =
     callback.callbackData.map { successUpload =>
       val sheetName                                                                            = stripExtension(successUpload.name)
@@ -155,8 +155,8 @@ class ProcessCsvService @Inject() (
       }
     }
 
-  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[ErsException, CsvFileSubmissions])(
-    implicit hc: HeaderCarrier
+  def extractSchemeData(schemeInfo: SchemeInfo, empRef: String, result: Either[ErsException, CsvFileSubmissions])(using
+    hc: HeaderCarrier
   ): Future[Either[ErsException, CsvFileLengthInfo]] =
     result.fold(
       error => Future.successful(Left(error)),
@@ -182,7 +182,7 @@ class ProcessCsvService @Inject() (
       }
     )
 
-  def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(implicit
+  def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(using
     hc: HeaderCarrier
   ): Future[Option[Throwable]] = {
     logger.debug(

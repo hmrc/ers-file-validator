@@ -16,15 +16,15 @@
 
 package models.upscan
 
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
+import org.scalatest.matchers.must.Matchers.mustBe
 import org.scalatest.wordspec.AnyWordSpecLike
-import play.api.libs.json._
+import play.api.libs.json.*
 
 class UploadStatusSpec extends AnyWordSpecLike {
 
   "UploadStatus.readsUploadStatus" should {
 
-    implicit val reads: Reads[UploadStatus] = UploadStatus.readsUploadStatus
+    given reads: Reads[UploadStatus] = UploadStatus.readsUploadStatus
 
     "read NotStarted" in {
       val json = Json.obj("_type" -> "NotStarted")
@@ -84,7 +84,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
 
   "UploadStatus.writesUploadStatus" should {
 
-    implicit val writes: Writes[UploadStatus] = UploadStatus.writesUploadStatus
+    given writes: Writes[UploadStatus] = UploadStatus.writesUploadStatus
 
     "write NotStarted" in {
       Json.toJson(NotStarted: UploadStatus) mustBe
@@ -117,7 +117,7 @@ class UploadStatusSpec extends AnyWordSpecLike {
 
   "UploadedSuccessfully format" should {
 
-    implicit val format: Format[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
+    given format: Format[UploadedSuccessfully] = Json.format[UploadedSuccessfully]
 
     "read and write correctly" in {
       val value = UploadedSuccessfully("file.csv", "http://example.com/file.csv", Some(12), mimeType = Some("text/csv"))

@@ -20,11 +20,11 @@ import com.github.tomakehurst.wiremock.client.WireMock.{aResponse, get, getReque
 import com.github.tomakehurst.wiremock.http.Fault
 import com.github.tomakehurst.wiremock.stubbing.StubMapping
 import config.ApplicationConfig
-import models._
+import models.*
 import models.upscan.UpscanCallback
 import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito._
+import org.mockito.Mockito.*
 import org.scalatest.EitherValues
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -37,7 +37,7 @@ import play.api.test.FakeRequest
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import play.api.{Application, Play}
 import services.audit.AuditEvents
-import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.test.WireMockSupport
 import utils.ErrorResponseMessages.{
@@ -46,14 +46,13 @@ import utils.ErrorResponseMessages.{
 }
 
 import java.io.IOException
-import java.time.ZonedDateTime
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 import scala.io.Source
 
 class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with GuiceOneAppPerSuite with WireMockSupport {
 
-  implicit override lazy val app: Application = GuiceApplicationBuilder()
+  override lazy val app: Application = GuiceApplicationBuilder()
     .configure(
       "metrics.enabled"                            -> false,
       "microservice.services.ers-submissions.port" -> wireMockPort,
@@ -61,25 +60,25 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
     )
     .build()
 
+  given Application           = app
   lazy val injector: Injector = app.injector
 
-  implicit def materializer: Materializer = Play.materializer
+  given materializer: Materializer = Play.materializer
 
-  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
-  implicit val hc: HeaderCarrier            = new HeaderCarrier
-  val appConfig: ApplicationConfig          = app.injector.instanceOf[ApplicationConfig]
+  given ec: ExecutionContextExecutor = ExecutionContext.global
+  given hc: HeaderCarrier            = new HeaderCarrier
+  val appConfig: ApplicationConfig   = app.injector.instanceOf[ApplicationConfig]
 
   val auditEvents: AuditEvents = app.injector.instanceOf[AuditEvents]
   val httpClient: HttpClientV2 = app.injector.instanceOf[HttpClientV2]
 
   val ersFileValidatorConnector: ERSFileValidatorConnector =
-    spy(new ERSFileValidatorConnector(appConfig, httpClient, auditEvents, ec))
+    spy(new ERSFileValidatorConnector(appConfig, httpClient, auditEvents)(using ec))
 
   val data: ListBuffer[Seq[String]] = ListBuffer[Seq[String]](Seq("abc"))
 
   val schemeInfo: SchemeInfo = SchemeInfo(
     schemeRef = "XA11000001231275",
-    timestamp = ZonedDateTime.now,
     schemeId = "123PA12345678",
     taxYear = "2014/F15",
     schemeName = "MyScheme",
@@ -95,7 +94,7 @@ class ERSFileValidatorConnectorSpec extends PlaySpec with EitherValues with Guic
   val mockEncodedSubmissionsUrlV2 = "/ers/v2/1234%2FABCD/submit-presubmission"
   val empRef                      = "1234/ABCD"
 
-  implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+  given request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
   override protected def beforeEach(): Unit = {
     reset(ersFileValidatorConnector)

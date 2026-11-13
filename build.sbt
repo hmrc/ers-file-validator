@@ -3,9 +3,11 @@ import sbt.*
 import sbt.Keys.*
 import uk.gov.hmrc.*
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin
+import uk.gov.hmrc.DefaultBuildSettings.targetJvm
 
-ThisBuild / majorVersion := 1
-ThisBuild / scalaVersion := "2.13.18"
+ThisBuild / majorVersion := 2
+ThisBuild / scalaVersion := "3.9.0"
+ThisBuild / targetJvm := "jvm-21"
 
 lazy val microservice = Project("ers-file-validator", file("."))
   .enablePlugins(play.sbt.PlayScala, SbtDistributablesPlugin)
@@ -15,7 +17,7 @@ lazy val microservice = Project("ers-file-validator", file("."))
     libraryDependencies ++= AppDependencies(),
     scalacOptions ++= Seq(
       "-feature",
-      "-Wconf:cat=unused-imports&src=routes/.*:s"
+      "-Wconf:msg=unused import&src=routes/.*:s"
     )
   )
   .settings(PlayKeys.playDefaultPort := 9226)

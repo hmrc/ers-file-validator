@@ -17,9 +17,9 @@
 package models
 
 import models.upscan.UpscanCallback
-import org.scalatest.matchers.must.Matchers.convertToAnyMustWrapper
+import org.scalatest.matchers.must.Matchers.mustBe
 import org.scalatest.wordspec.AnyWordSpecLike
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import scala.collection.mutable.ListBuffer

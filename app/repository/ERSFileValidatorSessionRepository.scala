@@ -31,11 +31,11 @@ class ERSFileValidatorSessionRepository @Inject() (
   mongoComponent: MongoComponent,
   appConfig: ApplicationConfig,
   timestampSupport: TimestampSupport
-)(implicit ec: ExecutionContext)
+)(using ec: ExecutionContext)
     extends SessionCacheRepository(
       mongoComponent = mongoComponent,
       collectionName = appConfig.appName,
       ttl = Duration(appConfig.mongoTTLInSeconds, TimeUnit.SECONDS),
       timestampSupport = timestampSupport,
       sessionIdKey = SessionKeys.sessionId
-    )(ec)
+    )(using ec)
