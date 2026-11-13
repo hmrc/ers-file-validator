@@ -16,9 +16,9 @@
 
 package models.upscan
 
+import org.scalatest.matchers.must.Matchers.mustBe
 import org.scalatest.wordspec.AnyWordSpecLike
 import play.api.libs.json.*
-import org.scalatest.matchers.must.Matchers.mustBe
 
 class UploadStatusSpec extends AnyWordSpecLike {
 

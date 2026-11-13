@@ -17,7 +17,7 @@
 package services
 
 import models.upscan.{NotStarted, UploadStatus, UploadedSuccessfully, UpscanCallback}
-import org.mockito.ArgumentMatchers.{any, anyString, eq => meq}
+import org.mockito.ArgumentMatchers.{any, anyString, eq as meq}
 import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar

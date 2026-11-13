@@ -17,10 +17,10 @@
 package fixtures
 
 import play.api.libs.json.JsValue
-import play.api.mvc.{Action, AnyContent, ControllerComponents, Request, Result}
+import play.api.mvc.*
 import play.api.test.Helpers.stubControllerComponents
+
 import scala.concurrent.Future
-import play.api.mvc.ActionBuilder
 
 trait WithMockedAuthActions {
 

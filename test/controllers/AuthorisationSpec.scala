@@ -17,16 +17,19 @@
 package controllers
 
 import ch.qos.logback.classic.Level
-import org.apache.pekko.stream.Materializer
 import controllers.auth.Authorisation
 import fixtures.LogCapturePerTest
+import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.{any, eq as argEq}
 import org.mockito.Mockito.*
-import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpecLike
+import org.scalatest.{BeforeAndAfterEach, OptionValues}
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
 import play.api.http.Status
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.*
 import play.api.mvc.Results.Ok
@@ -37,9 +40,6 @@ import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.inject.guice.GuiceApplicationBuilder
-import org.scalatest.wordspec.AnyWordSpecLike
-import play.api.Application
 
 class AuthorisationSpec
     extends AnyWordSpecLike

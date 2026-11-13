@@ -16,9 +16,9 @@
 
 package controllers
 
-import org.apache.pekko.stream.Materializer
 import fixtures.WithMockedAuthActions
 import models.upscan.*
+import org.apache.pekko.stream.Materializer
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.when
 import org.scalatestplus.mockito.MockitoSugar

@@ -18,7 +18,7 @@ package services
 
 import models.{SchemeData, SchemeInfo}
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.mockito.ArgumentMatchers.{any, eq => argEq}
+import org.mockito.ArgumentMatchers.{any, eq as argEq}
 import org.mockito.Mockito.{times, verify}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
