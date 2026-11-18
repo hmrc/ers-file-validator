@@ -26,13 +26,13 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class AuditService @Inject() (auditConnector: DefaultAuditConnector, implicit val ec: ExecutionContext) {
+class AuditService @Inject() (auditConnector: DefaultAuditConnector)(using val ec: ExecutionContext) {
   val auditSource = "ers-file-validator"
 
-  def sendEvent(transactionName: String, details: Map[String, String])(implicit hc: HeaderCarrier): Unit =
+  def sendEvent(transactionName: String, details: Map[String, String])(using hc: HeaderCarrier): Unit =
     auditConnector.sendEvent(buildEvent(transactionName, details))
 
-  private def buildEvent(transactionName: String, details: Map[String, String])(implicit hc: HeaderCarrier) =
+  private def buildEvent(transactionName: String, details: Map[String, String])(using hc: HeaderCarrier) =
     DataEvent(
       auditSource = auditSource,
       auditType = transactionName,

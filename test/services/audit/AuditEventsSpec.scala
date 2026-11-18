@@ -18,7 +18,7 @@ package services
 
 import models.{SchemeData, SchemeInfo}
 import org.apache.commons.lang3.exception.ExceptionUtils
-import org.mockito.ArgumentMatchers.{any, eq => argEq}
+import org.mockito.ArgumentMatchers.{any, eq as argEq}
 import org.mockito.Mockito.{times, verify}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpecLike
@@ -32,9 +32,9 @@ import scala.collection.mutable.ListBuffer
 
 class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
 
-  implicit var hc: HeaderCarrier     = new HeaderCarrier()
+  given hc: HeaderCarrier            = new HeaderCarrier()
   val mockAuditService: AuditService = mock[AuditService]
-  val dateTime                       = ZonedDateTime.now()
+  val dateTime: ZonedDateTime        = ZonedDateTime.now()
   val schemeInfo                     = new SchemeInfo("schemeRef", dateTime, "schemeID", "taxYear", "schemeName", "schemeType")
   val schemeData                     = new SchemeData(schemeInfo, "sheetName", None, ListBuffer(Seq("")))
 
@@ -59,7 +59,7 @@ class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
     )
 
     auditEvents.auditRunTimeError(runtimeException, "some context info", schemeData.schemeInfo, schemeData.sheetName)
-    verify(mockAuditService, times(1)).sendEvent(argEq("ERSRunTimeError"), argEq(details))(any[HeaderCarrier]())
+    verify(mockAuditService, times(1)).sendEvent(argEq("ERSRunTimeError"), argEq(details))(using any[HeaderCarrier]())
 
   }
 
@@ -85,8 +85,10 @@ class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
       ValidationError(cell2, "error.3", "003", "This entry is larger than the maximum number value allowed.")
     )
 
-    auditEvents.validationErrorAudit(validationErrors, schemeInfo, "sheetName")(hc)
-    verify(mockAuditService, times(1)).sendEvent(argEq("ERSValidationError"), argEq(details))(any[HeaderCarrier]())
+    auditEvents.validationErrorAudit(validationErrors, schemeInfo, "sheetName")(using hc)
+    verify(mockAuditService, times(1)).sendEvent(argEq("ERSValidationError"), argEq(details))(using
+      any[HeaderCarrier]()
+    )
 
   }
 
@@ -101,7 +103,9 @@ class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
       "timestamp"  -> schemeInfo.timestamp.toString
     )
     auditEvents.fileValidatorAudit(schemeInfo, "sheetName")
-    verify(mockAuditService, times(1)).sendEvent(argEq("ERSFileValidatorAudit"), argEq(details))(any[HeaderCarrier]())
+    verify(mockAuditService, times(1)).sendEvent(argEq("ERSFileValidatorAudit"), argEq(details))(using
+      any[HeaderCarrier]()
+    )
 
   }
 
@@ -118,7 +122,9 @@ class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
       "ErrorMessage" -> errorMessage
     )
     auditEvents.fileProcessingErrorAudit(schemeData.schemeInfo, schemeData.sheetName, errorMessage)
-    verify(mockAuditService, times(1)).sendEvent(argEq("ERSFileProcessingError"), argEq(details))(any[HeaderCarrier]())
+    verify(mockAuditService, times(1)).sendEvent(argEq("ERSFileProcessingError"), argEq(details))(using
+      any[HeaderCarrier]()
+    )
   }
 
   "totalRows should audit the number of rows" in {
@@ -133,7 +139,7 @@ class AuditEventsSpec extends AnyWordSpecLike with Matchers with MockitoSugar {
     )
 
     auditEvents.totalRows(5, schemeInfo)
-    verify(mockAuditService, times(1)).sendEvent(argEq("ERStotalRowCount"), argEq(details))(any[HeaderCarrier]())
+    verify(mockAuditService, times(1)).sendEvent(argEq("ERStotalRowCount"), argEq(details))(using any[HeaderCarrier]())
   }
 
 }

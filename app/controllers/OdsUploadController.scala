@@ -18,12 +18,12 @@ package controllers
 
 import controllers.auth.Authorisation
 import metrics.Metrics
-import models._
+import models.*
 import models.scheme.SchemeMismatchError
 import models.upscan.UpscanFileData
 import play.api.Logging
 import play.api.libs.json.Json
-import play.api.mvc._
+import play.api.mvc.*
 import services.ProcessOdsService
 import uk.gov.hmrc.play.bootstrap.auth.DefaultAuthConnector
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -39,7 +39,7 @@ class OdsUploadController @Inject() (
   val authConnector: DefaultAuthConnector,
   val cc: ControllerComponents,
   val defaultActionBuilder: DefaultActionBuilder
-)(implicit val ec: ExecutionContext)
+)(using val ec: ExecutionContext)
     extends BackendController(cc) with Metrics with Authorisation with Logging {
 
   def processOdsFile(empRef: String): Action[AnyContent] = authorisedAction(empRef) {
@@ -54,7 +54,7 @@ class OdsUploadController @Inject() (
             .fold(
               valid = upscanFileData => {
 
-                implicit val schemeInfo: SchemeInfo = upscanFileData.schemeInfo
+                given schemeInfo: SchemeInfo = upscanFileData.schemeInfo
 
                 processOdsService.processFile(upscanFileData.callbackData, empRef).map {
                   case Right(result)             =>
@@ -83,7 +83,7 @@ class OdsUploadController @Inject() (
       }
   }
 
-  private def handleOdsError(error: ErsException)(implicit schemeInfo: SchemeInfo): Result =
+  private def handleOdsError(error: ErsException)(using schemeInfo: SchemeInfo): Result =
 
     error match {
       case schemeError: SchemeTypeMismatchException =>

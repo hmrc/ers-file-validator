@@ -22,11 +22,11 @@ import models.{ErsFileProcessingException, SchemeData, SchemeInfo, SubmissionsSc
 import play.api.Logging
 import play.api.libs.json.Json
 import services.audit.AuditEvents
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
+import uk.gov.hmrc.http.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import utils.ErrorResponseMessages
-
+import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
 import java.io.InputStream
 import java.net.URI
 import java.util.concurrent.TimeUnit
@@ -37,14 +37,14 @@ import scala.concurrent.{ExecutionContext, Future}
 class ERSFileValidatorConnector @Inject() (
   appConfig: ApplicationConfig,
   httpClient: HttpClientV2,
-  auditEvents: AuditEvents,
-  implicit val ec: ExecutionContext
-) extends Metrics with Logging {
+  auditEvents: AuditEvents
+)(using val ec: ExecutionContext)
+    extends Metrics with Logging {
 
   def upscanFileStream(downloadUrl: String): InputStream =
     URI.create(downloadUrl).toURL.openStream()
 
-  def sendToSubmissions(schemeData: SchemeData, empRef: String)(implicit
+  def sendToSubmissions(schemeData: SchemeData, empRef: String)(using
     hc: HeaderCarrier
   ): Future[Either[Throwable, HttpResponse]] = {
     import java.net.URLEncoder
@@ -64,7 +64,7 @@ class ERSFileValidatorConnector @Inject() (
       }
   }
 
-  def sendToSubmissionsNew(submissionsSchemeData: SubmissionsSchemeData, empRef: String)(implicit
+  def sendToSubmissionsNew(submissionsSchemeData: SubmissionsSchemeData, empRef: String)(using
     hc: HeaderCarrier
   ): Future[Either[Throwable, HttpResponse]] = {
 
@@ -87,7 +87,7 @@ class ERSFileValidatorConnector @Inject() (
       }
   }
 
-  def handleException(exception: Throwable, startTime: Long, schemeInfo: SchemeInfo, sheetName: String)(implicit
+  def handleException(exception: Throwable, startTime: Long, schemeInfo: SchemeInfo, sheetName: String)(using
     hc: HeaderCarrier
   ): ErsFileProcessingException = exception match {
     case nf: BadRequestException         =>

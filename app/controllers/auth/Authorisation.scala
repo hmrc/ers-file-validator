@@ -19,7 +19,7 @@ package controllers.auth
 import play.api.Logging
 import play.api.libs.json.JsValue
 import play.api.mvc.Results.Unauthorized
-import play.api.mvc._
+import play.api.mvc.*
 import uk.gov.hmrc.auth.core.{AuthorisationException, AuthorisedFunctions, ConfidenceLevel, Enrolment}
 import uk.gov.hmrc.domain.EmpRef
 import uk.gov.hmrc.http.HeaderCarrier
@@ -29,7 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
 trait Authorisation extends AuthorisedFunctions with Logging {
-  implicit val ec: ExecutionContext
+  given ec: ExecutionContext
   val cc: ControllerComponents
   val defaultActionBuilder: DefaultActionBuilder
   private type AsyncRequest     = Request[AnyContent] => Future[Result]
@@ -37,7 +37,7 @@ trait Authorisation extends AuthorisedFunctions with Logging {
 
   def authorisedAction(slashSeparatedEmpRef: String)(body: AsyncRequest): Action[AnyContent] =
     defaultActionBuilder.async { implicit request =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+      given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       Try(EmpRef.fromIdentifiers(slashSeparatedEmpRef)).toOption
         .map(empRef =>
           authorised(
@@ -66,7 +66,7 @@ trait Authorisation extends AuthorisedFunctions with Logging {
 
   def authorisedActionWithBody(slashSeparatedEmpRef: String)(body: AsyncJsonRequest): Action[JsValue] =
     defaultActionBuilder.async(cc.parsers.json) { implicit request: Request[JsValue] =>
-      implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+      given hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
       Try(EmpRef.fromIdentifiers(slashSeparatedEmpRef)).toOption
         .map(empRef =>
           authorised(

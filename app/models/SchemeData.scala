@@ -17,7 +17,7 @@
 package models
 
 import models.upscan.UpscanCallback
-import play.api.libs.json._
+import play.api.libs.json.*
 
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import scala.collection.mutable.ListBuffer
@@ -30,13 +30,13 @@ case class SchemeData(
 )
 
 object SchemeData {
-  implicit val formatSchemeData: OFormat[SchemeData] = Json.format[SchemeData]
+  given formatSchemeData: OFormat[SchemeData] = Json.format[SchemeData]
 }
 
 case class SubmissionsSchemeData(schemeInfo: SchemeInfo, sheetName: String, data: UpscanCallback, numberOfRows: Int)
 
 object SubmissionsSchemeData {
-  implicit val formatSubmissionsSchemeData: OFormat[SubmissionsSchemeData] = Json.format[SubmissionsSchemeData]
+  given formatSubmissionsSchemeData: OFormat[SubmissionsSchemeData] = Json.format[SubmissionsSchemeData]
 }
 
 case class SchemeInfo(
@@ -50,7 +50,7 @@ case class SchemeInfo(
 
 object SchemeInfo {
 
-  implicit val dateFormatDefault: Format[ZonedDateTime] = new Format[ZonedDateTime] {
+  given dateFormatDefault: Format[ZonedDateTime] = new Format[ZonedDateTime] {
 
     override def reads(json: JsValue): JsResult[ZonedDateTime] = json match {
       case JsNumber(d) => JsSuccess(ZonedDateTime.ofInstant(Instant.ofEpochMilli(d.toLong), ZoneId.of("UTC")))
@@ -60,5 +60,5 @@ object SchemeInfo {
     override def writes(o: ZonedDateTime): JsValue = JsNumber(o.toInstant.toEpochMilli)
   }
 
-  implicit val formatSchemeInfo: OFormat[SchemeInfo] = Json.format[SchemeInfo]
+  given formatSchemeInfo: OFormat[SchemeInfo] = Json.format[SchemeInfo]
 }

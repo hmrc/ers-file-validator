@@ -25,5 +25,5 @@ case class SchemeMismatchError(
 )
 
 object SchemeMismatchError {
-  implicit val format: OFormat[SchemeMismatchError] = Json.format[SchemeMismatchError]
+  given format: OFormat[SchemeMismatchError] = Json.format[SchemeMismatchError]
 }

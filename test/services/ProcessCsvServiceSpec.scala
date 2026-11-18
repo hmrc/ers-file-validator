@@ -18,7 +18,7 @@ package services
 
 import ch.qos.logback.classic.Level
 import fixtures.{LogCapturePerTest, TestFixtures}
-import models._
+import models.*
 import models.upscan.{UpscanCallback, UpscanCsvFileData}
 import org.apache.pekko.NotUsed
 import org.apache.pekko.actor.ActorSystem
@@ -26,8 +26,8 @@ import org.apache.pekko.http.scaladsl.model.{HttpResponse, StatusCodes}
 import org.apache.pekko.stream.scaladsl.{Sink, Source}
 import org.apache.pekko.testkit.TestKit
 import org.apache.pekko.util.{ByteString, Timeout}
-import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.*
+import org.mockito.Mockito.*
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
@@ -49,7 +49,7 @@ class ProcessCsvServiceSpec
     with LogCapturePerTest
     with TestFixtures {
 
-  implicit val defaultTimeout: Timeout                      = 5.seconds
+  given defaultTimeout: Timeout                             = 5.seconds
   private def awaitSequence[T](seq: Seq[Future[T]]): Seq[T] = await(Future.sequence(seq))
 
   when(mockAppConfig.uploadFileSizeLimit).thenReturn(10000)
@@ -58,8 +58,8 @@ class ProcessCsvServiceSpec
   private def stubSource(data: String): String => Source[HttpResponse, NotUsed] =
     _ => Source.single(HttpResponse(entity = data))
 
-  type BodyExtractor   = Source[HttpResponse, _] => Source[Either[Throwable, List[ByteString]], _]
-  type EntityExtractor = HttpResponse => Source[ByteString, _]
+  type BodyExtractor   = Source[HttpResponse, ?] => Source[Either[Throwable, List[ByteString]], ?]
+  type EntityExtractor = HttpResponse => Source[ByteString, ?]
 
   private def processCsvService(
     extractBodyOverride: Option[BodyExtractor] = None,
@@ -71,16 +71,16 @@ class ProcessCsvServiceSpec
       override def extractRequestBody: BodyExtractor =
         extractBodyOverride.getOrElse(super.extractRequestBody)
 
-      override def extractEntityData(response: HttpResponse): Source[ByteString, _] =
+      override def extractEntityData(response: HttpResponse): Source[ByteString, ?] =
         extractEntityOverride match {
           case Some(httpResponseToSource) => httpResponseToSource(response)
           case None                       => super.extractEntityData(response)
         }
 
-      override def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(implicit
+      override def sendSchemeCsv(ersSchemeData: SubmissionsSchemeData, empRef: String)(using
         hc: HeaderCarrier
       ): Future[Option[Throwable]] =
-        sendSchemeOverride.getOrElse(super.sendSchemeCsv(ersSchemeData, empRef)(hc))
+        sendSchemeOverride.getOrElse(super.sendSchemeCsv(ersSchemeData, empRef)(using hc))
     }
 
   val submissionsSchemeData: SubmissionsSchemeData = SubmissionsSchemeData(
@@ -161,8 +161,8 @@ class ProcessCsvServiceSpec
         Left(
           FileValidationException(
             "Found validation errors in CSV",
-            "Error processing CSV file: CSOP_OptionsGranted_V4.csv, errors: column - A, error - 001 : Enter a date that matches the yyyy-mm-dd pattern" +
-              "\ncolumn - B, error - 002 : Must be a whole number and be less than 1,000,000"
+            "Error processing CSV file: CSOP_OptionsGranted_V4.csv, errors: column - A, error - 001 : ers.upload.error.date" +
+              "\ncolumn - B, error - 002 : ers.upload.error.int6"
           )
         )
       )
@@ -256,7 +256,7 @@ class ProcessCsvServiceSpec
           FileValidationException(
             message = "Found validation errors in CSV",
             context = "Error processing CSV file: CSOP_OptionsGranted_V4.csv, errors: column - A, " +
-              "error - 001 : Enter a date that matches the yyyy-mm-dd pattern"
+              "error - 001 : ers.upload.error.date"
           )
         )
       )
@@ -352,10 +352,10 @@ class ProcessCsvServiceSpec
     "return a None if the submission was sent successfully" in {
       when(
         mockErsFileValidatorConnector
-          .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier])
+          .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(using any[HeaderCarrier])
       ).thenReturn(Future.successful(Right(uk.gov.hmrc.http.HttpResponse(StatusCodes.OK.intValue, "aBody"))))
 
-      when(mockAuditEvents.fileValidatorAudit(any[SchemeInfo], any[String])(any[HeaderCarrier]))
+      when(mockAuditEvents.fileValidatorAudit(any[SchemeInfo], any[String])(using any[HeaderCarrier]))
         .thenReturn(true)
 
       val service = processCsvService()
@@ -375,12 +375,12 @@ class ProcessCsvServiceSpec
 
       when(
         mockErsFileValidatorConnector
-          .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(any[HeaderCarrier])
+          .sendToSubmissionsNew(any[SubmissionsSchemeData], any[String])(using any[HeaderCarrier])
       ).thenReturn(Future.successful(Left(new Exception("this failed"))))
 
       doNothing()
         .when(mockAuditEvents)
-        .auditRunTimeError(any[Throwable], any[String], any[SchemeInfo], any[String])(any[HeaderCarrier])
+        .auditRunTimeError(any[Throwable], any[String], any[SchemeInfo], any[String])(using any[HeaderCarrier])
 
       val result = await(processCsvService().sendSchemeCsv(submissionsSchemeData, empRef))
 

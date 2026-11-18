@@ -18,7 +18,7 @@ package controllers
 
 import controllers.auth.Authorisation
 import metrics.Metrics
-import models._
+import models.*
 import models.upscan.UpscanCsvFileData
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.http.scaladsl.Http
@@ -26,7 +26,7 @@ import org.apache.pekko.http.scaladsl.model.{HttpRequest, HttpResponse}
 import org.apache.pekko.stream.scaladsl.Source
 import play.api.Logging
 import play.api.libs.json.JsValue
-import play.api.mvc._
+import play.api.mvc.*
 import services.audit.AuditEvents
 import services.{ProcessCsvService, SessionCacheService}
 import uk.gov.hmrc.http.SessionId
@@ -47,7 +47,7 @@ class CsvUploadController @Inject() (
   val authConnector: DefaultAuthConnector,
   val cc: ControllerComponents,
   val defaultActionBuilder: DefaultActionBuilder
-)(implicit val ec: ExecutionContext, actorSystem: ActorSystem)
+)(using val ec: ExecutionContext, actorSystem: ActorSystem)
     extends BackendController(cc) with Metrics with Authorisation with Logging {
 
   def processCsvFile(empRef: String): Action[JsValue] = authorisedActionWithBody(empRef) {
@@ -75,9 +75,9 @@ class CsvUploadController @Inject() (
     empRef: String,
     upscanCsvFileData: UpscanCsvFileData,
     startTime: Long
-  )(implicit request: Request[JsValue]): Future[Result] = {
+  )(using request: Request[JsValue]): Future[Result] = {
 
-    implicit val schemeInfo: SchemeInfo = upscanCsvFileData.schemeInfo
+    given schemeInfo: SchemeInfo = upscanCsvFileData.schemeInfo
 
     logger.debug("SCHEME TYPE: " + schemeInfo.schemeType)
     deliverFileProcessingMetrics(startTime)
@@ -99,8 +99,8 @@ class CsvUploadController @Inject() (
     res: UpscanCsvFileData,
     startTime: Long,
     allFilesResults: Seq[Either[ErsException, CsvFileLengthInfo]]
-  )(implicit request: Request[JsValue]): Future[Result] = {
-    implicit val schemeInfo: SchemeInfo = res.schemeInfo
+  )(using request: Request[JsValue]): Future[Result] = {
+    given schemeInfo: SchemeInfo = res.schemeInfo
 
     val maybeErrors: Option[ErsException] = allFilesResults.collectFirst { case Left(error) => error }
 
@@ -129,8 +129,8 @@ class CsvUploadController @Inject() (
     res: UpscanCsvFileData,
     results: Seq[CsvFileLengthInfo],
     startTime: Long
-  )(implicit request: Request[JsValue]): Future[Result] = {
-    implicit val schemeInfo: SchemeInfo = res.schemeInfo
+  )(using request: Request[JsValue]): Future[Result] = {
+    given schemeInfo: SchemeInfo = res.schemeInfo
 
     results.foreach(info =>
       logger.info(
@@ -144,7 +144,7 @@ class CsvUploadController @Inject() (
     val sessionId = hc.sessionId.getOrElse(SessionId(UUID.randomUUID().toString)).value
 
     sessionService
-      .storeCallbackData(res.callbackData.head, totalRowCount)(RequestWithUpdatedSession(request, sessionId))
+      .storeCallbackData(res.callbackData.head, totalRowCount)(using RequestWithUpdatedSession(request, sessionId))
       .map {
         case callback if callback.isDefined =>
           val numberOfSlices = results.map(_.noOfSlices).sum
@@ -164,13 +164,13 @@ class CsvUploadController @Inject() (
       }
   }
 
-  private[controllers] def streamFile(downloadUrl: String): Source[HttpResponse, _] =
+  private[controllers] def streamFile(downloadUrl: String): Source[HttpResponse, ?] =
     Source
       .single(HttpRequest(uri = downloadUrl))
       .mapAsync(parallelism = 1)(makeRequest)
 
   private[controllers] def makeRequest(request: HttpRequest): Future[HttpResponse] =
-    Http()(actorSystem).singleRequest(request)
+    Http()(using actorSystem).singleRequest(request)
 
   private def deliverFileProcessingMetrics(startTime: Long): Unit =
     metrics.fileProcessingTimer(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS)

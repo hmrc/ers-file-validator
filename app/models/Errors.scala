@@ -16,7 +16,7 @@
 
 package models
 
-sealed abstract class ErsException(message: String) extends Exception(message) {
+sealed abstract class ErsException(errorMessage: String) extends Exception(errorMessage) {
   def message: String
   def context: String
 }

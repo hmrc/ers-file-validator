@@ -17,8 +17,8 @@
 package services
 
 import models.upscan.{NotStarted, UploadStatus, UploadedSuccessfully, UpscanCallback}
-import org.mockito.ArgumentMatchers.{any, anyString, eq => meq}
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.{any, anyString, eq as meq}
+import org.mockito.Mockito.*
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -29,29 +29,29 @@ import uk.gov.hmrc.http.{HeaderCarrier, SessionKeys}
 import uk.gov.hmrc.mongo.cache.DataKey
 
 import java.util.UUID
-import scala.concurrent.duration._
+import scala.concurrent.duration.*
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.language.postfixOps
 
 class SessionCacheServiceSpec extends PlaySpec with ScalaFutures with MockitoSugar {
 
-  val sessionPair: (String, String)                         = SessionKeys.sessionId -> UUID.randomUUID.toString
-  val mockSessionCache: ERSFileValidatorSessionRepository   = mock[ERSFileValidatorSessionRepository]
-  implicit val ec: ExecutionContextExecutor                 = ExecutionContext.global
-  val sessionService                                        = new SessionCacheService(mockSessionCache, ec)
-  implicit val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-  val hc: HeaderCarrier                                     = HeaderCarrier()
-  val CALLBACK_DATA_KEY                                     = "callback_data_key"
+  val sessionPair: (String, String)                       = SessionKeys.sessionId -> UUID.randomUUID.toString
+  val mockSessionCache: ERSFileValidatorSessionRepository = mock[ERSFileValidatorSessionRepository]
+  given ec: ExecutionContextExecutor                      = ExecutionContext.global
+  val sessionService                                      = new SessionCacheService(mockSessionCache)(using ec)
+  given request: FakeRequest[AnyContentAsEmpty.type]      = FakeRequest()
+  val hc: HeaderCarrier                                   = HeaderCarrier()
+  val CALLBACK_DATA_KEY                                   = "callback_data_key"
 
   "storeCallbackData" must {
     "successfully store attachments callback post data" in {
       val postData: UpscanCallback = UpscanCallback("thefilename", "downloadUrl", Some(1000L))
 
-      when(mockSessionCache.putSession(DataKey(anyString()), any())(any(), any()))
+      when(mockSessionCache.putSession(DataKey(anyString()), any())(using any(), any()))
         .thenReturn(Future.successful(sessionPair))
 
       val result: Option[UpscanCallback] =
-        Await.result(sessionService.storeCallbackData(postData, 1000)(request), 10 seconds)
+        Await.result(sessionService.storeCallbackData(postData, 1000)(using request), 10 seconds)
 
       result.get.length   must be(Some(1000L))
       result.get.noOfRows must be(Some(1000))
@@ -60,24 +60,29 @@ class SessionCacheServiceSpec extends PlaySpec with ScalaFutures with MockitoSug
     "return a None when cache can't be returned" in {
       val postData: UpscanCallback = UpscanCallback("thefilename", "downloadUrl", Some(1000L))
 
-      when(mockSessionCache.putSession(DataKey(anyString()), any())(any(), any()))
+      when(mockSessionCache.putSession(DataKey(anyString()), any())(using any(), any()))
         .thenReturn(Future.failed(new Exception("")))
 
       val result: Option[UpscanCallback] =
-        Await.result(sessionService.storeCallbackData(postData, 1000)(request), 10 seconds)
+        Await.result(sessionService.storeCallbackData(postData, 1000)(using request), 10 seconds)
       result mustBe None
     }
   }
 
   "createCallbackRecord" must {
     "successfully store a NotStarted status in the session cache" in {
-      when(mockSessionCache.putSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)), meq(NotStarted))(any(), any()))
+      when(
+        mockSessionCache.putSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)), meq(NotStarted))(using any(), any())
+      )
         .thenReturn(Future.successful(sessionPair))
 
-      val result: (String, String) = Await.result(sessionService.createCallbackRecord(request), 10 seconds)
+      val result: (String, String) = Await.result(sessionService.createCallbackRecord(using request), 10 seconds)
 
       result mustBe sessionPair
-      verify(mockSessionCache).putSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)), meq(NotStarted))(any(), any())
+      verify(mockSessionCache).putSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)), meq(NotStarted))(using
+        any(),
+        any()
+      )
     }
   }
 
@@ -85,13 +90,13 @@ class SessionCacheServiceSpec extends PlaySpec with ScalaFutures with MockitoSug
     "successfully retrieve the stored UploadStatus" in {
       val expectedStatus: UploadStatus = NotStarted
 
-      when(mockSessionCache.getFromSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)))(any(), any()))
+      when(mockSessionCache.getFromSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)))(using any(), any()))
         .thenReturn(Future.successful(Some(expectedStatus)))
 
-      val result: Option[UploadStatus] = Await.result(sessionService.getCallbackRecord(request), 10 seconds)
+      val result: Option[UploadStatus] = Await.result(sessionService.getCallbackRecord(using request), 10 seconds)
 
       result mustBe Some(expectedStatus)
-      verify(mockSessionCache).getFromSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)))(any(), any())
+      verify(mockSessionCache).getFromSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)))(using any(), any())
     }
   }
 
@@ -99,13 +104,19 @@ class SessionCacheServiceSpec extends PlaySpec with ScalaFutures with MockitoSug
     "successfully update the UploadStatus in the session cache" in {
       val newStatus: UploadStatus = UploadedSuccessfully("fileId", "downloadUrl", Some(1), mimeType = None)
 
-      when(mockSessionCache.putSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)), meq(newStatus))(any(), any()))
+      when(
+        mockSessionCache.putSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)), meq(newStatus))(using any(), any())
+      )
         .thenReturn(Future.successful(sessionPair))
 
-      val result: (String, String) = Await.result(sessionService.updateCallbackRecord(newStatus)(request), 10 seconds)
+      val result: (String, String) =
+        Await.result(sessionService.updateCallbackRecord(newStatus)(using request), 10 seconds)
 
       result mustBe sessionPair
-      verify(mockSessionCache).putSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)), meq(newStatus))(any(), any())
+      verify(mockSessionCache).putSession[UploadStatus](DataKey(meq(CALLBACK_DATA_KEY)), meq(newStatus))(using
+        any(),
+        any()
+      )
     }
   }
 
