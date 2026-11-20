@@ -190,6 +190,41 @@ class ProcessOdsServiceSpec
         result.left.value mustBe FileValidationException("Must not contain ampersands.", "Must not contain ampersands.")
       }
 
+      "must return UnknownSheetException when uploading EMI V7 ods when useV4andV5Scheme is true" in {
+
+        val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplates)
+        val result = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
+
+        val error = result.left.value
+        error mustBe a[UnknownSheetException]
+        error.getMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+      }
+
+      "must successfully process valid EMI V7 ODS data when useV6andV7Scheme is true" in {
+        when(mockAppConfig.useV6andV7Scheme).thenReturn(true)
+        when(mockAppConfig.useV4andV5Scheme).thenReturn(false)
+
+        when(
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
+        ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+
+        when(mockSessionService.storeCallbackData(any(), any())(using any()))
+          .thenReturn(Future.successful(Some(callbackData)))
+
+
+        val schemeInfo: SchemeInfo = SchemeInfo(
+          schemeRef = "XA11000001231275",
+          schemeId = "123PA12345678",
+          taxYear = "2023/F24",
+          schemeName = "MyScheme",
+          schemeType = "EMI"
+        )
+        when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(using any())).thenReturn(true)
+        val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplates)
+        val result = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
+
+        result mustBe Right(1)
+      }
       "must return FileValidatorNoDataException when ODS data is empty" in {
         val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplateWithNoData)
         val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
