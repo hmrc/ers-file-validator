@@ -192,11 +192,11 @@ class ProcessOdsServiceSpec
 
       "must return UnknownSheetException when uploading EMI V7 ods when useV4andV5Scheme is true" in {
 
-        val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplates)
-        val result = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
+        val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIRLCTemplatesV7)
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         val error = result.left.value
-        error mustBe a[UnknownSheetException]
+        error            mustBe a[UnknownSheetException]
         error.getMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
       }
 
@@ -211,7 +211,6 @@ class ProcessOdsServiceSpec
         when(mockSessionService.storeCallbackData(any(), any())(using any()))
           .thenReturn(Future.successful(Some(callbackData)))
 
-
         val schemeInfo: SchemeInfo = SchemeInfo(
           schemeRef = "XA11000001231275",
           schemeId = "123PA12345678",
@@ -219,9 +218,10 @@ class ProcessOdsServiceSpec
           schemeName = "MyScheme",
           schemeType = "EMI"
         )
+        
         when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(using any())).thenReturn(true)
-        val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplates)
-        val result = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
+        val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIRLCTemplatesV7)
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         result mustBe Right(1)
       }
