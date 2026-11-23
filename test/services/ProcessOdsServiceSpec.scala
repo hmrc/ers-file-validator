@@ -218,7 +218,7 @@ class ProcessOdsServiceSpec
           schemeName = "MyScheme",
           schemeType = "EMI"
         )
-        
+
         when(mockAuditEvents.totalRows(any(), argEq(schemeInfo))(using any())).thenReturn(true)
         val service = serviceWithOverrides(readFileOverride = XMLTestData.getEMIRLCTemplatesV7)
         val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
