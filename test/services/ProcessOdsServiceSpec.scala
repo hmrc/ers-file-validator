@@ -254,10 +254,10 @@ class ProcessOdsServiceSpec
       "must return UnknownSheetException when uploading SAYE V7 ods when useV4andV5Scheme is true" in {
 
         val service = serviceWithOverrides(readFileOverride = SAYEV7XMLTestData.getSayeGrantedV7TemplateTestData)
-        val result = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
+        val result  = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
 
         val error = result.left.value
-        error mustBe a[UnknownSheetException]
+        error            mustBe a[UnknownSheetException]
         error.getMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
       }
 
@@ -281,8 +281,8 @@ class ProcessOdsServiceSpec
           schemeType = "SAYE"
         )
         when(mockAuditEvents.totalRows(any(), argEq(sayeSchemeInfo))(using any())).thenReturn(true)
-        val service = serviceWithOverrides(readFileOverride = SAYEV7XMLTestData.getSayeGrantedV7TemplateTestData)
-        val result = await(service.processFile(callbackData, "")(using headerCarrier, sayeSchemeInfo, request))
+        val service                    = serviceWithOverrides(readFileOverride = SAYEV7XMLTestData.getSayeGrantedV7TemplateTestData)
+        val result                     = await(service.processFile(callbackData, "")(using headerCarrier, sayeSchemeInfo, request))
         result mustBe Right(1)
 
       }

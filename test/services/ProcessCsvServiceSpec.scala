@@ -31,7 +31,6 @@ import org.mockito.Mockito.*
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
-import org.scalatest.matchers.should.Matchers.should
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.test.Helpers.await
@@ -129,14 +128,14 @@ class ProcessCsvServiceSpec
         schemeName = "MyScheme",
         schemeType = "SAYE"
       )
-      val upscanCallback = UpscanCallback("SAYE_Granted_V7.csv", "no", noOfRows = Some(1))
-      val callback = UpscanCsvFileData(List(upscanCallback), sayeSchemeInfo)
-      val data = "2016-01-02,123456,100.12,10.1234,11.1234,no,yes,aa12345678"
+      val upscanCallback             = UpscanCallback("SAYE_Granted_V7.csv", "no", noOfRows = Some(1))
+      val callback                   = UpscanCsvFileData(List(upscanCallback), sayeSchemeInfo)
+      val data                       = "2016-01-02,123456,100.12,10.1234,11.1234,no,yes,aa12345678"
 
       val results = awaitSequence(
         processCsvService().processFiles(callback, sayeSchemeInfo, stubSource(data))
       )
-      results.size mustBe 1
+      results.size                    mustBe 1
       results.head.left.value.message mustBe "Sheet name: SAYE_Granted_V7 not found for selected scheme version: V4"
     }
 
@@ -151,9 +150,9 @@ class ProcessCsvServiceSpec
         schemeName = "MyScheme",
         schemeType = "SAYE"
       )
-      
+
       val upscanCallback = UpscanCallback("SAYE_Granted_V7", "no", noOfRows = Some(1))
-      val callback = UpscanCsvFileData(List(upscanCallback), sayeSchemeInfo)
+      val callback       = UpscanCsvFileData(List(upscanCallback), sayeSchemeInfo)
 
       val results = awaitSequence(
         processCsvService().processFiles(callback, sayeSchemeInfo, stubSource(validData))
