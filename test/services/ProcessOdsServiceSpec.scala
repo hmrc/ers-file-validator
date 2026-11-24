@@ -251,6 +251,42 @@ class ProcessOdsServiceSpec
 
       }
 
+      "must return UnknownSheetException when uploading SAYE V7 ods when useV4andV5Scheme is true" in {
+
+        val service = serviceWithOverrides(readFileOverride = SAYEV7XMLTestData.getSayeGrantedV7TemplateTestData)
+        val result = await(service.processFile(callbackData, "")(using headerCarrier, schemeInfo, request))
+
+        val error = result.left.value
+        error mustBe a[UnknownSheetException]
+        error.getMessage mustBe "Incorrect ERS Template - Sheet Name isn't as expected"
+      }
+
+      "must successfully process valid SAYE ODS data when useV6andV7Scheme is true" in {
+        when(mockAppConfig.useV6andV7Scheme).thenReturn(true)
+        when(mockAppConfig.useV4andV5Scheme).thenReturn(false)
+
+        when(
+          mockErsFileValidatorConnector.sendToSubmissions(any[SchemeData](), any[String]())(using any[HeaderCarrier])
+        ).thenReturn(Future.successful(Right(HttpResponse(200, ""))))
+
+        when(mockSessionService.storeCallbackData(any(), any())(using any()))
+          .thenReturn(Future.successful(Some(callbackData)))
+
+        val sayeSchemeInfo: SchemeInfo = SchemeInfo(
+          schemeRef = "XA11000001231275",
+          timestamp = ZonedDateTime.now,
+          schemeId = "123PA12345678",
+          taxYear = "2014/F15",
+          schemeName = "MyScheme",
+          schemeType = "SAYE"
+        )
+        when(mockAuditEvents.totalRows(any(), argEq(sayeSchemeInfo))(using any())).thenReturn(true)
+        val service = serviceWithOverrides(readFileOverride = SAYEV7XMLTestData.getSayeGrantedV7TemplateTestData)
+        val result = await(service.processFile(callbackData, "")(using headerCarrier, sayeSchemeInfo, request))
+        result mustBe Right(1)
+
+      }
+
       "must return UnknownSheetException when ODS sheet name is unknown" in {
         val service =
           serviceWithOverrides(readFileOverride = XMLTestData.getEMIAdjustmentsTemplateWithIncorrectSheetName)

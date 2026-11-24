@@ -31,6 +31,7 @@ import org.mockito.Mockito.*
 import org.scalatest.EitherValues
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.must.Matchers
+import org.scalatest.matchers.should.Matchers.should
 import org.scalatest.wordspec.AnyWordSpecLike
 import org.scalatestplus.mockito.MockitoSugar
 import play.api.test.Helpers.await
@@ -118,6 +119,47 @@ class ProcessCsvServiceSpec
       )
 
       results mustBe Seq(Right(CsvFileSubmissions("CSOP_OptionsGranted_V4", 1, upscanCallback)))
+    }
+
+    "return ErsSystemError - not found for selected scheme version when user uploads V7 file when useV4andV5Scheme is true" in {
+      val sayeSchemeInfo: SchemeInfo = SchemeInfo(
+        schemeRef = "XA11000001231275",
+        schemeId = "123PA12345678",
+        taxYear = "2014/F15",
+        schemeName = "MyScheme",
+        schemeType = "SAYE"
+      )
+      val upscanCallback = UpscanCallback("SAYE_Granted_V7.csv", "no", noOfRows = Some(1))
+      val callback = UpscanCsvFileData(List(upscanCallback), sayeSchemeInfo)
+      val data = "2016-01-02,123456,100.12,10.1234,11.1234,no,yes,aa12345678"
+
+      val results = awaitSequence(
+        processCsvService().processFiles(callback, sayeSchemeInfo, stubSource(data))
+      )
+      results.size mustBe 1
+      results.head.left.value.message mustBe "Sheet name: SAYE_Granted_V7 not found for selected scheme version: V4"
+    }
+
+    "return success response for V7 file when useV6andV7Scheme is true if all rows are valid" in {
+      when(mockAppConfig.useV6andV7Scheme).thenReturn(true)
+      when(mockAppConfig.useV4andV5Scheme).thenReturn(false)
+
+      val sayeSchemeInfo: SchemeInfo = SchemeInfo(
+        schemeRef = "XA11000001231275",
+        schemeId = "123PA12345678",
+        taxYear = "2014/F15",
+        schemeName = "MyScheme",
+        schemeType = "SAYE"
+      )
+      
+      val upscanCallback = UpscanCallback("SAYE_Granted_V7", "no", noOfRows = Some(1))
+      val callback = UpscanCsvFileData(List(upscanCallback), sayeSchemeInfo)
+
+      val results = awaitSequence(
+        processCsvService().processFiles(callback, sayeSchemeInfo, stubSource(validData))
+      )
+
+      results mustBe Seq(Right(CsvFileSubmissions("SAYE_Granted_V7", 3, upscanCallback)))
     }
 
     "return a user validation error when file is empty" in {
