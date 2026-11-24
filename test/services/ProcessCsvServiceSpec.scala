@@ -162,6 +162,8 @@ class ProcessCsvServiceSpec
     }
 
     "return a user validation error when file is empty" in {
+      when(mockAppConfig.useV4andV5Scheme).thenReturn(true)
+
       val callback = UpscanCsvFileData(
         List(UpscanCallback("CSOP_OptionsGranted_V4.csv", "no", noOfRows = Some(1))),
         schemeInfo
