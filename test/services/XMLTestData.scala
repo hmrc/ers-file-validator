@@ -125,4 +125,50 @@ object XMLTestData {
     new ByteArrayInputStream(inputXml.getBytes("utf-8"))
   }
 
+  val emiReplacedV7SheetName = "EMI40_Replaced_V7"
+
+  val emiReplacedV7Row1: Elem =
+    <table:table-row table:style-name='ro6'>
+      <table:table-cell table:style-name='ce1' calcext:value-type='string'>
+        <text:p>Enterprise Management Incentives (EMI) annual return template - Enter replacement of options</text:p>
+      </table:table-cell> <table:table-cell table:style-name='ce6' table:number-columns-repeated='16'></table:table-cell> <table:table-cell table:style-name='ce15' table:number-columns-repeated='20'></table:table-cell> <table:table-cell table:number-columns-repeated='987'></table:table-cell>
+    </table:table-row>
+
+  val emiReplacedV7Row2: Elem =
+    <table:table-row table:style-name='ro7'>
+      <table:table-cell table:style-name='ce24' calcext:value-type='string'>
+        <text:p>Use this worksheet to tell HMRC about options replaced because of a company re-organisation in the tax year.</text:p>
+      </table:table-cell> <table:table-cell table:style-name='ce24' table:number-columns-repeated='11'></table:table-cell> <table:table-cell table:style-name='ce8' table:number-columns-repeated='3'></table:table-cell> <table:table-cell table:style-name='ce9' table:number-columns-repeated='22'></table:table-cell> <table:table-cell table:number-columns-repeated='987'></table:table-cell>
+    </table:table-row>
+
+  val emiReplacedV7Row3: Elem =
+    <table:table-row table:style-name='ro8'>
+      <table:table-cell table:style-name='ce25' calcext:value-type='string'>
+        <text:p>
+          <text:a xlink:href='https://www.gov.uk/government/publications/enterprise-management-incentives-end-of-year-template' xlink:type='simple'>Check the notes and guidance for completing the end of year return for Enterprise Management Incentives schemes on GOV.UK</text:a>
+        </text:p>
+      </table:table-cell> <table:table-cell table:style-name='ce26'></table:table-cell> <table:table-cell table:style-name='ce8' table:number-columns-repeated='3'></table:table-cell> <table:table-cell table:style-name='ce9'></table:table-cell> <table:table-cell table:style-name='ce53'></table:table-cell> <table:table-cell table:style-name='ce18'></table:table-cell> <table:table-cell table:style-name='ce13' table:content-validation-name='val2' table:number-columns-repeated='7'></table:table-cell> <table:table-cell table:style-name='ce53' table:content-validation-name='val2'></table:table-cell> <table:table-cell table:style-name='ce53'></table:table-cell> <table:table-cell table:style-name='ce9' table:number-columns-repeated='20'></table:table-cell> <table:table-cell table:number-columns-repeated='987'></table:table-cell>
+    </table:table-row>
+
+  val emiReplacedV7Row4: Elem =
+    <table:table-row table:style-name='ro9'><table:table-cell table:style-name='ce10' calcext:value-type='string'><text:p>1. Date of grant of old option.</text:p> <text:p></text:p> <text:p>Enter the date in the correct format.</text:p> <text:p></text:p> <text:p>For example, 2023-10-31</text:p></table:table-cell><table:table-cell table:style-name='ce10' calcext:value-type='string'><text:p>2. Date of grant of new option.</text:p> <text:p></text:p> <text:p>Enter the date in the correct format.</text:p> <text:p></text:p> <text:p>For example, 2023-10-31</text:p></table:table-cell><table:table-cell table:style-name='ce4' calcext:value-type='string'><text:p>3. Employee first name.</text:p></table:table-cell><table:table-cell table:style-name='ce4' calcext:value-type='string'><text:p>4. Employee second name (optional).</text:p> <text:p></text:p></table:table-cell><table:table-cell table:style-name='ce4' calcext:value-type='string'><text:p>5. Employee last name.</text:p></table:table-cell><table:table-cell table:style-name='ce17' calcext:value-type='string'><text:p>6. National Insurance number.</text:p> <text:p></text:p> <text:p>Enter in the correct format.</text:p> <text:p></text:p> <text:p>For example, QQ123456C</text:p> <text:p></text:p></table:table-cell><table:table-cell table:style-name='ce17' calcext:value-type='string'><text:p>7. PAYE reference of employing company.</text:p></table:table-cell><table:table-cell table:style-name='ce19' calcext:value-type='string'><text:p>8. Actual market value of original shares at the date the option(s) were replaced.</text:p> <text:p></text:p> <text:p>Enter the value in pounds to 4 decimal places.</text:p> <text:p></text:p> <text:p>For example, 10.1234</text:p></table:table-cell><table:table-cell table:style-name='ce4' calcext:value-type='string'><text:p>9. Name of the company whose shares are the subject of the new option.</text:p></table:table-cell><table:table-cell table:style-name='ce27' calcext:value-type='string'><text:p>10. Company address line 1.</text:p></table:table-cell><table:table-cell table:style-name='ce27' calcext:value-type='string'><text:p>11. Company address line 2.</text:p></table:table-cell><table:table-cell table:style-name='ce27' calcext:value-type='string'><text:p>12. Company address line 3.</text:p></table:table-cell><table:table-cell table:style-name='ce27' calcext:value-type='string'><text:p>13. Company address line 4.</text:p></table:table-cell><table:table-cell table:style-name='ce27' calcext:value-type='string'><text:p>14. Country.</text:p></table:table-cell><table:table-cell table:style-name='ce27' calcext:value-type='string'><text:p>15. Postcode.</text:p></table:table-cell><table:table-cell table:style-name='ce27' calcext:value-type='string'><text:p>16. Corporation Tax reference</text:p> <text:p>(Unique Taxpayer Reference).</text:p></table:table-cell><table:table-cell table:style-name='ce27' calcext:value-type='string'><text:p>17. Company Reference Number (CRN).</text:p> <text:p></text:p> <text:p></text:p></table:table-cell><table:table-cell table:style-name='ce15' table:number-columns-repeated='20'></table:table-cell><table:table-cell table:number-columns-repeated='987'></table:table-cell></table:table-row>
+
+  val emiReplacedV7Row5: Elem =
+    <table:table-row table:style-name='ro4'><table:table-cell office:date-value='2015-12-09' table:style-name='ce11' calcext:value-type='date' table:number-columns-repeated='2'><text:p>2015-12-09</text:p></table:table-cell><table:table-cell table:style-name='ce15' calcext:value-type='string'><text:p>John</text:p></table:table-cell><table:table-cell table:style-name='ce15' calcext:value-type='string'><text:p>Barry</text:p></table:table-cell><table:table-cell table:style-name='ce15' calcext:value-type='string'><text:p>Smith</text:p></table:table-cell><table:table-cell table:style-name='ce14' calcext:value-type='string'><text:p>AA123456A</text:p></table:table-cell><table:table-cell table:style-name='ce14' calcext:value-type='string'><text:p>123/XZ55555555</text:p></table:table-cell><table:table-cell table:style-name='ce21' calcext:value-type='float' office:value='10.1234'><text:p>10.1234</text:p></table:table-cell><table:table-cell table:style-name='ce15' calcext:value-type='float' office:value='10'><text:p>10</text:p></table:table-cell><table:table-cell table:style-name='ce21' calcext:value-type='string'><text:p>1 Example Street</text:p></table:table-cell><table:table-cell table:style-name='ce21' calcext:value-type='string'><text:p>Bucknall</text:p></table:table-cell><table:table-cell table:style-name='ce21' calcext:value-type='string'><text:p>Stoke</text:p></table:table-cell><table:table-cell table:style-name='ce21' calcext:value-type='string'><text:p>Staffordshire</text:p></table:table-cell><table:table-cell table:style-name='ce21' calcext:value-type='string'><text:p>United Kingdom</text:p></table:table-cell><table:table-cell table:style-name='ce21' calcext:value-type='string'><text:p>SE1 2AB</text:p></table:table-cell><table:table-cell table:style-name='ce15' calcext:value-type='float' office:value='1234567890'><text:p>1234567890</text:p></table:table-cell><table:table-cell table:style-name='ce15' calcext:value-type='string'><text:p>AB123456</text:p></table:table-cell><table:table-cell table:number-columns-repeated='1007'></table:table-cell></table:table-row>
+
+  val emiReplacedV7Row6: Elem =
+    <table:table-row table:style-name='ro4' table:number-rows-repeated='995'><table:table-cell table:style-name='ce12' table:number-columns-repeated='2'></table:table-cell><table:table-cell table:style-name='ce5' table:number-columns-repeated='3'></table:table-cell><table:table-cell table:style-name='ce15' table:number-columns-repeated='2'></table:table-cell><table:table-cell table:style-name='ce21'></table:table-cell><table:table-cell table:style-name='ce5' table:number-columns-repeated='7'></table:table-cell><table:table-cell table:style-name='ce15' table:number-columns-repeated='22'></table:table-cell><table:table-cell table:number-columns-repeated='987'></table:table-cell></table:table-row>
+
+  val emiReplacedV7Row7: Elem =
+    <table:table-row table:style-name='ro5' table:number-rows-repeated='1047575'><table:table-cell table:number-columns-repeated='1024'></table:table-cell></table:table-row>
+
+  val emiReplacedV7Row8: Elem =
+    <table:table-row table:style-name='ro5'><table:table-cell table:number-columns-repeated='1024'></table:table-cell></table:table-row>
+
+  val emiReplacedV7XML: String = openTable(emiReplacedV7SheetName) + emiReplacedV7Row1 + emiReplacedV7Row2 +
+    emiReplacedV7Row3 + emiReplacedV7Row4 + emiReplacedV7Row5 + emiReplacedV7Row6 + emiReplacedV7Row7 + emiReplacedV7Row8 + closeTable
+
+  def getEMIRLCTemplatesV7: ByteArrayInputStream =
+    new ByteArrayInputStream(emiReplacedV7XML.getBytes("utf-8"))
+
 }
